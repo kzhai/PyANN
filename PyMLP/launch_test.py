@@ -12,9 +12,7 @@ import theano.tensor
 import datetime
 import optparse
 
-import multilayer_perceptron
-import neural_network_layer
-import launch_train
+import lasagne
 
 def parse_args():
     parser = optparse.OptionParser()
@@ -65,9 +63,8 @@ def launch_test():
     # print "dictionary file=" + str(dict_file)
     print "========== ========== ========== ========== =========="
     
-    data_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
-    data_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
-    test_set_x, test_set_y = launch_train.shared_dataset(data_x, data_y)
+    test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
+    test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
     
     ######################
     # BUILD ACTUAL MODEL #
@@ -80,35 +77,42 @@ def launch_test():
         #snapshot_index = int(model_file_name.split("-")[-1]);
         
         model_file_path = os.path.join(model_directory, model_file_name);
-        prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
-        print 'prediction error is %f%% for %s' % (prediction_error_on_test_set * 100., model_file_path)
+        prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
+        print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
     
     model_file_path = os.path.join(model_directory, "best_model.pkl");
-    prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
+    prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
     #prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
-    print 'prediction error is %f%% for %s' % (prediction_error_on_test_set * 100., model_file_path)
+    print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
 
 def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     # allocate symbolic variables for the data
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     
-    classifier = multilayer_perceptron.MultiLayerPerceptron.load_model(x, input_snapshot_path);
+    network = cPickle.load(open(input_snapshot_path, 'rb'));
+    
+    # This is to establish the computational graph
+    lasagne.layers.get_all_layers(network)[0].input_var = x
+    
+    # Create a train_loss expression for validation/testing. The crucial difference
+    # here is that we do a deterministic forward pass through the network,
+    # disabling dropout layers.
+    test_prediction = lasagne.layers.get_output(network, deterministic=True)
+    test_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction, y))
+    # As a bonus, also create an expression for the classification accuracy:
+    test_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(test_prediction, axis=1), y), dtype=theano.config.floatX)
     
     # compiling a Theano function that computes the mistakes that are made by the model on a minibatch
-    test_model = theano.function(
-            inputs=[],
-            outputs=[theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(classifier._output, axis=1), y))],
-            givens={
-                x: test_set_x,
-                y: test_set_y
-            }
-        )
+    test_function = theano.function(
+        inputs=[x, y],
+        outputs=[test_loss, test_accuracy],
+    )
     
     # test it on the test set
-    prediction_error_on_test_set = test_model()
+    prediction_loss_on_test_set, prediction_accuracy_on_test_set = test_function(test_set_x, test_set_y);
     
-    return prediction_error_on_test_set;
+    return prediction_loss_on_test_set, prediction_accuracy_on_test_set;
     
 if __name__ == '__main__':
     launch_test()
