@@ -21,24 +21,21 @@ def build_mlp(
         layer_shapes=None,
         layer_dropout_rates=None
         ):
-    
-    if layer_dropout_rates is not None:
-        assert (layer_dropout_rates[index] >= 0 for index in xrange(len(layer_dropout_rates)))
-        assert (layer_dropout_rates[index] <= 1 for index in xrange(len(layer_dropout_rates)))
-    
     # print layer_nonlinearities
-    layer_nonlinearities = [getattr(lasagne.nonlinearities, layer_nonlinearity) for layer_nonlinearity in layer_nonlinearities]
+    #layer_nonlinearities = [getattr(lasagne.nonlinearities, layer_nonlinearity) for layer_nonlinearity in layer_nonlinearities]
     
     network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input)
-    
+    #print network.shape, network.output_shape
     for layer_index in xrange(1, len(layer_shapes)):
         if layer_dropout_rates is not None and layer_dropout_rates[layer_index - 1] > 0:
             network = lasagne.layers.DropoutLayer(network, p=layer_dropout_rates[layer_index - 1])
-            
+            #print network.input_shape, network.output_shape
+        
         layer_shape = layer_shapes[layer_index]
         layer_nonlinearity = layer_nonlinearities[layer_index - 1];
         network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
-    
+        #print network.input_shape, network.output_shape
+        
     return network;
 
 def parse_args():
@@ -51,7 +48,7 @@ def parse_args():
                         number_of_epochs=-1,
                         minibatch_size=100,
                         snapshot_interval=10,
-                        # validation_interval=1000,
+                        validation_interval=1000,
                         
                         # parameter set 3
                         learning_rate=1e-3,
@@ -78,18 +75,10 @@ def parse_args():
                       help="number of epochs [-1]");
     parser.add_option("--snapshot_interval", type="int", dest="snapshot_interval",
                       help="snapshot interval in number of epochs [10]");
-    # parser.add_option("--validation_interval", type="int", dest="validation_interval",
-                      # help="validation interval in number of mini-batches [1], used only if provide a validation set");
+    parser.add_option("--validation_interval", type="int", dest="validation_interval",
+                      help="validation interval in number of mini-batches [1000]");
     # parser.add_option("--improvement_threshold", type="float", dest="improvement_threshold",
                       # help="improvement threshold [0.01]")
-    
-    '''
-    patience = 10000  # look as this many examples regardless
-    patience_increase = 2  # wait this much longer when a new best is
-                           # found
-    improvement_threshold = 0.995  # a relative improvement of this much is
-                                   # considered significant
-    '''
     
     # parameter set 3
     parser.add_option("--learning_rate", type="float", dest="learning_rate",
@@ -125,8 +114,8 @@ def launch_train():
     minibatch_size = options.minibatch_size;
     assert(options.number_of_epochs > 0);
     number_of_epochs = options.number_of_epochs;
-    # assert(options.validation_interval > 0);
-    # validation_interval = options.validation_interval;
+    assert(options.validation_interval > 0);
+    validation_interval = options.validation_interval;
     assert(options.snapshot_interval > 0);
     snapshot_interval = options.snapshot_interval;
     
@@ -141,6 +130,7 @@ def launch_train():
 
     assert options.layer_nonlinearities != None
     layer_nonlinearities = options.layer_nonlinearities.split(",")
+    layer_nonlinearities = [getattr(lasagne.nonlinearities, layer_nonlinearity) for layer_nonlinearity in layer_nonlinearities]
     assert len(layer_nonlinearities) == number_of_layers;
     
     layer_dropout_rates = options.layer_dropout_rates;
@@ -151,7 +141,10 @@ def launch_train():
         else:
             assert len(layer_dropout_rate_tokens) == number_of_layers;
             layer_dropout_rates = [float(layer_dropout_rate) for layer_dropout_rate in layer_dropout_rate_tokens]
-
+            
+        assert (layer_dropout_rate >= 0 for layer_dropout_rate in layer_dropout_rates)
+        assert (layer_dropout_rate <= 1 for layer_dropout_rate in layer_dropout_rates)
+        
     # parameter set 5
     L1_regularizer_lambdas = options.L1_regularizer_lambdas
     L1_regularizer_lambda_tokens = L1_regularizer_lambdas.split(",")
@@ -194,16 +187,10 @@ def launch_train():
     suffix += "-aa%f" % (learning_rate);
     # suffix += "-l1r%f" % (L1_regularizer_lambdas);
     # suffix += "-l2r%d" % (L2_regularizer_lambdas);
-    # suffix += "-%s" % (resample_topics);
-    # suffix += "-%s" % (hash_oov_words);
     suffix += "/";
     
     output_directory = os.path.join(output_directory, suffix);
     os.mkdir(os.path.abspath(output_directory));
-
-    # dict_file = options.dictionary;
-    # if dict_file != None:
-        # dict_file = dict_file.strip();
         
     # store all the options to a file
     options_output_file = open(output_directory + "option.txt", 'w');
@@ -249,6 +236,9 @@ def launch_train():
     
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
     data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
+    #data_x = numpy.asarray(data_x, numpy.float32) / 256
+    data_x = data_x / numpy.float32(256)
+    #print data_x.dtype
     
     assert data_x.shape[0] == len(data_y);
     number_of_train = int(round(0.8 * len(data_y)));
@@ -261,22 +251,11 @@ def launch_train():
     valid_set_x = data_x[indices[number_of_train:], :]
     valid_set_y = data_y[indices[number_of_train:]]
     
-    print "successfully load data with %d for training and %d for validation..." % (len(train_set_y), len(valid_set_y))
+    print "successfully load data with %d for training and %d for validation..." % (train_set_x.shape[0], valid_set_x.shape[0])
     
-    # train_set_x, train_set_y = shared_dataset(data_x, data_y)
-    # train_set_y = numpy.asarray(train_set_y, dtype=numpy.int32)
-    
-    # valid_set_x = numpy.load(os.path.join(input_directory, "validate.feature.npy"))
-    # valid_set_y = numpy.load(os.path.join(input_directory, "validate.label.npy"))
-    # valid_set_x, valid_set_y = shared_dataset(data_x, data_y)
-    # valid_set_y = numpy.asarray(valid_set_y, dtype=numpy.int32)
-
     # compute number of minibatches for training, validation and testing
     # number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
     number_of_minibatches = train_set_x.shape[0] / minibatch_size
-    # if valid_set_x is not None and valid_set_y is not None:
-        # n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / minibatch_size
-    # n_test_batches = test_set_x.get_value(borrow=True).shape[0] / minibatch_size
 
     ######################
     # BUILD ACTUAL MODEL #
@@ -355,19 +334,19 @@ def launch_train():
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
             average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
 
-        # And a full pass over the validation data:
-        # prediction_accuracy_on_validation_set = validate_model(valid_set_x, valid_set_y);
-        prediction_loss_on_validation_set, prediction_accuracy_on_validation_set = validate_function(valid_set_x, valid_set_y);
-        # if we got the best validation score until now
-        if prediction_accuracy_on_validation_set > highest_prediction_accuracy:
-            highest_prediction_accuracy = prediction_accuracy_on_validation_set
-            best_iteration_index = iteration_index
-            
-            # save the best model
-            print 'best model found at epoch_index %i, minibatch_index %i, prediction_accuracy_on_validation_set %f%%' % (epoch_index, minibatch_index, prediction_accuracy_on_validation_set * 100)
-        
-            best_model_file_path = os.path.join(output_directory, 'best_model.pkl')
-            cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+            # And a full pass over the validation data:
+            if (iteration_index + 1) % validation_interval == 0:
+                prediction_loss_on_validation_set, prediction_accuracy_on_validation_set = validate_function(valid_set_x, valid_set_y);
+                # if we got the best validation score until now
+                if prediction_accuracy_on_validation_set > highest_prediction_accuracy:
+                    highest_prediction_accuracy = prediction_accuracy_on_validation_set
+                    best_iteration_index = iteration_index
+                    
+                    # save the best model
+                    print 'best model found at epoch_index %i, minibatch_index %i, prediction_accuracy_on_validation_set %f%%' % (epoch_index, minibatch_index, prediction_accuracy_on_validation_set * 100)
+                
+                    best_model_file_path = os.path.join(output_directory, 'best_model.pkl')
+                    cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
         clock_epoch = time.time() - clock_epoch;
     
