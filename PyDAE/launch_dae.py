@@ -20,7 +20,7 @@ def build_dae(
         input=None,
         layer_nonlinearities=None,
         layer_shapes=None,
-        layer_corruption_levels=None,
+        #layer_corruption_levels=None,
         layer_dropout_rates=None
         ):
     
@@ -30,10 +30,10 @@ def build_dae(
     for layer_index in xrange(1, len(layer_shapes)):
         layer_shape = layer_shapes[layer_index]
         layer_nonlinearity = layer_nonlinearities[layer_index - 1];
-        layer_corruption_level = layer_corruption_levels[layer_index - 1];
+        #layer_corruption_level = layer_corruption_levels[layer_index - 1];
         network = dae.DenoisingAutoEncoderLayer(network,
             layer_shape,
-            layer_corruption_level,
+            #layer_corruption_level,
             encoder_nonlinearity=layer_nonlinearity,
             decoder_nonlinearity=layer_nonlinearity,
             )
