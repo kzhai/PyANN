@@ -46,15 +46,6 @@ def launch_test():
     dataset_name = os.path.basename(input_directory);
     model_directory = options.model_directory;
 
-    # store all the options to a file
-    options_output_file = open(model_directory + "option.txt", 'w');
-    # parameter set 1
-    options_output_file.write("input_directory=" + input_directory + "\n");
-    options_output_file.write("dataset_name=" + dataset_name + "\n");
-    options_output_file.write("model_directory=" + model_directory + "\n");
-    # options_output_file.write("vocabulary_path=" + str(dict_file) + "\n");
-    options_output_file.close()
-
     print "========== ========== ========== ========== =========="
     # parameter set 1
     print "model_directory=" + model_directory
@@ -77,15 +68,15 @@ def launch_test():
         #snapshot_index = int(model_file_name.split("-")[-1]);
         
         model_file_path = os.path.join(model_directory, model_file_name);
-        prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
+        prediction_loss_on_test_set, prediction_accuracy_on_test_set = plot_snapshot(model_file_path, test_set_x, test_set_y)
         print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
     
     model_file_path = os.path.join(model_directory, "best_model.pkl");
-    prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
-    #prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
+    prediction_loss_on_test_set, prediction_accuracy_on_test_set = plot_snapshot(model_file_path, test_set_x, test_set_y)
+    #prediction_error_on_test_set = plot_snapshot(model_file_path, test_set_x, test_set_y)
     print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
 
-def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
+def plot_snapshot(input_snapshot_path, test_set_x, test_set_y):
     # allocate symbolic variables for the data
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels

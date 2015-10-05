@@ -56,7 +56,7 @@ def parse_args():
                         # parameter set 4
                         layer_dimensions=None,
                         layer_nonlinearities=None,
-                        layer_dropout_rates=None,
+                        layer_corruption_levels=None,
                         
                         # parameter set 5
                         L1_regularizer_lambdas="0",
