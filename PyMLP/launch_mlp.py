@@ -15,28 +15,8 @@ import optparse
 
 import lasagne
 
-def build_mlp(
-        input=None,
-        layer_nonlinearities=None,
-        layer_shapes=None,
-        layer_dropout_rates=None
-        ):
-    # print layer_nonlinearities
-    #layer_nonlinearities = [getattr(lasagne.nonlinearities, layer_nonlinearity) for layer_nonlinearity in layer_nonlinearities]
-    
-    network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input)
-    #print network.shape, network.output_shape
-    for layer_index in xrange(1, len(layer_shapes)):
-        if layer_dropout_rates is not None and layer_dropout_rates[layer_index - 1] > 0:
-            network = lasagne.layers.DropoutLayer(network, p=layer_dropout_rates[layer_index - 1])
-            #print network.input_shape, network.output_shape
-        
-        layer_shape = layer_shapes[layer_index]
-        layer_nonlinearity = layer_nonlinearities[layer_index - 1];
-        network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
-        #print network.input_shape, network.output_shape
-        
-    return network;
+import networks
+import networks.mlp
 
 def parse_args():
     parser = optparse.OptionParser()
@@ -56,7 +36,8 @@ def parse_args():
                         # parameter set 4
                         layer_dimensions=None,
                         layer_nonlinearities=None,
-                        layer_corruption_levels=None,
+                        layer_dropout_rates=None,
+                        #layer_corruption_levels=None,
                         
                         # parameter set 5
                         L1_regularizer_lambdas="0",
@@ -101,7 +82,7 @@ def parse_args():
     (options, args) = parser.parse_args();
     return options;
 
-def launch_train():
+def launch_mlp():
     """
     Demonstrate stochastic gradient descent optimization for a multilayer perceptron
     This is demonstrated on MNIST.
@@ -236,9 +217,9 @@ def launch_train():
     
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
     data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
-    #data_x = numpy.asarray(data_x, numpy.float32) / 256
+    # data_x = numpy.asarray(data_x, numpy.float32) / 256
     data_x = data_x / numpy.float32(256)
-    #print data_x.dtype
+    # print data_x.dtype
     
     assert data_x.shape[0] == len(data_y);
     number_of_train = int(round(0.8 * len(data_y)));
@@ -265,21 +246,22 @@ def launch_train():
     x = theano.tensor.matrix('inputs')  # the data is presented as rasterized images
     y = theano.tensor.ivector('outputs')  # the labels are presented as 1D vector of [int] labels
 
-    network = build_mlp(x,
-                        layer_nonlinearities,  # = [theano.tensor.nnet.sigmoid, theano.tensor.nnet.softmax],
-                        layer_shapes,
-                        layer_dropout_rates
-                        )
+    network = networks.mlp.MultiLayerPerceptron(
+        x,
+        layer_nonlinearities,  # = [theano.tensor.nnet.sigmoid, theano.tensor.nnet.softmax],
+        layer_shapes,
+        layer_dropout_rates
+        )
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
-    train_prediction = lasagne.layers.get_output(network)
+    train_prediction = network.get_output()
     # train_loss = theano.tensor.mean(lasagne.objectives.categorical_crossentropy(train_prediction, y))
     train_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(train_prediction, y))
     train_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=1), y), dtype=theano.config.floatX)
     
     # We could add some weight decay as well here, see lasagne.regularization.
-    network_layers = lasagne.layers.get_all_layers(network);
+    network_layers = network.get_all_layers()
     L1_regularizer_layer_lambdas = {temp_layer:L1_regularizer_lambda for temp_layer, L1_regularizer_lambda in zip(network_layers[1:], L1_regularizer_lambdas)};
     L1_regularizer = lasagne.regularization.regularize_layer_params_weighted(L1_regularizer_layer_lambdas, lasagne.regularization.l1)
     L2_regularizer_layer_lambdas = {temp_layer:L2_regularizer_lambda for temp_layer, L2_regularizer_lambda in zip(network_layers[1:], L2_regularizer_lambdas)};
@@ -289,13 +271,13 @@ def launch_train():
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
-    all_network_params = lasagne.layers.get_all_params(network, trainable=True)
+    all_network_params = network.get_all_params(trainable=True)
     updates = lasagne.updates.nesterov_momentum(train_loss, all_network_params, learning_rate, momentum=0.9)
 
     # Create a train_loss expression for validation/testing. The crucial difference
-    # here is that we do a deterministic forward pass through the network,
+    # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
-    validate_prediction = lasagne.layers.get_output(network, deterministic=True)
+    validate_prediction = network.get_output(deterministic=True)
     validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y))
     # As a bonus, also create an expression for the classification accuracy:
     validate_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(validate_prediction, axis=1), y), dtype=theano.config.floatX)
@@ -364,4 +346,4 @@ def launch_train():
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
 
 if __name__ == '__main__':
-    launch_train()
+    launch_mlp()

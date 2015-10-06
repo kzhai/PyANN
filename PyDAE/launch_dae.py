@@ -14,7 +14,8 @@ import datetime
 import optparse
 
 import lasagne
-import dae
+
+from layers.dae import DenoisingAutoEncoderLayer
 
 def build_dae(
         input=None,
@@ -26,12 +27,12 @@ def build_dae(
     
     network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input)
     
-    # print network.shape, network.output_shape
+    # print networks.shape, networks.output_shape
     for layer_index in xrange(1, len(layer_shapes)):
         layer_shape = layer_shapes[layer_index]
         layer_nonlinearity = layer_nonlinearities[layer_index - 1];
         #layer_corruption_level = layer_corruption_levels[layer_index - 1];
-        network = dae.DenoisingAutoEncoderLayer(network,
+        network = DenoisingAutoEncoderLayer(network,
             layer_shape,
             #layer_corruption_level,
             encoder_nonlinearity=layer_nonlinearity,
@@ -40,13 +41,13 @@ def build_dae(
         
         '''
         if layer_dropout_rates is not None and layer_dropout_rates[layer_index - 1] > 0:
-            network = lasagne.layers.DropoutLayer(network, p=layer_dropout_rates[layer_index - 1])
-            #print network.input_shape, network.output_shape
+            networks = lasagne.layers.DropoutLayer(networks, p=layer_dropout_rates[layer_index - 1])
+            #print networks.input_shape, networks.output_shape
         '''
         
         '''
-        network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
-        #print network.input_shape, network.output_shape
+        networks = lasagne.layers.DenseLayer(networks, layer_shape, nonlinearity=layer_nonlinearity)
+        #print networks.input_shape, networks.output_shape
         '''
         
     return network;
@@ -298,9 +299,9 @@ def launch_train():
 
     '''
     # Create a train_loss expression for validation/testing. The crucial difference
-    # here is that we do a deterministic forward pass through the network,
+    # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
-    validate_prediction = lasagne.layers.get_output(network, deterministic=True)
+    validate_prediction = lasagne.layers.get_output(networks, deterministic=True)
     validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y))
     # As a bonus, also create an expression for the classification accuracy:
     validate_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(validate_prediction, axis=1), y), dtype=theano.config.floatX)

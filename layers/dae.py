@@ -56,8 +56,10 @@ class DenoisingAutoEncoderLayer(Layer):
 
     """
     
-    def __init__(self, incoming, num_units,
-                 #corruption_level,
+    def __init__(self,
+                 incoming,
+                 num_units,
+                 corruption_level,
                  W_encode=init.GlorotUniform(),
                  b_encoder=init.Constant(0.),
                  b_decoder=init.Constant(0.),
@@ -72,7 +74,7 @@ class DenoisingAutoEncoderLayer(Layer):
         self.decoder_nonlinearity = (nonlinearities.identity if decoder_nonlinearity is None
                              else decoder_nonlinearity)
 
-        #self.corruption_level = corruption_level;
+        self.corruption_level = corruption_level;
 
         self.num_units = num_units
         
@@ -93,7 +95,7 @@ class DenoisingAutoEncoderLayer(Layer):
         if b_decoder is None:
             self.b_decoder = None
         else:
-            self.b_decoder = self.add_param(b_decoder, (num_inputs,), name="b_encoder",
+            self.b_decoder = self.add_param(b_decoder, (num_inputs,), name="b_decoder",
                                     regularizable=False)
 
     def get_decoder_shape_for(self, input_shape):
@@ -131,8 +133,8 @@ class DenoisingAutoEncoderLayer(Layer):
             
         return self.decoder_nonlinearity(activation);
     
-    def get_output_for(self, input, corruption_level=0, **kwargs):
-        input = get_corrupted_input(input, corruption_level);
+    def get_output_for(self, input, **kwargs):
+        input = get_corrupted_input(input, self.corruption_level);
         
         if input.ndim > 2:
             # if the input has more than two dimensions, flatten it into a

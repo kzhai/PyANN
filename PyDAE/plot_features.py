@@ -79,11 +79,11 @@ def launch_test():
 def plot_snapshot(input_snapshot_path):
     network = cPickle.load(open(input_snapshot_path, 'rb'));
     
-    print network.W_encode.get_value(borrow=True).shape
+    print _network.W_encode.get_value(borrow=True).shape
     
     # start-snippet-4
     images = tile_raster_images(
-        X=network.W_encode.get_value(borrow=True).T,
+        X=_network.W_encode.get_value(borrow=True).T,
         img_shape=(28, 28),
         tile_shape=(10, 10),
         tile_spacing=(1, 1),

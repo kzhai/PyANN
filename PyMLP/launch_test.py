@@ -68,15 +68,15 @@ def launch_test():
         #snapshot_index = int(model_file_name.split("-")[-1]);
         
         model_file_path = os.path.join(model_directory, model_file_name);
-        prediction_loss_on_test_set, prediction_accuracy_on_test_set = plot_snapshot(model_file_path, test_set_x, test_set_y)
+        prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
         print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
     
     model_file_path = os.path.join(model_directory, "best_model.pkl");
-    prediction_loss_on_test_set, prediction_accuracy_on_test_set = plot_snapshot(model_file_path, test_set_x, test_set_y)
-    #prediction_error_on_test_set = plot_snapshot(model_file_path, test_set_x, test_set_y)
+    prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
+    #prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
     print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
 
-def plot_snapshot(input_snapshot_path, test_set_x, test_set_y):
+def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     # allocate symbolic variables for the data
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
@@ -84,12 +84,13 @@ def plot_snapshot(input_snapshot_path, test_set_x, test_set_y):
     network = cPickle.load(open(input_snapshot_path, 'rb'));
     
     # This is to establish the computational graph
-    lasagne.layers.get_all_layers(network)[0].input_var = x
+    #network.get_all_layers()[0].input_var = x
+    network.set_input_variable(x);
     
     # Create a train_loss expression for validation/testing. The crucial difference
-    # here is that we do a deterministic forward pass through the network,
+    # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
-    test_prediction = lasagne.layers.get_output(network, deterministic=True)
+    test_prediction = network.get_output(deterministic=True)
     test_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction, y))
     # As a bonus, also create an expression for the classification accuracy:
     test_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(test_prediction, axis=1), y), dtype=theano.config.floatX)
