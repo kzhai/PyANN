@@ -14,7 +14,6 @@ import datetime
 import optparse
 
 import lasagne
-import dae
 
 import network
 

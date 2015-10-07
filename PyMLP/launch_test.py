@@ -62,6 +62,7 @@ def launch_test():
     ######################
     print '... testing the model'
     
+    '''
     for model_file_name in os.listdir(model_directory):
         if not model_file_name.startswith("model-"):
             continue;
@@ -70,6 +71,7 @@ def launch_test():
         model_file_path = os.path.join(model_directory, model_file_name);
         prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
         print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
+    '''
     
     model_file_path = os.path.join(model_directory, "best_model.pkl");
     prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)

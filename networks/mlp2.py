@@ -14,9 +14,10 @@ import datetime
 import optparse
 
 import lasagne
-import dae
 
 import network
+
+from layers.dae import DenoisingAutoEncoderLayer
 
 class MultiLayerPerceptron2(network.Network):
     def __init__(self,
@@ -62,7 +63,7 @@ class MultiLayerPerceptron2(network.Network):
             
             layer_corruption_level = layer_corruption_levels[hidden_layer_index - 1];
             
-            denoising_auto_encoder = dae.DenoisingAutoEncoderLayer(
+            denoising_auto_encoder = DenoisingAutoEncoderLayer(
                 hidden_layer.input_layer,
                 num_units=hidden_layer_shape,
                 corruption_level=layer_corruption_level,
