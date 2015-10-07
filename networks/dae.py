@@ -6,8 +6,12 @@ from lasagne.layers import Layer
 from lasagne import init, nonlinearities
 from lasagne import nonlinearities
 
-import network
 import lasagne
+
+import network
+
+from layers.dae import DenoisingAutoEncoderLayer
+from network import mean_binary_crossentropy
 
 from theano.tensor.shared_randomstreams import RandomStreams
 
@@ -58,8 +62,15 @@ class DenoisingAutoEncoderNetwork(network.Network):
         L(x,z) = -sum_{k=1}^d [x_k \log z_k + (1-x_k) \log( 1-z_k)]      (4)
 
     """
-    
     def __init__(self,
+            objective_to_minimize=theano.tensor.nnet.binary_crossentropy,
+            # updates_to_parameters=lasagne.updates.nesterov_momentum,
+            ):
+        super(DenoisingAutoEncoderNetwork, self).__init__(
+            objective_to_minimize,
+            )
+        
+    def _initialize(self,
             input_layer=None,
             layer_shapes=100,
             corruption_level=0,
@@ -69,29 +80,33 @@ class DenoisingAutoEncoderNetwork(network.Network):
             b_decoder=init.Constant(0.),
             encoder_nonlinearity=nonlinearities.sigmoid,
             decoder_nonlinearity=nonlinearities.sigmoid,
+            L1_regularizer_lambdas=None,
+            L2_regularizer_lambdas=None,
             **kwargs):
         
-        super(DenoisingAutoEncoderNetwork, self).__init__(
-        # objective_to_minimize,
-        )
+        self._input = lasagne.layers.get_output(input_layer);
         
-        network = input_layer;
-        num_inputs = int(numpy.prod(self.input_shape[1:]))
-        
-        network = lasagne.layers.DropoutLayer(network, p=corruption_level);
-        
-        network = lasagne.layers.DenseLayer(network, layer_shapes, W = W_encode,
-            b = b_encoder, nonlinearity=encoder_nonlinearity);
-        
-        if W_decode is None:
-            W_decode = W_encode.T
-        else:
-            W_decode = init.GlorotUniform();
-            
-        network = lasagne.layers.DenseLayer(network, num_inputs, W = W_decode,
-            b = b_decoder, nonlinearity=decoder_nonlinearity);
+        network = DenoisingAutoEncoderLayer(
+            input_layer,
+            layer_shapes,
+            corruption_level,
+            W_encode=W_encode,
+            b_encoder=b_encoder,
+            encoder_nonlinearity=encoder_nonlinearity,
+            decoder_nonlinearity=decoder_nonlinearity
+            );
         
         self._network = network;
+        
+        self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
+        self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
+    
+    def get_objective_to_minimize(self):
+        train_loss = theano.tensor.mean(self._objective_to_minimize(self.get_output(), self._input))
+        train_loss += self.L1_regularizer()
+        train_loss += self.L2_regularizer();
+        
+        return train_loss
     
     '''
     def get_decoder_shape_for(self, input_shape):
