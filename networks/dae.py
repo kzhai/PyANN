@@ -11,7 +11,6 @@ import lasagne
 import network
 
 from layers.dae import DenoisingAutoEncoderLayer
-from network import mean_binary_crossentropy
 
 from theano.tensor.shared_randomstreams import RandomStreams
 
@@ -102,11 +101,16 @@ class DenoisingAutoEncoderNetwork(network.Network):
         self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
     
     def get_objective_to_minimize(self):
-        train_loss = theano.tensor.mean(self._objective_to_minimize(self.get_output(), self._input))
+        train_loss = theano.tensor.mean(theano.tensor.sum(self._objective_to_minimize(self.get_output(), self._input), axis=1))
+        
         train_loss += self.L1_regularizer()
         train_loss += self.L2_regularizer();
         
         return train_loss
+    
+    def get_all_params(self, **tags):
+        #return lasagne.layers.get_all_params(self._network, **tags);
+        return self._network.get_params(**tags);
     
     '''
     def get_decoder_shape_for(self, input_shape):

@@ -18,9 +18,9 @@ import lasagne
 import network
 
 from networks.dae import DenoisingAutoEncoderNetwork
-from layers.dae import DenoisingAutoEncoderLayer
+#from layers.dae import DenoisingAutoEncoderLayer
 
-from network import mean_categorical_crossentropy
+#from network import mean_categorical_crossentropy
 
 #from layers.dae import DenoisingAutoEncoderLayer
 
@@ -43,9 +43,6 @@ class MultiLayerPerceptron2(network.Network):
             L2_regularizer_lambdas=None
             ):
 
-        # if layer_dropout_rates is not None:
-            # layer_dropout_rates = [0] * (len(layer_shapes)-1);
-            
         self._input = input;
 
         network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input)
@@ -62,7 +59,7 @@ class MultiLayerPerceptron2(network.Network):
         self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
         self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
         
-    def get_pretrain_daes(self, layer_corruption_levels):
+    def build_pretrain_network(self, layer_corruption_levels, ):
         layers = self.get_all_layers();
         
         denoising_auto_encoders = [];
@@ -103,10 +100,10 @@ class MultiLayerPerceptron2(network.Network):
 
         return denoising_auto_encoders;
 
-    def pre_train(self, layer_corruption_levels, data_x, learning_rate=1e-3, minibatch_size=10):
+    def pre_train(self, data_x, layer_corruption_levels=0, learning_rate=1e-3, minibatch_size=10):
         #x = theano.tensor.matrix('x');
         
-        denoising_auto_encoders = self.get_pretrain_daes(layer_corruption_levels);
+        denoising_auto_encoders = self.build_pretrain_network(layer_corruption_levels);
         pretrain_functions = [];
         for denoising_auto_encoder in denoising_auto_encoders:
             '''
@@ -132,6 +129,7 @@ class MultiLayerPerceptron2(network.Network):
             # parameters at each training step. Here, we'll use Stochastic Gradient
             # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
             all_dae_params = denoising_auto_encoder.get_all_params(trainable=True)
+            print all_dae_params
             #all_dae_params = lasagne.layers.get_all_params(denoising_auto_encoder, trainable=True)
             updates = lasagne.updates.nesterov_momentum(pretrain_loss, all_dae_params, learning_rate, momentum=0.9)
         
@@ -172,5 +170,5 @@ class MultiLayerPerceptron2(network.Network):
                     
                     average_pretrain_loss.append(temp_average_pretrain_loss)
                     
-                print 'Pre-training layer %i, epoch %d, average cost %f\n' % (dae_index + 1, pretrain_epoch_index, numpy.mean(average_pretrain_loss)),
+                print 'Pre-training layer %i, epoch %d, average cost %f' % (dae_index + 1, pretrain_epoch_index, numpy.mean(average_pretrain_loss))
         

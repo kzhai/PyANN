@@ -71,13 +71,6 @@ class Network(object):
         
         return train_loss
     
-    '''
-    def get_update(self, label):
-        all_dae_params = self.get_all_params(trainable=True)
-        updates = lasagne.updates.nesterov_momentum(self.get_objective_to_minimize(label), all_dae_params, learning_rate, momentum=0.9)
-        return
-    ''' 
-    
     def L1_regularizer(self):
         if self._layer_L1_regularizer_lambdas == None:
             return 0;
