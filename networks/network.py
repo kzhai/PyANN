@@ -49,8 +49,9 @@ def updates(loss_function, learning_rate):
 class Network(object):
     __metaclass__ = abc.ABCMeta
     
+    '''
     def __init__(self,
-            objective_to_minimize=theano.tensor.nnet.categorical_crossentropy,
+            #objective_to_minimize=theano.tensor.nnet.categorical_crossentropy,
             #objective_to_minimize=mean_categorical_crossentropy,
             #updates_to_parameters=lasagne.updates.nesterov_momentum,
             #L1_regularizer_lambdas=None,
@@ -58,11 +59,12 @@ class Network(object):
             ):
         self._network = None;
         
-        self._objective_to_minimize = objective_to_minimize;
+        #self._objective_to_minimize = objective_to_minimize;
         #self._updates_to_parameters = updates_to_parameters;
         
         #self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
         #self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
+    '''
 
     def get_objective_to_minimize(self, label):
         train_loss = theano.tensor.mean(self._objective_to_minimize(self.get_output(), label))
@@ -83,8 +85,8 @@ class Network(object):
             self._layer_L1_regularizer_lambdas = None;
         else:
             assert len(L1_regularizer_lambdas) == len(self.get_all_layers()) - 1;
-            self._layer_L1_regularizer_lambdas = {temp_layer:L1_regularizer_lambda for temp_layer, L1_regularizer_lambda in zip(self._network.get_all_layers(), self._L1_regularizer_lambdas)};
-        
+            self._layer_L1_regularizer_lambdas = {temp_layer:L1_regularizer_lambda for temp_layer, L1_regularizer_lambda in zip(self.get_all_layers(), L1_regularizer_lambdas)};
+            
     def L2_regularizer(self):
         if self._layer_L2_regularizer_lambdas == None:
             return 0;
@@ -98,7 +100,7 @@ class Network(object):
         else:
             assert len(L2_regularizer_lambdas) == len(self.get_all_layers()) - 1;
             
-            self._layer_L2_regularizer_lambdas = {temp_layer:L2_regularizer_lambda for temp_layer, L2_regularizer_lambda in zip(self._network.get_all_layers(), self._L2_regularizer_lambdas)};
+            self._layer_L2_regularizer_lambdas = {temp_layer:L2_regularizer_lambda for temp_layer, L2_regularizer_lambda in zip(self.get_all_layers(), L2_regularizer_lambdas)};
     
     def get_output(self, inputs=None, **kwargs):
         return lasagne.layers.get_output(self._network, inputs, **kwargs)

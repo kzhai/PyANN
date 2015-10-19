@@ -17,31 +17,23 @@ import lasagne
 
 import network
 
-from networks.dae import DenoisingAutoEncoderNetwork
-#from layers.dae import DenoisingAutoEncoderLayer
+from networks.dae2 import DenoisingAutoEncoderNetwork
+# from layers.dae import DenoisingAutoEncoderLayer
 
-#from network import mean_categorical_crossentropy
+# from network import mean_categorical_crossentropy
 
-#from layers.dae import DenoisingAutoEncoderLayer
+# from layers.dae import DenoisingAutoEncoderLayer
 
 class MultiLayerPerceptron2(network.Network):
     def __init__(self,
-            objective_to_minimize=theano.tensor.nnet.categorical_crossentropy,
-            #updates_to_parameters=lasagne.updates.nesterov_momentum,
-            ):
-        super(MultiLayerPerceptron2, self).__init__(
-            objective_to_minimize,
-            )
-        
-    def _initialize(self,         
             input=None,
-            layer_nonlinearities=None,
             layer_shapes=None,
-            # layer_dropout_rates=None,
-            # objective_to_minimize=network.mean_categorical_crossentropy,
+            layer_nonlinearities=None,
+            objective_to_minimize=None,
             L1_regularizer_lambdas=None,
-            L2_regularizer_lambdas=None
+            L2_regularizer_lambdas=None,
             ):
+        #super(MultiLayerPerceptron2, self).__init__()
 
         self._input = input;
 
@@ -53,13 +45,20 @@ class MultiLayerPerceptron2(network.Network):
             layer_shape = layer_shapes[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index - 1];
             network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
-        
+            
         self._network = network;
+
+        assert objective_to_minimize != None;
+        self._objective_to_minimize = objective_to_minimize;
         
         self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
         self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
         
-    def build_pretrain_network(self, layer_corruption_levels, ):
+    def __build_pretrain_network(self,
+                                 layer_corruption_levels,
+                                 L1_regularizer_lambdas=None,
+                                 L2_regularizer_lambdas=None
+                                 ):
         layers = self.get_all_layers();
         
         denoising_auto_encoders = [];
@@ -72,38 +71,27 @@ class MultiLayerPerceptron2(network.Network):
             
             layer_corruption_level = layer_corruption_levels[hidden_layer_index - 1];
             
-            #'''
-            denoising_auto_encoder = DenoisingAutoEncoderNetwork(objective_to_minimize=theano.tensor.nnet.binary_crossentropy);
-            denoising_auto_encoder._initialize(
-                hidden_layer.input_layer,
-                layer_shapes=hidden_layer_shape,
+            denoising_auto_encoder = DenoisingAutoEncoderNetwork(
+                input_layer=hidden_layer.input_layer,
+                layer_shape=hidden_layer_shape,
+                encoder_nonlinearity=hidden_layer_nonlinearity,
+                decoder_nonlinearity=lasagne.nonlinearities.sigmoid,
+                objective_to_minimize=lasagne.objectives.binary_crossentropy,
                 corruption_level=layer_corruption_level,
+                L1_regularizer_lambdas=L1_regularizer_lambdas,
+                L2_regularizer_lambdas=L2_regularizer_lambdas,
                 W_encode=hidden_layer.W,
                 b_encoder=hidden_layer.b,
-                encoder_nonlinearity=hidden_layer_nonlinearity,
-                decoder_nonlinearity=hidden_layer_nonlinearity,
                 )
-            #'''
-            '''
-            denoising_auto_encoder = DenoisingAutoEncoderLayer(
-                hidden_layer.input_layer,
-                layer_shapes=hidden_layer_shape,
-                corruption_level=layer_corruption_level,
-                W_encode=hidden_layer.W,
-                b_encoder=hidden_layer.b,
-                encoder_nonlinearity=hidden_layer_nonlinearity,
-                decoder_nonlinearity=hidden_layer_nonlinearity
-                );
-            '''
             
             denoising_auto_encoders.append(denoising_auto_encoder);
 
         return denoising_auto_encoders;
 
-    def pre_train(self, data_x, layer_corruption_levels=0, learning_rate=1e-3, minibatch_size=10):
-        #x = theano.tensor.matrix('x');
+    def pretrain(self, data_x, layer_corruption_levels=0, learning_rate=1e-3, minibatch_size=1000):
+        # x = theano.tensor.matrix('x');
         
-        denoising_auto_encoders = self.build_pretrain_network(layer_corruption_levels);
+        denoising_auto_encoders = self.__build_pretrain_network(layer_corruption_levels);
         pretrain_functions = [];
         for denoising_auto_encoder in denoising_auto_encoders:
             '''
@@ -129,8 +117,7 @@ class MultiLayerPerceptron2(network.Network):
             # parameters at each training step. Here, we'll use Stochastic Gradient
             # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
             all_dae_params = denoising_auto_encoder.get_all_params(trainable=True)
-            print all_dae_params
-            #all_dae_params = lasagne.layers.get_all_params(denoising_auto_encoder, trainable=True)
+            # all_dae_params = lasagne.layers.get_all_params(denoising_auto_encoder, trainable=True)
             updates = lasagne.updates.nesterov_momentum(pretrain_loss, all_dae_params, learning_rate, momentum=0.9)
         
             '''
@@ -169,6 +156,7 @@ class MultiLayerPerceptron2(network.Network):
                     temp_average_pretrain_loss = pretrain_functions[dae_index](minibatch_x)
                     
                     average_pretrain_loss.append(temp_average_pretrain_loss)
-                    
+                
+                # print 'Pre-training layer %i, epoch %d, average cost %s' % (dae_index + 1, pretrain_epoch_index, average_pretrain_loss)
                 print 'Pre-training layer %i, epoch %d, average cost %f' % (dae_index + 1, pretrain_epoch_index, numpy.mean(average_pretrain_loss))
         

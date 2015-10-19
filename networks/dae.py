@@ -85,6 +85,37 @@ class DenoisingAutoEncoderNetwork(network.Network):
         
         self._input = lasagne.layers.get_output(input_layer);
         
+        network = input_layer;
+        
+        network = lasagne.layers.DropoutLayer(network, p=corruption_level)
+        
+        network = lasagne.layers.DenseLayer(network, layer_shapes, nonlinearity=encoder_nonlinearity)
+        
+        #lasagne.layers.get_output_shape(input_layer)[1:]
+        
+        print lasagne.layers.get_output_shape(input_layer);
+        print lasagne.layers.get_output_shape(input_layer)[1:];
+        print encoder_nonlinearity
+        network = lasagne.layers.DenseLayer(network, lasagne.layers.get_output_shape(input_layer)[1:], nonlinearity=encoder_nonlinearity)
+
+        #network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input)
+        # print _network.shape, _network.output_shape
+        for layer_index in xrange(1, len(layer_shapes)):
+            # network = lasagne.layers.DropoutLayer(network, p=layer_dropout_rates[layer_index - 1])
+            
+            layer_shapes = layer_shapes[layer_index]
+            layer_nonlinearity = layer_nonlinearities[layer_index - 1];
+            network = lasagne.layers.DenseLayer(network, layer_shapes, nonlinearity=layer_nonlinearity)
+        
+        self._network = network;
+        
+        self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
+        self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
+        
+        
+        
+        
+        
         network = DenoisingAutoEncoderLayer(
             input_layer,
             layer_shapes,
