@@ -280,8 +280,7 @@ def launch_mlp2():
     ###################
     # PRE-TRAIN MODEL #
     ###################
-    
-    network.pretrain(data_x, layer_corruption_levels, learning_rate, minibatch_size)
+    network.pretrain(data_x, layer_corruption_levels)
     
     """
     denoising_auto_encoders = network.get_pretrain_daes(layer_corruption_levels);

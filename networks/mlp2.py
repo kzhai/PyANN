@@ -33,8 +33,6 @@ class MultiLayerPerceptron2(network.Network):
             L1_regularizer_lambdas=None,
             L2_regularizer_lambdas=None,
             ):
-        #super(MultiLayerPerceptron2, self).__init__()
-
         self._input = input;
 
         network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input)
@@ -76,7 +74,9 @@ class MultiLayerPerceptron2(network.Network):
                 layer_shape=hidden_layer_shape,
                 encoder_nonlinearity=hidden_layer_nonlinearity,
                 decoder_nonlinearity=lasagne.nonlinearities.sigmoid,
-                objective_to_minimize=lasagne.objectives.binary_crossentropy,
+                #objective_to_minimize=lasagne.objectives.binary_crossentropy,
+                objective_to_minimize=theano.tensor.nnet.binary_crossentropy,
+                #objective_to_minimize=lasagne.objectives.binary_crossentropy,
                 corruption_level=layer_corruption_level,
                 L1_regularizer_lambdas=L1_regularizer_lambdas,
                 L2_regularizer_lambdas=L2_regularizer_lambdas,
@@ -88,9 +88,7 @@ class MultiLayerPerceptron2(network.Network):
 
         return denoising_auto_encoders;
 
-    def pretrain(self, data_x, layer_corruption_levels=0, learning_rate=1e-3, minibatch_size=1000):
-        # x = theano.tensor.matrix('x');
-        
+    def pretrain(self, data_x, layer_corruption_levels=None, learning_rate=1e-3, momentum=0.9, number_of_epochs=10, minibatch_size=1):
         denoising_auto_encoders = self.__build_pretrain_network(layer_corruption_levels);
         pretrain_functions = [];
         for denoising_auto_encoder in denoising_auto_encoders:
@@ -118,7 +116,7 @@ class MultiLayerPerceptron2(network.Network):
             # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
             all_dae_params = denoising_auto_encoder.get_all_params(trainable=True)
             # all_dae_params = lasagne.layers.get_all_params(denoising_auto_encoder, trainable=True)
-            updates = lasagne.updates.nesterov_momentum(pretrain_loss, all_dae_params, learning_rate, momentum=0.9)
+            updates = lasagne.updates.nesterov_momentum(pretrain_loss, all_dae_params, learning_rate, momentum)
         
             '''
             # Create a pretrain_loss expression for validation/testing. The crucial difference
@@ -134,7 +132,13 @@ class MultiLayerPerceptron2(network.Network):
             # the updates dictionary) and returning the corresponding training pretrain_loss:
             pretrain_function = theano.function(
                 inputs=[self._input],
-                outputs=pretrain_loss,
+                outputs=[pretrain_loss,
+                         self._input,
+                         #denoising_auto_encoder._network.get_encoder_output_for(self._input),
+                         #denoising_auto_encoder._network.get_decoder_output_for(self._input),
+                         #denoising_auto_encoder._network.get_output_for(self._input)
+                         lasagne.layers.get_output(denoising_auto_encoder._network, self._input),
+                         ],
                 updates=updates
             )
             
@@ -146,14 +150,23 @@ class MultiLayerPerceptron2(network.Network):
         for dae_index in xrange(len(denoising_auto_encoders)):
             # denoising_auto_encoder = denoising_auto_encoders[dae_index]
             # layer_corruption_level = layer_corruption_levels[dae_index]
-            for pretrain_epoch_index in xrange(10):
+            for pretrain_epoch_index in xrange(number_of_epochs):
                 average_pretrain_loss = []
                 for minibatch_index in xrange(number_of_minibatches_to_pretrain):
                     iteration_index = pretrain_epoch_index * number_of_minibatches_to_pretrain + minibatch_index
                 
                     minibatch_x = data_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
                     
-                    temp_average_pretrain_loss = pretrain_functions[dae_index](minibatch_x)
+                    #print numpy.max(minibatch_x), numpy.min(minibatch_x)
+                    
+                    function_output = pretrain_functions[dae_index](minibatch_x)
+                    temp_average_pretrain_loss = function_output[0];
+                    #print temp_average_pretrain_loss
+                    
+                    #print function_output[1]
+                    #print function_output[2]
+                    #print function_output[3]
+                    #print function_output[4]
                     
                     average_pretrain_loss.append(temp_average_pretrain_loss)
                 
