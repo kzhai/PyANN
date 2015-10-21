@@ -74,9 +74,9 @@ class MultiLayerPerceptron2(network.Network):
                 layer_shape=hidden_layer_shape,
                 encoder_nonlinearity=hidden_layer_nonlinearity,
                 decoder_nonlinearity=lasagne.nonlinearities.sigmoid,
-                #objective_to_minimize=lasagne.objectives.binary_crossentropy,
+                # objective_to_minimize=lasagne.objectives.binary_crossentropy,
                 objective_to_minimize=theano.tensor.nnet.binary_crossentropy,
-                #objective_to_minimize=lasagne.objectives.binary_crossentropy,
+                # objective_to_minimize=lasagne.objectives.binary_crossentropy,
                 corruption_level=layer_corruption_level,
                 L1_regularizer_lambdas=L1_regularizer_lambdas,
                 L2_regularizer_lambdas=L2_regularizer_lambdas,
@@ -134,9 +134,9 @@ class MultiLayerPerceptron2(network.Network):
                 inputs=[self._input],
                 outputs=[pretrain_loss,
                          self._input,
-                         #denoising_auto_encoder._network.get_encoder_output_for(self._input),
-                         #denoising_auto_encoder._network.get_decoder_output_for(self._input),
-                         #denoising_auto_encoder._network.get_output_for(self._input)
+                         # denoising_auto_encoder._network.get_encoder_output_for(self._input),
+                         # denoising_auto_encoder._network.get_decoder_output_for(self._input),
+                         # denoising_auto_encoder._network.get_output_for(self._input)
                          lasagne.layers.get_output(denoising_auto_encoder._network, self._input),
                          ],
                 updates=updates
@@ -151,25 +151,27 @@ class MultiLayerPerceptron2(network.Network):
             # denoising_auto_encoder = denoising_auto_encoders[dae_index]
             # layer_corruption_level = layer_corruption_levels[dae_index]
             for pretrain_epoch_index in xrange(number_of_epochs):
+                start_time = time.time()
+                 
                 average_pretrain_loss = []
                 for minibatch_index in xrange(number_of_minibatches_to_pretrain):
                     iteration_index = pretrain_epoch_index * number_of_minibatches_to_pretrain + minibatch_index
                 
                     minibatch_x = data_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
                     
-                    #print numpy.max(minibatch_x), numpy.min(minibatch_x)
+                    # print numpy.max(minibatch_x), numpy.min(minibatch_x)
                     
                     function_output = pretrain_functions[dae_index](minibatch_x)
                     temp_average_pretrain_loss = function_output[0];
-                    #print temp_average_pretrain_loss
+                    # print temp_average_pretrain_loss
                     
-                    #print function_output[1]
-                    #print function_output[2]
-                    #print function_output[3]
-                    #print function_output[4]
+                    # print function_output[1]
+                    # print function_output[2]
+                    # print function_output[3]
+                    # print function_output[4]
                     
                     average_pretrain_loss.append(temp_average_pretrain_loss)
                 
-                # print 'Pre-training layer %i, epoch %d, average cost %s' % (dae_index + 1, pretrain_epoch_index, average_pretrain_loss)
-                print 'Pre-training layer %i, epoch %d, average cost %f' % (dae_index + 1, pretrain_epoch_index, numpy.mean(average_pretrain_loss))
-        
+                end_time = time.time()
+                
+                print 'pre-training layer %i, epoch %d, average cost %f, time elapsed %f' % (dae_index + 1, pretrain_epoch_index, numpy.mean(average_pretrain_loss), end_time - start_time)
