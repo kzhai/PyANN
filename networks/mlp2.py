@@ -18,11 +18,6 @@ import lasagne
 import network
 
 from networks.dae2 import DenoisingAutoEncoderNetwork
-# from layers.dae import DenoisingAutoEncoderLayer
-
-# from network import mean_categorical_crossentropy
-
-# from layers.dae import DenoisingAutoEncoderLayer
 
 class MultiLayerPerceptron2(network.Network):
     def __init__(self,
@@ -164,11 +159,6 @@ class MultiLayerPerceptron2(network.Network):
                     function_output = pretrain_functions[dae_index](minibatch_x)
                     temp_average_pretrain_loss = function_output[0];
                     # print temp_average_pretrain_loss
-                    
-                    # print function_output[1]
-                    # print function_output[2]
-                    # print function_output[3]
-                    # print function_output[4]
                     
                     average_pretrain_loss.append(temp_average_pretrain_loss)
                 
