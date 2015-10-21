@@ -1,10 +1,15 @@
 from theano import function, config, shared, sandbox
 import theano.tensor as T
+import theano
 import numpy
 import time
 
 # THEANO_FLAGS=mode=FAST_RUN,device=cpu,floatX=float32 python test_gpu.py
 # THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python test_gpu.py
+
+# theano.config.device="gpu"
+# theano.config.mode="FAST_RUN"
+# theano.config.floatX="float32"
 
 vlen = 10 * 30 * 768  # 10 x #cores x # threads per core
 iters = 1000
