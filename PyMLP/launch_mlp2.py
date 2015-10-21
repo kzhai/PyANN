@@ -246,9 +246,9 @@ def launch_mlp2():
     # data_x = numpy.asarray(data_x, numpy.float32) / 256
     data_x = data_x / numpy.float32(256)
     #data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
-    
     assert data_x.shape[0] == len(data_y);
-    number_of_train = int(round(0.8 * len(data_y)));
+    
+    number_of_train = int(round(0.85 * len(data_y)));
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
     
@@ -280,72 +280,11 @@ def launch_mlp2():
     ###################
     # PRE-TRAIN MODEL #
     ###################
+    
     network.pretrain(data_x, layer_corruption_levels)
     
-    """
-    denoising_auto_encoders = network.get_pretrain_daes(layer_corruption_levels);
-    pretrain_functions = [];
-    for denoising_auto_encoder in denoising_auto_encoders:
-        train_prediction = lasagne.layers.get_output(denoising_auto_encoder)
-        pretrain_loss = x * theano.tensor.log(train_prediction) + (1 - x) * theano.tensor.log(1 - train_prediction)
-        pretrain_loss = theano.tensor.mean(-theano.tensor.sum(pretrain_loss, axis=1))
-        # pretrain_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(train_prediction, y))
-        
-        '''
-        # We could add some weight decay as well here, see lasagne.regularization.
-        dae_layers = lasagne.layers.get_all_layers(denoising_auto_encoders);
-        L1_regularizer_layer_lambdas = {temp_layer:L1_regularizer_lambda for temp_layer, L1_regularizer_lambda in zip(dae_layers[1:], L1_regularizer_lambdas)};
-        L1_regularizer = lasagne.regularization.regularize_layer_params_weighted(L1_regularizer_layer_lambdas, lasagne.regularization.l1)
-        L2_regularizer_layer_lambdas = {temp_layer:L2_regularizer_lambda for temp_layer, L2_regularizer_lambda in zip(dae_layers[1:], L2_regularizer_lambdas)};
-        L2_regularizer = lasagne.regularization.regularize_layer_params_weighted(L2_regularizer_layer_lambdas, lasagne.regularization.l2)
-        pretrain_loss += L1_regularizer + L2_regularizer
-        '''
-    
-        # Create update expressions for training, i.e., how to modify the
-        # parameters at each training step. Here, we'll use Stochastic Gradient
-        # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
-        all_dae_params = lasagne.layers.get_all_params(denoising_auto_encoder, trainable=True)
-        updates = lasagne.updates.nesterov_momentum(pretrain_loss, all_dae_params, learning_rate, momentum=0.9)
-    
-        '''
-        # Create a pretrain_loss expression for validation/testing. The crucial difference
-        # here is that we do a deterministic forward pass through the networks,
-        # disabling dropout layers.
-        validate_prediction = lasagne.layers.get_output(networks, deterministic=True)
-        validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y))
-        # As a bonus, also create an expression for the classification accuracy:
-        validate_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(validate_prediction, axis=1), y), dtype=theano.config.floatX)
-        '''
-    
-        # Compile a function performing a training step on a mini-batch (by giving
-        # the updates dictionary) and returning the corresponding training pretrain_loss:
-        pretrain_function = theano.function(
-            inputs=[x],
-            outputs=pretrain_loss,
-            updates=updates
-        )
-        
-        pretrain_functions.append(pretrain_function);
-    
-    number_of_minibatches_to_pretrain = data_x.shape[0] / minibatch_size
-
-    # start_time = timeit.default_timer()
-    for dae_index in xrange(len(denoising_auto_encoders)):
-        # denoising_auto_encoder = denoising_auto_encoders[dae_index]
-        # layer_corruption_level = layer_corruption_levels[dae_index]
-        for pretrain_epoch_index in xrange(10):
-            average_pretrain_loss = []
-            for minibatch_index in xrange(number_of_minibatches_to_pretrain):
-                iteration_index = pretrain_epoch_index * number_of_minibatches_to_pretrain + minibatch_index
-            
-                minibatch_x = data_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
-                
-                temp_average_pretrain_loss = pretrain_functions[dae_index](minibatch_x)
-                
-                average_pretrain_loss.append(temp_average_pretrain_loss)
-                
-            print 'Pre-training layer %i, epoch %d, average cost %f\n' % (dae_index + 1, pretrain_epoch_index, numpy.mean(average_pretrain_loss)),
-    """
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
@@ -355,16 +294,6 @@ def launch_mlp2():
     # train_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(train_prediction, y))
     train_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=1), y), dtype=theano.config.floatX)
     
-    # We could add some weight decay as well here, see lasagne.regularization.
-    '''
-    dae_layers = network.get_all_layers()
-    L1_regularizer_layer_lambdas = {temp_layer:L1_regularizer_lambda for temp_layer, L1_regularizer_lambda in zip(dae_layers[1:], L1_regularizer_lambdas)};
-    L1_regularizer = lasagne.regularization.regularize_layer_params_weighted(L1_regularizer_layer_lambdas, lasagne.regularization.l1)
-    L2_regularizer_layer_lambdas = {temp_layer:L2_regularizer_lambda for temp_layer, L2_regularizer_lambda in zip(dae_layers[1:], L2_regularizer_lambdas)};
-    L2_regularizer = lasagne.regularization.regularize_layer_params_weighted(L2_regularizer_layer_lambdas, lasagne.regularization.l2)
-    train_loss += L1_regularizer + L2_regularizer
-    '''
-
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
