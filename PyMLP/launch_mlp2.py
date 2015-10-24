@@ -43,6 +43,7 @@ def parse_args():
                         # parameter set 5
                         L1_regularizer_lambdas="0",
                         L2_regularizer_lambdas="0",
+                        dae_regularizer_lambdas="0",
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -84,6 +85,8 @@ def parse_args():
                       help="L1 regularization lambda [0]")
     parser.add_option("--L2_regularizer_lambdas", type="string", dest="L2_regularizer_lambdas",
                       help="L2 regularization lambda [0]")
+    parser.add_option("--dae_regularizer_lambdas", type="string", dest="dae_regularizer_lambdas",
+                      help="dae regularization lambda [0]")
 
     (options, args) = parser.parse_args();
     return options;
@@ -165,6 +168,14 @@ def launch_mlp2():
         assert len(L2_regularizer_lambda_tokens) == number_of_layers;
         L2_regularizer_lambdas = [float(L2_regularizer_lambda_token) for L2_regularizer_lambda_token in L2_regularizer_lambda_tokens]
         
+    dae_regularizer_lambdas = options.dae_regularizer_lambdas
+    dae_regularizer_lambda_tokens = dae_regularizer_lambdas.split(",")
+    if len(dae_regularizer_lambda_tokens) == 1:
+        dae_regularizer_lambdas = [float(dae_regularizer_lambdas) for layer_index in xrange(number_of_layers - 1)]
+    else:
+        assert len(dae_regularizer_lambda_tokens) == number_of_layers - 1;
+        dae_regularizer_lambdas = [float(dae_regularizer_lambda_token) for dae_regularizer_lambda_token in dae_regularizer_lambda_tokens]
+        
     # parameter set 1
     assert(options.input_directory != None);
     assert(options.output_directory != None);
@@ -216,6 +227,7 @@ def launch_mlp2():
     # parameter set 5
     options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
     options_output_file.write("L2_regularizer_lambdas=%s\n" % (L2_regularizer_lambdas));
+    options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
     options_output_file.close()
 
     print "========== ========== ========== ========== =========="
@@ -239,13 +251,14 @@ def launch_mlp2():
     # parameter set 5
     print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
     print "L2_regularizer_lambdas=%s" % (L2_regularizer_lambdas);
+    print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
     print "========== ========== ========== ========== =========="
     
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
     data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
     # data_x = numpy.asarray(data_x, numpy.float32) / 256
     data_x = data_x / numpy.float32(256)
-    #data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
+    # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
     assert data_x.shape[0] == len(data_y);
     
     number_of_train = int(round(0.85 * len(data_y)));
@@ -273,18 +286,22 @@ def launch_mlp2():
         layer_shapes=layer_shapes,
         layer_nonlinearities=layer_nonlinearities,
         objective_to_minimize=objective_to_minimize,
-        L1_regularizer_lambdas=L1_regularizer_lambdas,
-        L2_regularizer_lambdas=L2_regularizer_lambdas,
         )
+    
+    network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
+    network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
+    network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
     
     ###################
     # PRE-TRAIN MODEL #
     ###################
     
-    network.pretrain(data_x, layer_corruption_levels)
-    
-    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
-    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    pretrain_with_dae = False;
+    if pretrain_with_dae:
+        network.pretrain_with_dae(data_x, layer_corruption_levels)
+        
+        model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+        cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
@@ -347,18 +364,20 @@ def launch_mlp2():
             average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
 
             # And a full pass over the validation data:
-            if epoch_index >= 10 and (iteration_index + 1) % validation_interval == 0:
-                prediction_loss_on_validation_set, prediction_accuracy_on_validation_set = validate_function(valid_set_x, valid_set_y);
+            if (iteration_index + 1) % validation_interval == 0:
+                average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
                 # if we got the best validation score until now
-                if prediction_accuracy_on_validation_set > highest_prediction_accuracy:
-                    highest_prediction_accuracy = prediction_accuracy_on_validation_set
+                if average_validate_accuracy > highest_prediction_accuracy:
+                    highest_prediction_accuracy = average_validate_accuracy
                     best_iteration_index = iteration_index
                     
                     # save the best model
-                    print 'best model found at epoch_index %i, minibatch_index %i, prediction_accuracy_on_validation_set %f%%' % (epoch_index, minibatch_index, prediction_accuracy_on_validation_set * 100)
+                    print 'best model found at epoch_index %i, minibatch_index %i, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
                 
                     best_model_file_path = os.path.join(output_directory, 'best_model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+                
+                print 'epoch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, average_validate_loss, average_validate_accuracy * 100)
                     
         clock_epoch = time.time() - clock_epoch;
     

@@ -21,12 +21,21 @@ def parse_args():
     parser.set_defaults(# parameter set 1
                         input_directory=None,
                         model_directory=None,
+                        layer_index=1,
+                        image_size="28,28",
+                        tile_size="10,10"
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
                       help="input directory [None]");
     parser.add_option("--model_directory", type="string", dest="model_directory",
                       help="output directory [None]");
+    parser.add_option("--layer_index", type="int", dest="layer_index",
+                      help="layer index [1]");
+    parser.add_option("--image_size", type="string", dest="image_size",
+                      help="image size [28,28]");
+    parser.add_option("--tile_size", type="string", dest="tile_size",
+                      help="tile size [10,10]");
 
     (options, args) = parser.parse_args();
     return options;
@@ -40,55 +49,62 @@ def launch_test():
     options = parse_args();
 
     # parameter set 1
-    assert(options.input_directory != None);
+    #assert(options.input_directory != None);
     assert(options.model_directory != None);
     
-    input_directory = options.input_directory;
-    input_directory = input_directory.rstrip("/");
-    dataset_name = os.path.basename(input_directory);
+    #input_directory = options.input_directory;
+    #input_directory = input_directory.rstrip("/");
+    #dataset_name = os.path.basename(input_directory);
     model_directory = options.model_directory;
-
+    layer_index = options.layer_index;
+    image_size = options.image_size;
+    image_size = tuple([int(x) for x in image_size.split(",")])
+    tile_size = options.tile_size;
+    tile_size = tuple([int(x) for x in tile_size.split(",")])
+    
     print "========== ========== ========== ========== =========="
     # parameter set 1
     print "model_directory=" + model_directory
-    print "input_directory=" + input_directory
-    print "dataset_name=" + dataset_name
-    # print "dictionary file=" + str(dict_file)
+    #print "input_directory=" + input_directory
+    #print "dataset_name=" + dataset_name
+    print "layer_index=" + str(layer_index)
+    print "image_size=%s" % str(image_size)
+    print "tile_size=%s" % str(tile_size)
     print "========== ========== ========== ========== =========="
-    
-    #test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
-    #test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
     
     for model_file_name in os.listdir(model_directory):
         if not model_file_name.startswith("model-"):
             continue;
-        #snapshot_index = int(model_file_name.split("-")[-1]);
+        snapshot_index = int(model_file_name.split(".")[0].split("-")[1]);
         
         model_file_path = os.path.join(model_directory, model_file_name);
-        plot_snapshot(model_file_path)
-        #print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
-        break;
+        figure_file_path = os.path.join(model_directory, "layer-%d_figure-%d.pdf" % (layer_index, snapshot_index))
+        plot_snapshot(model_file_path, layer_index, image_size, tile_size, figure_file_path)
     
     '''
     model_file_path = os.path.join(model_directory, "best_model.pkl");
-    prediction_loss_on_test_set, prediction_accuracy_on_test_set = plot_snapshot(model_file_path, test_set_x, test_set_y)
-    #prediction_error_on_test_set = plot_snapshot(model_file_path, test_set_x, test_set_y)
-    print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
+    plot_snapshot(model_file_path)
     '''
 
-def plot_snapshot(input_snapshot_path):
-    network = cPickle.load(open(input_snapshot_path, 'rb'));
+def plot_snapshot(model_path, layer_index, image_size, tile_size, figure_path=None):
+    network = cPickle.load(open(model_path, 'rb'));
     
-    print _network.W_encode.get_value(borrow=True).shape
+    layers = lasagne.layers.get_all_layers(network._network)
     
+    if layer_index<0 or layer_index>=len(layers):
+        sys.stderr.write("error: invalid layer index %d..." % layer_index);
+        return;
+
+    layer = layers[layer_index]
+    print layer.W.get_value(borrow=True).shape
+
     # start-snippet-4
     images = tile_raster_images(
-        X=_network.W_encode.get_value(borrow=True).T,
-        img_shape=(28, 28),
-        tile_shape=(10, 10),
+        X=layer.W.get_value(borrow=True).T,
+        img_shape=image_size,
+        tile_shape=tile_size,
         tile_spacing=(1, 1),
         )
-    
     print images.shape
     
     fig, ax = matplotlib.pyplot.subplots()
@@ -108,7 +124,10 @@ def plot_snapshot(input_snapshot_path):
     #ax.yaxis.set_ticks_position('left')
     #ax.xaxis.set_ticks_position('bottom')
     
-    matplotlib.pyplot.show();
+    if figure_path == None:
+        matplotlib.pyplot.show();
+    else:
+        matplotlib.pyplot.savefig(figure_path);
 
 def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
                        scale_rows_to_unit_interval=True,

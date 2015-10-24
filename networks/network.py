@@ -81,7 +81,7 @@ class Network(object):
             return lasagne.regularization.regularize_layer_params_weighted(self._layer_L1_regularizer_lambdas, lasagne.regularization.l1)
 
     def set_L1_regularizer_lambda(self, L1_regularizer_lambdas=None):
-        if L1_regularizer_lambdas == None:
+        if L1_regularizer_lambdas == None or all(L1_regularizer_lambda == 0 for L1_regularizer_lambda in L1_regularizer_lambdas):
             self._layer_L1_regularizer_lambdas = None;
         else:
             assert len(L1_regularizer_lambdas) == len(self.get_all_layers()) - 1;
@@ -95,7 +95,7 @@ class Network(object):
             return lasagne.regularization.regularize_layer_params_weighted(self._layer_L2_regularizer_lambdas, lasagne.regularization.l2)
 
     def set_L2_regularizer_lambda(self, L2_regularizer_lambdas):
-        if L2_regularizer_lambdas == None:
+        if L2_regularizer_lambdas == None or all(L2_regularizer_lambda == 0 for L2_regularizer_lambda in L2_regularizer_lambdas):
             self._layer_L2_regularizer_lambdas = None;
         else:
             assert len(L2_regularizer_lambdas) == len(self.get_all_layers()) - 1;

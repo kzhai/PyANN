@@ -25,8 +25,6 @@ class MultiLayerPerceptron2(network.Network):
             layer_shapes=None,
             layer_nonlinearities=None,
             objective_to_minimize=None,
-            L1_regularizer_lambdas=None,
-            L2_regularizer_lambdas=None,
             ):
         self._input = input;
 
@@ -44,14 +42,48 @@ class MultiLayerPerceptron2(network.Network):
         assert objective_to_minimize != None;
         self._objective_to_minimize = objective_to_minimize;
         
+        '''
         self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
         self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
+        '''
+    
+    def get_objective_to_minimize(self, label):
+        train_loss = theano.tensor.mean(self._objective_to_minimize(self.get_output(), label))
+        train_loss += self.L1_regularizer();
+        train_loss += self.L2_regularizer();
+        train_loss += self.dae_regularizer();
         
-    def __build_pretrain_network(self,
-                                 layer_corruption_levels,
-                                 L1_regularizer_lambdas=None,
-                                 L2_regularizer_lambdas=None
-                                 ):
+        return train_loss
+    
+    def dae_regularizer(self):
+        if self._layer_dae_regularizer_lambdas == None:
+            return 0;
+        else:
+            dae_regularization = 0;
+            for dae_layer in self._layer_dae_regularizer_lambdas:
+                dae_regularization += self._layer_dae_regularizer_lambdas[dae_layer] * dae_layer.get_objective_to_minimize()
+            return dae_regularization;
+
+    def set_dae_regularizer_lambda(self,
+                                   layer_dae_regularizer_lambdas,
+                                   layer_corruption_levels,
+                                   L1_regularizer_lambdas=None,
+                                   L2_regularizer_lambdas=None
+                                   ):
+        if layer_dae_regularizer_lambdas == None or all(layer_dae_regularizer_lambda == 0 for layer_dae_regularizer_lambda in layer_dae_regularizer_lambdas):
+            self._layer_dae_regularizer_lambdas = None;
+        else:
+            assert len(layer_dae_regularizer_lambdas) == len(self.get_all_layers()) - 2;
+            dae_regularizer_layers = self.__build_pretrain_network_with_dae(layer_corruption_levels, L1_regularizer_lambdas, L2_regularizer_lambdas);
+            self._layer_dae_regularizer_lambdas = {temp_layer:layer_dae_regularizer_lambda for temp_layer, layer_dae_regularizer_lambda in zip(dae_regularizer_layers, layer_dae_regularizer_lambdas)};
+            
+        return;
+    
+    def __build_pretrain_network_with_dae(self,
+                                          layer_corruption_levels,
+                                          L1_regularizer_lambdas=None,
+                                          L2_regularizer_lambdas=None
+                                          ):
         layers = self.get_all_layers();
         
         denoising_auto_encoders = [];
@@ -83,8 +115,8 @@ class MultiLayerPerceptron2(network.Network):
 
         return denoising_auto_encoders;
 
-    def pretrain(self, data_x, layer_corruption_levels=None, learning_rate=1e-3, momentum=0.9, number_of_epochs=10, minibatch_size=1):
-        denoising_auto_encoders = self.__build_pretrain_network(layer_corruption_levels);
+    def pretrain_with_dae(self, data_x, layer_corruption_levels=None, learning_rate=1e-3, momentum=0.9, number_of_epochs=10, minibatch_size=1):
+        denoising_auto_encoders = self.__build_pretrain_network_with_dae(layer_corruption_levels);
         pretrain_functions = [];
         for denoising_auto_encoder in denoising_auto_encoders:
             '''
@@ -153,8 +185,6 @@ class MultiLayerPerceptron2(network.Network):
                     iteration_index = pretrain_epoch_index * number_of_minibatches_to_pretrain + minibatch_index
                 
                     minibatch_x = data_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
-                    
-                    # print numpy.max(minibatch_x), numpy.min(minibatch_x)
                     
                     function_output = pretrain_functions[dae_index](minibatch_x)
                     temp_average_pretrain_loss = function_output[0];
