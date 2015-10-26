@@ -296,7 +296,7 @@ def launch_mlp2():
     # PRE-TRAIN MODEL #
     ###################
     
-    pretrain_with_dae = False;
+    pretrain_with_dae = True;
     if pretrain_with_dae:
         network.pretrain_with_dae(data_x, layer_corruption_levels)
         
