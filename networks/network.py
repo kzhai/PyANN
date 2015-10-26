@@ -86,7 +86,7 @@ class Network(object):
         else:
             assert len(L1_regularizer_lambdas) == len(self.get_all_layers()) - 1;
             self._layer_L1_regularizer_lambdas = {temp_layer:L1_regularizer_lambda for temp_layer, L1_regularizer_lambda in zip(self.get_all_layers(), L1_regularizer_lambdas)};
-            
+        
     def L2_regularizer(self):
         if self._layer_L2_regularizer_lambdas == None:
             return 0;
