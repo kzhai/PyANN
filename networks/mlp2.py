@@ -25,13 +25,16 @@ class MultiLayerPerceptron2(network.Network):
             layer_shapes=None,
             layer_nonlinearities=None,
             objective_to_minimize=None,
+            #layer_dropout_rates=None,
             ):
         self._input = input;
+        
+        assert len(layer_shapes) == len(layer_nonlinearities) + 1
+        #assert len(layer_dropout_rates) == len(layer_nonlinearities)
 
         network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input)
-        # print _network.shape, _network.output_shape
         for layer_index in xrange(1, len(layer_shapes)):
-            # network = lasagne.layers.DropoutLayer(network, p=layer_dropout_rates[layer_index - 1])
+            #network = lasagne.layers.DropoutLayer(network, p=layer_dropout_rates[layer_index - 1])
             
             layer_shape = layer_shapes[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index - 1];

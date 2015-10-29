@@ -38,12 +38,12 @@ def parse_args():
                         layer_nonlinearities=None,
                         objective_to_minimize=None,
                         layer_dropout_rates="0",
-                        layer_corruption_levels="0",
                         
                         # parameter set 5
                         L1_regularizer_lambdas="0",
                         L2_regularizer_lambdas="0",
                         dae_regularizer_lambdas="0",
+                        layer_corruption_levels=None,
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -74,11 +74,9 @@ def parse_args():
                       help="activation functions of different layer [None], example, 'tanh,softmax' represents 2 layers with tanh and softmax activation function respectively");
     parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
                       help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
-                                            
+                    
     parser.add_option("--layer_dropout_rates", type="string", dest="layer_dropout_rates",
-                      help="dropout probability of different layer [None], either one number of a list of numbers, example, '0.2' represents 0.2 dropout rate for all input+hidden layers, or '0.2,0.5' represents 0.2 dropout rate for input layer and 0.5 dropout rate for first hidden layer respectively");
-    parser.add_option("--layer_corruption_levels", type="string", dest="layer_corruption_levels",
-                      help="layer corruption level for pre-training [None], either one number of a list of numbers, example, '0.2' represents 0.2 corruption level for all denoising auto encoders, or '0.2,0.5' represents 0.2 corruption level for first denoising auto encoder layer and 0.5 for second one respectively");
+                      help="dropout probability of different layer [None], either one number of a list of numbers, example, '0.2' represents 0.2 dropout rate for all input+hidden layers, or '0.2,0.5' represents 0.2 dropout rate for input layer and 0.5 dropout rate for first hidden layer respectively");    
 
     # parameter set 5
     parser.add_option("--L1_regularizer_lambdas", type="string", dest="L1_regularizer_lambdas",
@@ -87,6 +85,8 @@ def parse_args():
                       help="L2 regularization lambda [0]")
     parser.add_option("--dae_regularizer_lambdas", type="string", dest="dae_regularizer_lambdas",
                       help="dae regularization lambda [0]")
+    parser.add_option("--layer_corruption_levels", type="string", dest="layer_corruption_levels",
+                      help="layer corruption level for pre-training [None - no pre-training], either one number of a list of numbers, example, '0.2' represents 0.2 corruption level for all denoising auto encoders, or '0.2,0.5' represents 0.2 corruption level for first denoising auto encoder layer and 0.5 for second one respectively");
 
     (options, args) = parser.parse_args();
     return options;
@@ -135,9 +135,10 @@ def launch_mlp2():
         else:
             assert len(layer_dropout_rate_tokens) == number_of_layers;
             layer_dropout_rates = [float(layer_dropout_rate) for layer_dropout_rate in layer_dropout_rate_tokens]
-            
-        assert (layer_dropout_rate >= 0 for layer_dropout_rate in layer_dropout_rates)
-        assert (layer_dropout_rate <= 1 for layer_dropout_rate in layer_dropout_rates)
+    else:
+        layer_dropout_rates = [0 for layer_index in xrange(number_of_layers)]
+    assert (layer_dropout_rate >= 0 for layer_dropout_rate in layer_dropout_rates)
+    assert (layer_dropout_rate <= 1 for layer_dropout_rate in layer_dropout_rates)
     
     layer_corruption_levels = options.layer_corruption_levels;
     if layer_corruption_levels is not None:
@@ -149,7 +150,7 @@ def launch_mlp2():
             layer_corruption_levels = [float(layer_corruption_level) for layer_corruption_level in layer_corruption_level_tokens]
             
         assert (layer_corruption_level >= 0 for layer_corruption_level in layer_corruption_levels)
-        assert (layer_corruption_level <= 1 for layer_corruption_level in layer_corruption_levels)    
+        assert (layer_corruption_level <= 1 for layer_corruption_level in layer_corruption_levels)
         
     # parameter set 5
     L1_regularizer_lambdas = options.L1_regularizer_lambdas
@@ -290,18 +291,18 @@ def launch_mlp2():
     
     network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
     network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
-    network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
     
     ###################
     # PRE-TRAIN MODEL #
     ###################
     
-    pretrain_with_dae = True;
-    if pretrain_with_dae:
+    if layer_corruption_levels is not None:
         network.pretrain_with_dae(data_x, layer_corruption_levels)
         
         model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
         cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+        
+        network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
