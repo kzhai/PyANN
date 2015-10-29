@@ -16,7 +16,6 @@ import optparse
 import lasagne
 
 import networks
-import networks.mlp
 
 def parse_args():
     parser = optparse.OptionParser()
@@ -36,12 +35,14 @@ def parse_args():
                         # parameter set 4
                         layer_dimensions=None,
                         layer_nonlinearities=None,
-                        layer_dropout_rates=None,
-                        #layer_corruption_levels=None,
+                        objective_to_minimize=None,
+                        layer_dropout_rates="0",
                         
                         # parameter set 5
                         L1_regularizer_lambdas="0",
                         L2_regularizer_lambdas="0",
+                        dae_regularizer_lambdas="0",
+                        layer_corruption_levels=None,
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -69,20 +70,27 @@ def parse_args():
     parser.add_option("--layer_dimensions", type="string", dest="layer_dimensions",
                       help="dimension of different layer [None], example, '100,500,10' represents 3 layers contains 100, 500, and 10 neurons respectively");
     parser.add_option("--layer_nonlinearities", type="string", dest="layer_nonlinearities",
-                      help="activation functions of different layer [None], example, 'tanh,softmax' represents 2 layers with tanh and softmax activation function respectively");                      
+                      help="activation functions of different layer [None], example, 'tanh,softmax' represents 2 layers with tanh and softmax activation function respectively");
+    parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
+                      help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
+                    
     parser.add_option("--layer_dropout_rates", type="string", dest="layer_dropout_rates",
-                      help="dropout probability of different layer [None], either one number of a list of numbers, example, '0.2' represents 0.2 dropout rate for all input+hidden layers, or '0.2,0.5' represents 0.2 dropout rate for input layer and 0.5 dropout rate for first hidden layer respectively");  
+                      help="dropout probability of different layer [None], either one number of a list of numbers, example, '0.2' represents 0.2 dropout rate for all input+hidden layers, or '0.2,0.5' represents 0.2 dropout rate for input layer and 0.5 dropout rate for first hidden layer respectively");    
 
     # parameter set 5
     parser.add_option("--L1_regularizer_lambdas", type="string", dest="L1_regularizer_lambdas",
                       help="L1 regularization lambda [0]")
     parser.add_option("--L2_regularizer_lambdas", type="string", dest="L2_regularizer_lambdas",
                       help="L2 regularization lambda [0]")
+    parser.add_option("--dae_regularizer_lambdas", type="string", dest="dae_regularizer_lambdas",
+                      help="dae regularization lambda [0]")
+    parser.add_option("--layer_corruption_levels", type="string", dest="layer_corruption_levels",
+                      help="layer corruption level for pre-training [None - no pre-training], either one number of a list of numbers, example, '0.2' represents 0.2 corruption level for all denoising auto encoders, or '0.2,0.5' represents 0.2 corruption level for first denoising auto encoder layer and 0.5 for second one respectively");
 
     (options, args) = parser.parse_args();
     return options;
 
-def launch_mlp():
+def launch_mlp2():
     """
     Demonstrate stochastic gradient descent optimization for a multilayer perceptron
     This is demonstrated on MNIST.
@@ -114,6 +122,10 @@ def launch_mlp():
     layer_nonlinearities = [getattr(lasagne.nonlinearities, layer_nonlinearity) for layer_nonlinearity in layer_nonlinearities]
     assert len(layer_nonlinearities) == number_of_layers;
     
+    assert options.objective_to_minimize != None
+    objective_to_minimize = options.objective_to_minimize;
+    objective_to_minimize = getattr(lasagne.objectives, objective_to_minimize)
+    
     layer_dropout_rates = options.layer_dropout_rates;
     if layer_dropout_rates is not None:
         layer_dropout_rate_tokens = layer_dropout_rates.split(",")
@@ -122,9 +134,22 @@ def launch_mlp():
         else:
             assert len(layer_dropout_rate_tokens) == number_of_layers;
             layer_dropout_rates = [float(layer_dropout_rate) for layer_dropout_rate in layer_dropout_rate_tokens]
+    else:
+        layer_dropout_rates = [0 for layer_index in xrange(number_of_layers)]
+    assert (layer_dropout_rate >= 0 for layer_dropout_rate in layer_dropout_rates)
+    assert (layer_dropout_rate <= 1 for layer_dropout_rate in layer_dropout_rates)
+    
+    layer_corruption_levels = options.layer_corruption_levels;
+    if layer_corruption_levels is not None:
+        layer_corruption_level_tokens = layer_corruption_levels.split(",")
+        if len(layer_corruption_level_tokens) == 1:
+            layer_corruption_levels = [float(layer_corruption_levels) for layer_index in xrange(number_of_layers - 1)]
+        else:
+            assert len(layer_corruption_level_tokens) == number_of_layers - 1;
+            layer_corruption_levels = [float(layer_corruption_level) for layer_corruption_level in layer_corruption_level_tokens]
             
-        assert (layer_dropout_rate >= 0 for layer_dropout_rate in layer_dropout_rates)
-        assert (layer_dropout_rate <= 1 for layer_dropout_rate in layer_dropout_rates)
+        assert (layer_corruption_level >= 0 for layer_corruption_level in layer_corruption_levels)
+        assert (layer_corruption_level <= 1 for layer_corruption_level in layer_corruption_levels)
         
     # parameter set 5
     L1_regularizer_lambdas = options.L1_regularizer_lambdas
@@ -142,6 +167,14 @@ def launch_mlp():
     else:
         assert len(L2_regularizer_lambda_tokens) == number_of_layers;
         L2_regularizer_lambdas = [float(L2_regularizer_lambda_token) for L2_regularizer_lambda_token in L2_regularizer_lambda_tokens]
+        
+    dae_regularizer_lambdas = options.dae_regularizer_lambdas
+    dae_regularizer_lambda_tokens = dae_regularizer_lambdas.split(",")
+    if len(dae_regularizer_lambda_tokens) == 1:
+        dae_regularizer_lambdas = [float(dae_regularizer_lambdas) for layer_index in xrange(number_of_layers - 1)]
+    else:
+        assert len(dae_regularizer_lambda_tokens) == number_of_layers - 1;
+        dae_regularizer_lambdas = [float(dae_regularizer_lambda_token) for dae_regularizer_lambda_token in dae_regularizer_lambda_tokens]
         
     # parameter set 1
     assert(options.input_directory != None);
@@ -188,10 +221,13 @@ def launch_mlp():
     # parameter set 4
     options_output_file.write("layer_shapes=%s\n" % (layer_shapes));
     options_output_file.write("layer_nonlinearities=%s\n" % (layer_nonlinearities));
+    options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
     options_output_file.write("layer_dropout_rates=%s\n" % (layer_dropout_rates));
+    options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
     # parameter set 5
     options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
     options_output_file.write("L2_regularizer_lambdas=%s\n" % (L2_regularizer_lambdas));
+    options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
     options_output_file.close()
 
     print "========== ========== ========== ========== =========="
@@ -209,70 +245,78 @@ def launch_mlp():
     # parameter set 4
     print "layer_shapes=%s" % (layer_shapes)
     print "layer_nonlinearities=%s" % (layer_nonlinearities)
+    print "objective_to_minimize=%s" % (objective_to_minimize)
     print "layer_dropout_rates=%s" % (layer_dropout_rates)
+    print "layer_corruption_levels=%s" % (layer_corruption_levels);
     # parameter set 5
     print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
     print "L2_regularizer_lambdas=%s" % (L2_regularizer_lambdas);
+    print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
     print "========== ========== ========== ========== =========="
     
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
     data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
     # data_x = numpy.asarray(data_x, numpy.float32) / 256
     data_x = data_x / numpy.float32(256)
-    # print data_x.dtype
-    
+    # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
     assert data_x.shape[0] == len(data_y);
-    number_of_train = int(round(0.8 * len(data_y)));
+    
+    number_of_train = int(round(0.85 * len(data_y)));
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
     
     train_set_x = data_x[indices[:number_of_train], :]
     train_set_y = data_y[indices[:number_of_train]]
-    
+
     valid_set_x = data_x[indices[number_of_train:], :]
     valid_set_y = data_y[indices[number_of_train:]]
     
     print "successfully load data with %d for training and %d for validation..." % (train_set_x.shape[0], valid_set_x.shape[0])
-    
-    # compute number of minibatches for training, validation and testing
-    # number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
-    number_of_minibatches = train_set_x.shape[0] / minibatch_size
 
     ######################
     # BUILD ACTUAL MODEL #
     ######################
 
     # allocate symbolic variables for the data
-    x = theano.tensor.matrix('inputs')  # the data is presented as rasterized images
-    y = theano.tensor.ivector('outputs')  # the labels are presented as 1D vector of [int] labels
+    x = theano.tensor.matrix('x')  # the data is presented as rasterized images
+    y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
 
     network = networks.mlp.MultiLayerPerceptron(
-        x,
-        layer_nonlinearities,  # = [theano.tensor.nnet.sigmoid, theano.tensor.nnet.softmax],
-        layer_shapes,
-        layer_dropout_rates
+        input=x,
+        layer_shapes=layer_shapes,
+        layer_nonlinearities=layer_nonlinearities,
+        layer_dropout_rates=layer_dropout_rates,
+        objective_to_minimize=objective_to_minimize,
         )
+    
+    network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
+    network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
+    
+    ###################
+    # PRE-TRAIN MODEL #
+    ###################
+    
+    if layer_corruption_levels is not None:
+        network.pretrain_with_dae(data_x, layer_corruption_levels, number_of_epochs=1)
+        
+        model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+        cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+        
+        network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
     train_prediction = network.get_output()
+    train_loss = network.get_objective_to_minimize(y);
     # train_loss = theano.tensor.mean(lasagne.objectives.categorical_crossentropy(train_prediction, y))
-    train_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(train_prediction, y))
+    # train_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(train_prediction, y))
     train_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=1), y), dtype=theano.config.floatX)
     
-    # We could add some weight decay as well here, see lasagne.regularization.
-    network_layers = network.get_all_layers()
-    L1_regularizer_layer_lambdas = {temp_layer:L1_regularizer_lambda for temp_layer, L1_regularizer_lambda in zip(network_layers[1:], L1_regularizer_lambdas)};
-    L1_regularizer = lasagne.regularization.regularize_layer_params_weighted(L1_regularizer_layer_lambdas, lasagne.regularization.l1)
-    L2_regularizer_layer_lambdas = {temp_layer:L2_regularizer_lambda for temp_layer, L2_regularizer_lambda in zip(network_layers[1:], L2_regularizer_lambdas)};
-    L2_regularizer = lasagne.regularization.regularize_layer_params_weighted(L2_regularizer_layer_lambdas, lasagne.regularization.l2)
-    train_loss += L1_regularizer + L2_regularizer
-
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
-    all_network_params = network.get_all_params(trainable=True)
-    updates = lasagne.updates.nesterov_momentum(train_loss, all_network_params, learning_rate, momentum=0.9)
+    all_mlp_params = network.get_all_params(trainable=True)
+    updates = lasagne.updates.nesterov_momentum(train_loss, all_mlp_params, learning_rate, momentum=0.9)
 
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
@@ -303,6 +347,10 @@ def launch_mlp():
     highest_prediction_accuracy = 0
     best_iteration_index = 0
     start_time = timeit.default_timer()
+    
+    # compute number of minibatches for training, validation and testing
+    # number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
+    number_of_minibatches = train_set_x.shape[0] / minibatch_size
 
     # Finally, launch the training loop.
     # We iterate over epochs:
@@ -318,18 +366,20 @@ def launch_mlp():
 
             # And a full pass over the validation data:
             if (iteration_index + 1) % validation_interval == 0:
-                prediction_loss_on_validation_set, prediction_accuracy_on_validation_set = validate_function(valid_set_x, valid_set_y);
+                average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
                 # if we got the best validation score until now
-                if prediction_accuracy_on_validation_set > highest_prediction_accuracy:
-                    highest_prediction_accuracy = prediction_accuracy_on_validation_set
+                if average_validate_accuracy > highest_prediction_accuracy:
+                    highest_prediction_accuracy = average_validate_accuracy
                     best_iteration_index = iteration_index
                     
                     # save the best model
-                    print 'best model found at epoch_index %i, minibatch_index %i, prediction_accuracy_on_validation_set %f%%' % (epoch_index, minibatch_index, prediction_accuracy_on_validation_set * 100)
+                    print 'best model found at epoch_index %i, minibatch_index %i, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
                 
                     best_model_file_path = os.path.join(output_directory, 'best_model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-
+                
+                print 'epoch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, average_validate_loss, average_validate_accuracy * 100)
+                    
         clock_epoch = time.time() - clock_epoch;
     
         print 'epoch_index %i, average_train_loss %f, average_train_accuracy %f%%, running time %fs' % (epoch_index, average_train_loss, average_train_accuracy * 100, clock_epoch)
@@ -346,4 +396,4 @@ def launch_mlp():
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
 
 if __name__ == '__main__':
-    launch_mlp()
+    launch_mlp2()

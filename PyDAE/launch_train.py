@@ -14,7 +14,7 @@ import datetime
 import optparse
 
 import lasagne
-import networks.dae
+import networks.dae_backup
 
 def build_dae(
         input=None,
@@ -31,7 +31,7 @@ def build_dae(
         layer_shape = layer_shapes[layer_index]
         layer_nonlinearity = layer_nonlinearities[layer_index - 1];
         layer_corruption_level = layer_corruption_levels[layer_index - 1];
-        network = networks.dae.DenoisingAutoEncoderLayer(network,
+        network = networks.dae_backup.DenoisingAutoEncoderLayer(network,
             layer_shape,
             layer_corruption_level,
             encoder_nonlinearity=layer_nonlinearity,

@@ -62,63 +62,25 @@ class DenoisingAutoEncoderNetwork(network.Network):
 
     """
     def __init__(self,
-            objective_to_minimize=theano.tensor.nnet.binary_crossentropy,
-            # updates_to_parameters=lasagne.updates.nesterov_momentum,
-            ):
-        super(DenoisingAutoEncoderNetwork, self).__init__(
-            objective_to_minimize,
-            )
-        
-    def _initialize(self,
             input_layer=None,
-            layer_shapes=100,
+            layer_shape=100,
+            encoder_nonlinearity=lasagne.nonlinearities.sigmoid,
+            decoder_nonlinearity=lasagne.nonlinearities.identity,
+            objective_to_minimize=lasagne.objectives.squared_error,
             corruption_level=0,
+            L1_regularizer_lambdas=None,
+            L2_regularizer_lambdas=None,
             W_encode=init.GlorotUniform(),
             W_decode=None,
             b_encoder=init.Constant(0.),
             b_decoder=init.Constant(0.),
-            encoder_nonlinearity=nonlinearities.sigmoid,
-            decoder_nonlinearity=nonlinearities.sigmoid,
-            L1_regularizer_lambdas=None,
-            L2_regularizer_lambdas=None,
             **kwargs):
         
         self._input = lasagne.layers.get_output(input_layer);
         
-        network = input_layer;
-        
-        network = lasagne.layers.DropoutLayer(network, p=corruption_level)
-        
-        network = lasagne.layers.DenseLayer(network, layer_shapes, nonlinearity=encoder_nonlinearity)
-        
-        #lasagne.layers.get_output_shape(input_layer)[1:]
-        
-        print lasagne.layers.get_output_shape(input_layer);
-        print lasagne.layers.get_output_shape(input_layer)[1:];
-        print encoder_nonlinearity
-        network = lasagne.layers.DenseLayer(network, lasagne.layers.get_output_shape(input_layer)[1:], nonlinearity=encoder_nonlinearity)
-
-        #network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input)
-        # print _network.shape, _network.output_shape
-        for layer_index in xrange(1, len(layer_shapes)):
-            # network = lasagne.layers.DropoutLayer(network, p=layer_dropout_rates[layer_index - 1])
-            
-            layer_shapes = layer_shapes[layer_index]
-            layer_nonlinearity = layer_nonlinearities[layer_index - 1];
-            network = lasagne.layers.DenseLayer(network, layer_shapes, nonlinearity=layer_nonlinearity)
-        
-        self._network = network;
-        
-        self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
-        self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
-        
-        
-        
-        
-        
         network = DenoisingAutoEncoderLayer(
             input_layer,
-            layer_shapes,
+            layer_shape,
             corruption_level,
             W_encode=W_encode,
             b_encoder=b_encoder,
@@ -127,6 +89,9 @@ class DenoisingAutoEncoderNetwork(network.Network):
             );
         
         self._network = network;
+        
+        assert objective_to_minimize != None;
+        self._objective_to_minimize = objective_to_minimize;
         
         self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
         self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
