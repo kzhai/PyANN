@@ -8,8 +8,8 @@ from lasagne import nonlinearities
 
 from theano.tensor.shared_randomstreams import RandomStreams
 
-def get_corruption_mask(input, corruption_level=0, rng=RandomStreams()):
-    """This function keeps ``1-corruption_level`` entries of the inputs the
+def get_corruption_mask(input, retain_probability=0, rng=RandomStreams()):
+    """This function keeps ``1-retain_probability`` entries of the inputs the
     same and zero-out randomly selected subset of size ``coruption_level``
     Note : first argument of theano.rng.binomial is the shape(size) of
            random numbers that it should produce
@@ -17,8 +17,8 @@ def get_corruption_mask(input, corruption_level=0, rng=RandomStreams()):
            third argument is the probability of success of any trial
 
             this will produce an array of 0s and 1s where 1 has a
-            probability of 1 - ``corruption_level`` and 0 with
-            ``corruption_level``
+            probability of 1 - ``retain_probability`` and 0 with
+            ``retain_probability``
 
             The binomial function return int64 data type by
             default.  int64 multiplicated by the input
@@ -30,7 +30,7 @@ def get_corruption_mask(input, corruption_level=0, rng=RandomStreams()):
             correctly as it only support float32 for now.
     """
     
-    return rng.binomial(size=input.shape, n=1, p=1 - corruption_level, dtype=theano.config.floatX)
+    return rng.binomial(size=input.shape, n=1, p=1 - retain_probability, dtype=theano.config.floatX)
 
 class DenoisingAutoEncoderLayer(Layer):
     """Denoising Auto-Encoder class (dA)
@@ -134,7 +134,10 @@ class DenoisingAutoEncoderLayer(Layer):
         return self.decoder_nonlinearity(activation);
     
     def get_output_for(self, input, **kwargs):
-        input = self.get_corrupted_input(input);
+        corruption_mask = get_corruption_mask(input, self.corruption_level);
+        inverse_corruption_mask = 1 - corruption_mask;
+        input = corruption_mask * input
+        #input = self.get_corrupted_input(input);
         
         if input.ndim > 2:
             # if the input has more than two dimensions, flatten it into a
@@ -146,8 +149,8 @@ class DenoisingAutoEncoderLayer(Layer):
     '''
     def get_input(self, input):
         return input
-    '''
     
     def get_corrupted_input(self, input):
         corruption_mask = get_corruption_mask(input, self.corruption_level);
         return corruption_mask * input
+    '''

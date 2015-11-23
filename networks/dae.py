@@ -14,6 +14,7 @@ from layers.dae import DenoisingAutoEncoderLayer
 
 from theano.tensor.shared_randomstreams import RandomStreams
 
+'''
 def get_corruption_mask(input, corruption_level=0, rng=RandomStreams()):
     """This function keeps ``1-corruption_level`` entries of the inputs the
     same and zero-out randomly selected subset of size ``coruption_level``
@@ -37,6 +38,7 @@ def get_corruption_mask(input, corruption_level=0, rng=RandomStreams()):
     """
     
     return rng.binomial(size=input.shape, n=1, p=1 - corruption_level, dtype=theano.config.floatX)
+'''
 
 class DenoisingAutoEncoderNetwork(network.Network):
     """Denoising Auto-Encoder class (dA)

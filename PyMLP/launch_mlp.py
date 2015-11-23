@@ -37,11 +37,12 @@ def parse_args():
                         layer_nonlinearities=None,
                         objective_to_minimize=None,
                         layer_dropout_rates="0",
+                        layer_latent_feature_alphas="10",
                         
                         # parameter set 5
                         L1_regularizer_lambdas="0",
                         L2_regularizer_lambdas="0",
-                        dae_regularizer_lambdas="0",
+                        dae_regularizer_lambdas=None,
                         layer_corruption_levels=None,
                         )
     # parameter set 1
@@ -75,7 +76,9 @@ def parse_args():
                       help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
                     
     parser.add_option("--layer_dropout_rates", type="string", dest="layer_dropout_rates",
-                      help="dropout probability of different layer [None], either one number of a list of numbers, example, '0.2' represents 0.2 dropout rate for all input+hidden layers, or '0.2,0.5' represents 0.2 dropout rate for input layer and 0.5 dropout rate for first hidden layer respectively");    
+                      help="dropout probability of different layer [None], either one number of a list of numbers, example, '0.2' represents 0.2 dropout rate for all input+hidden layers, or '0.2,0.5' represents 0.2 dropout rate for input layer and 0.5 dropout rate for first hidden layer respectively");
+    parser.add_option("--layer_latent_feature_alphas", type="string", dest="layer_latent_feature_alphas",
+                      help="alpha for latent feature ");
 
     # parameter set 5
     parser.add_option("--L1_regularizer_lambdas", type="string", dest="L1_regularizer_lambdas",
@@ -90,7 +93,7 @@ def parse_args():
     (options, args) = parser.parse_args();
     return options;
 
-def launch_mlp2():
+def launch_mlp():
     """
     Demonstrate stochastic gradient descent optimization for a multilayer perceptron
     This is demonstrated on MNIST.
@@ -139,6 +142,18 @@ def launch_mlp2():
     assert (layer_dropout_rate >= 0 for layer_dropout_rate in layer_dropout_rates)
     assert (layer_dropout_rate <= 1 for layer_dropout_rate in layer_dropout_rates)
     
+    layer_latent_feature_alphas = options.layer_latent_feature_alphas;
+    if layer_latent_feature_alphas is not None:
+        layer_latent_feature_alpha_tokens = layer_latent_feature_alphas.split(",")
+        if len(layer_latent_feature_alpha_tokens) == 1:
+            layer_latent_feature_alphas = [float(layer_latent_feature_alphas) for layer_index in xrange(number_of_layers)]
+        else:
+            assert len(layer_latent_feature_alpha_tokens) == number_of_layers;
+            layer_latent_feature_alphas = [float(layer_latent_feature_alpha) for layer_latent_feature_alpha in layer_latent_feature_alpha_tokens]
+    else:
+        layer_latent_feature_alphas = [0 for layer_index in xrange(number_of_layers)]
+    assert (layer_latent_feature_alpha >= 0 for layer_latent_feature_alpha in layer_latent_feature_alphas)
+    
     layer_corruption_levels = options.layer_corruption_levels;
     if layer_corruption_levels is not None:
         layer_corruption_level_tokens = layer_corruption_levels.split(",")
@@ -169,13 +184,14 @@ def launch_mlp2():
         L2_regularizer_lambdas = [float(L2_regularizer_lambda_token) for L2_regularizer_lambda_token in L2_regularizer_lambda_tokens]
         
     dae_regularizer_lambdas = options.dae_regularizer_lambdas
-    dae_regularizer_lambda_tokens = dae_regularizer_lambdas.split(",")
-    if len(dae_regularizer_lambda_tokens) == 1:
-        dae_regularizer_lambdas = [float(dae_regularizer_lambdas) for layer_index in xrange(number_of_layers - 1)]
-    else:
-        assert len(dae_regularizer_lambda_tokens) == number_of_layers - 1;
-        dae_regularizer_lambdas = [float(dae_regularizer_lambda_token) for dae_regularizer_lambda_token in dae_regularizer_lambda_tokens]
-        
+    if dae_regularizer_lambdas is not None:
+        dae_regularizer_lambda_tokens = dae_regularizer_lambdas.split(",")
+        if len(dae_regularizer_lambda_tokens) == 1:
+            dae_regularizer_lambdas = [float(dae_regularizer_lambdas) for layer_index in xrange(number_of_layers - 1)]
+        else:
+            assert len(dae_regularizer_lambda_tokens) == number_of_layers - 1;
+            dae_regularizer_lambdas = [float(dae_regularizer_lambda_token) for dae_regularizer_lambda_token in dae_regularizer_lambda_tokens]
+            
     # parameter set 1
     assert(options.input_directory != None);
     assert(options.output_directory != None);
@@ -281,16 +297,29 @@ def launch_mlp2():
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
 
-    network = networks.mlp.MultiLayerPerceptron(
-        input=x,
-        layer_shapes=layer_shapes,
-        layer_nonlinearities=layer_nonlinearities,
-        layer_dropout_rates=layer_dropout_rates,
-        objective_to_minimize=objective_to_minimize,
-        )
+    activate_latent_features = True;
+    if activate_latent_features:
+        import networks.lfmlp
+        network = networks.lfmlp.LatentFeatureMultiLayerPerceptron(
+            input=x,
+            layer_shapes=layer_shapes,
+            layer_nonlinearities=layer_nonlinearities,
+            layer_latent_feature_alphas=layer_latent_feature_alphas,
+            objective_to_minimize=objective_to_minimize,
+            )
+    else:
+        import networks.mlp
+        network = networks.mlp.MultiLayerPerceptron(
+            input=x,
+            layer_shapes=layer_shapes,
+            layer_nonlinearities=layer_nonlinearities,
+            layer_dropout_rates=layer_dropout_rates,
+            objective_to_minimize=objective_to_minimize,
+            )
     
     network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
     network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
+    network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
     
     ###################
     # PRE-TRAIN MODEL #
@@ -302,7 +331,7 @@ def launch_mlp2():
         model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
         cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
         
-        network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
+        #network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
@@ -339,7 +368,7 @@ def launch_mlp2():
         inputs=[x, y],
         outputs=[validate_loss, validate_accuracy],
     )
-
+    
     ###############
     # TRAIN MODEL #
     ###############
@@ -396,4 +425,4 @@ def launch_mlp2():
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
 
 if __name__ == '__main__':
-    launch_mlp2()
+    launch_mlp()

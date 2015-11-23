@@ -44,16 +44,12 @@ class MultiLayerPerceptron(network.Network):
 
         assert objective_to_minimize != None;
         self._objective_to_minimize = objective_to_minimize;
-        
-        '''
-        self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
-        self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
-        '''
     
     def get_objective_to_minimize(self, label):
         train_loss = theano.tensor.mean(self._objective_to_minimize(self.get_output(), label))
         train_loss += self.L1_regularizer();
         train_loss += self.L2_regularizer();
+        
         train_loss += self.dae_regularizer();
         
         return train_loss
