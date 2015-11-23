@@ -17,6 +17,8 @@ import lasagne
 
 import network
 
+from layers.dropout import GeneralizedDropoutLayer
+
 from networks.dae import DenoisingAutoEncoderNetwork
 
 class MultiLayerPerceptron(network.Network):
@@ -24,17 +26,43 @@ class MultiLayerPerceptron(network.Network):
             input=None,
             layer_shapes=None,
             layer_nonlinearities=None,
-            layer_dropout_rates=None,
+            layer_dropout_parameters=None,
+            layer_dropout_styles=None,
             objective_to_minimize=None,
             ):
         self._input = input;
         
         assert len(layer_shapes) == len(layer_nonlinearities) + 1
-        assert len(layer_dropout_rates) == len(layer_nonlinearities)
-
+        assert len(layer_dropout_parameters) == len(layer_nonlinearities)
+        assert len(layer_dropout_styles) == len(layer_nonlinearities)
+        
         network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input)
         for layer_index in xrange(1, len(layer_shapes)):
-            network = lasagne.layers.DropoutLayer(network, p=layer_dropout_rates[layer_index - 1])
+            if layer_dropout_styles[layer_index-1] == "bernoulli":
+                previous_layer_shape = layer_shapes[layer_index - 1]
+                activation_probability = numpy.zeros(previous_layer_shape) + layer_dropout_parameters[layer_index - 1];
+                network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
+                
+                #network = lasagne.layers.DropoutLayer(network, p=layer_dropout_parameters[layer_index - 1])
+            elif layer_dropout_styles[layer_index-1] == "beta-bernoulli":
+                previous_layer_shape = layer_shapes[layer_index - 1]
+                
+                shape_alpha = layer_dropout_parameters[layer_index - 1] / numpy.arange(1, previous_layer_shape + 1);
+                shape_beta = 1.0;
+                
+                activation_probability = numpy.zeros(previous_layer_shape);
+                for index in xrange(previous_layer_shape):
+                    activation_probability[index] = numpy.random.beta(shape_alpha[index], shape_beta);
+                
+                network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
+            elif layer_dropout_styles[layer_index-1] == "reciprocal":
+                previous_layer_shape = layer_shapes[layer_index - 1]
+                activation_probability = layer_dropout_parameters[layer_index - 1] / numpy.arange(1, previous_layer_shape + 1);
+                
+                network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
+            else:
+                sys.stderr.write("erro: unrecognized configuration...\n");
+                sys.exit();
             
             layer_shape = layer_shapes[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index - 1];
@@ -44,7 +72,7 @@ class MultiLayerPerceptron(network.Network):
 
         assert objective_to_minimize != None;
         self._objective_to_minimize = objective_to_minimize;
-    
+
     def get_objective_to_minimize(self, label):
         train_loss = theano.tensor.mean(self._objective_to_minimize(self.get_output(), label))
         train_loss += self.L1_regularizer();
@@ -119,7 +147,7 @@ class MultiLayerPerceptron(network.Network):
 
         return denoising_auto_encoders;
 
-    def pretrain_with_dae(self, data_x, layer_corruption_levels=None, learning_rate=1e-3, momentum=0.9, number_of_epochs=10, minibatch_size=1):
+    def pretrain_with_dae(self, data_x, layer_corruption_levels=None, number_of_epochs=10, minibatch_size=1, learning_rate=1e-3, momentum=0.95):
         denoising_auto_encoders = self.__build_dae_network(layer_corruption_levels);
         pretrain_functions = [];
         for denoising_auto_encoder in denoising_auto_encoders:
