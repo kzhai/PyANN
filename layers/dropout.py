@@ -17,7 +17,7 @@ from theano.sandbox.rng_mrg import GPU_mrg_uniform, mrg_uniform
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 __all__ = [
-    "LatentFeatureDropoutLayer",
+    "GeneralizedDropoutLayer",
 ]
 
 def get_filter(input_shape, retain_probability, rng=RandomStreams()):
@@ -35,7 +35,7 @@ def get_filter(input_shape, retain_probability, rng=RandomStreams()):
             
     return filter
 
-class LatentFeatureDropoutLayer(Layer):
+class GeneralizedDropoutLayer(Layer):
     """Dropout layer
 
     Sets values to zero with probability activation_probability. See notes for disabling dropout
@@ -74,10 +74,11 @@ class LatentFeatureDropoutLayer(Layer):
            Dropout: A Simple Way to Prevent Neural Networks from Overfitting.
            Journal of Machine Learning Research, 5(Jun)(2), 1929-1958.
     """
-    def __init__(self, incoming, alpha=10, rescale=True, **kwargs):
-        super(LatentFeatureDropoutLayer, self).__init__(incoming, **kwargs)
+    def __init__(self, incoming, activation_probability, rescale=True, **kwargs):
+        super(GeneralizedDropoutLayer, self).__init__(incoming, **kwargs)
         self._srng = RandomStreams(get_rng().randint(1, 2147462579))
         
+        '''
         self._alpha_alpha = alpha;
         
         assert len(self.input_shape)==2;
@@ -90,7 +91,8 @@ class LatentFeatureDropoutLayer(Layer):
         activation_probability = numpy.zeros(dimensionality);
         for index in xrange(dimensionality):
             activation_probability[index] = numpy.random.beta(shape_alpha[index], shape_beta);
-            
+        '''
+        
         self.activation_probability = activation_probability;
         
         self.rescale = rescale

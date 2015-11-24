@@ -61,7 +61,6 @@ class DenoisingAutoEncoderNetwork(network.Network):
         x = s(W_encode' y  + b')                                                (3)
 
         L(x,z) = -sum_{k=1}^d [x_k \log z_k + (1-x_k) \log( 1-z_k)]      (4)
-
     """
     def __init__(self,
             input_layer=None,
@@ -72,8 +71,8 @@ class DenoisingAutoEncoderNetwork(network.Network):
             corruption_level=0,
             L1_regularizer_lambdas=None,
             L2_regularizer_lambdas=None,
-            W_encode=init.GlorotUniform(),
-            W_decode=None,
+            W_encoder=init.GlorotUniform(),
+            W_decoder=None,
             b_encoder=init.Constant(0.),
             b_decoder=init.Constant(0.),
             **kwargs):
@@ -84,7 +83,7 @@ class DenoisingAutoEncoderNetwork(network.Network):
             input_layer,
             layer_shape,
             corruption_level,
-            W_encode=W_encode,
+            W_encoder=W_encoder,
             b_encoder=b_encoder,
             encoder_nonlinearity=encoder_nonlinearity,
             decoder_nonlinearity=decoder_nonlinearity
