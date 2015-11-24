@@ -37,9 +37,9 @@ def parse_args():
                         layer_nonlinearities=None,
                         objective_to_minimize=None,
                         
-                        layer_dropout_parameters="0",
+                        layer_activation_parameters="1",
                         # layer_latent_feature_alphas="10",
-                        layer_dropout_styles="bernoulli",
+                        layer_activation_styles="bernoulli",
 
                         # parameter set 5
                         L1_regularizer_lambdas="0",
@@ -79,11 +79,11 @@ def parse_args():
     parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
                       help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
                     
-    parser.add_option("--layer_dropout_parameters", type="string", dest="layer_dropout_parameters",
-                      help="dropout probability of different layer [None], either one number of a list of numbers, example, '0.2' represents 0.2 dropout rate for all input+hidden layers, or '0.2,0.5' represents 0.2 dropout rate for input layer and 0.5 dropout rate for first hidden layer respectively");
+    parser.add_option("--layer_activation_parameters", type="string", dest="layer_activation_parameters",
+                      help="dropout probability of different layer [1], either one number of a list of numbers, example, '0.2' represents 0.2 dropout rate for all input+hidden layers, or '0.2,0.5' represents 0.2 dropout rate for input layer and 0.5 dropout rate for first hidden layer respectively");
     # parser.add_option("--layer_latent_feature_alphas", type="string", dest="layer_latent_feature_alphas",
                       # help="alpha for latent feature ");
-    parser.add_option("--layer_dropout_styles", type="string", dest="layer_dropout_styles",
+    parser.add_option("--layer_activation_styles", type="string", dest="layer_activation_styles",
                       help="dropout style different layer [bernoulli], example, 'bernoulli,beta-bernoulli' represents 2 layers with bernoulli and beta-bernoulli dropout respectively");
                       
     # parameter set 5
@@ -138,29 +138,29 @@ def launch_mlp():
     objective_to_minimize = options.objective_to_minimize;
     objective_to_minimize = getattr(lasagne.objectives, objective_to_minimize)
     
-    layer_dropout_parameters = options.layer_dropout_parameters;
-    if layer_dropout_parameters is not None:
-        layer_dropout_rate_tokens = layer_dropout_parameters.split(",")
-        if len(layer_dropout_rate_tokens) == 1:
-            layer_dropout_parameters = [float(layer_dropout_parameters) for layer_index in xrange(number_of_layers)]
+    layer_activation_parameters = options.layer_activation_parameters;
+    if layer_activation_parameters is not None:
+        layer_activation_parameter_tokens = layer_activation_parameters.split(",")
+        if len(layer_activation_parameter_tokens) == 1:
+            layer_activation_parameters = [float(layer_activation_parameters) for layer_index in xrange(number_of_layers)]
         else:
-            assert len(layer_dropout_rate_tokens) == number_of_layers;
-            layer_dropout_parameters = [float(layer_dropout_rate) for layer_dropout_rate in layer_dropout_rate_tokens]
+            assert len(layer_activation_parameter_tokens) == number_of_layers;
+            layer_activation_parameters = [float(layer_activation_parameter) for layer_activation_parameter in layer_activation_parameter_tokens]
     else:
-        layer_dropout_parameters = [0 for layer_index in xrange(number_of_layers)]
-    assert (layer_dropout_rate >= 0 for layer_dropout_rate in layer_dropout_parameters)
-    # assert (layer_dropout_rate <= 1 for layer_dropout_rate in layer_dropout_parameters)
+        layer_activation_parameters = [0 for layer_index in xrange(number_of_layers)]
+    assert (layer_activation_parameter >= 0 for layer_activation_parameter in layer_activation_parameters)
+    # assert (layer_activation_parameter <= 1 for layer_activation_parameter in layer_activation_parameters)
     
-    layer_dropout_styles = options.layer_dropout_styles;
-    layer_dropout_styles = layer_dropout_styles.split(",")
-    if len(layer_dropout_styles) == 1:
-        layer_dropout_styles = [layer_dropout_styles for layer_index in xrange(number_of_layers)]
-    assert len(layer_dropout_styles) == number_of_layers;
-    assert (layer_dropout_style in set("bernoulli", "beta-bernoulli", "reciprocal-beta-bernoulli") for layer_dropout_style in layer_dropout_styles)
+    layer_activation_styles = options.layer_activation_styles;
+    layer_activation_styles = layer_activation_styles.split(",")
+    if len(layer_activation_styles) == 1:
+        layer_activation_styles = [layer_activation_styles for layer_index in xrange(number_of_layers)]
+    assert len(layer_activation_styles) == number_of_layers;
+    assert (layer_activation_style in set("bernoulli", "beta-bernoulli", "reciprocal-beta-bernoulli") for layer_activation_style in layer_activation_styles)
     
     for layer_index in xrange(number_of_layers - 1):
-        if layer_dropout_styles[layer_index] == "bernoulli":
-            assert layer_dropout_parameters[layer_index] <= 1;
+        if layer_activation_styles[layer_index] == "bernoulli":
+            assert layer_activation_parameters[layer_index] <= 1;
     
     '''
     layer_latent_feature_alphas = options.layer_latent_feature_alphas;
@@ -262,8 +262,8 @@ def launch_mlp():
     options_output_file.write("layer_nonlinearities=%s\n" % (layer_nonlinearities));
     options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
     
-    options_output_file.write("layer_dropout_parameters=%s\n" % (layer_dropout_parameters));
-    options_output_file.write("layer_dropout_styles=%s\n" % (layer_dropout_styles));
+    options_output_file.write("layer_activation_parameters=%s\n" % (layer_activation_parameters));
+    options_output_file.write("layer_activation_styles=%s\n" % (layer_activation_styles));
     
     # parameter set 5
     options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
@@ -292,8 +292,8 @@ def launch_mlp():
     print "layer_nonlinearities=%s" % (layer_nonlinearities)
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
-    print "layer_dropout_parameters=%s" % (layer_dropout_parameters)
-    print "layer_dropout_styles=%s" % (layer_dropout_styles)
+    print "layer_activation_parameters=%s" % (layer_activation_parameters)
+    print "layer_activation_styles=%s" % (layer_activation_styles)
     
     # parameter set 5
     print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
@@ -331,29 +331,14 @@ def launch_mlp():
     # allocate symbolic variables for the data
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
-
-    '''
-    activate_latent_features = False;
-    if activate_latent_features:
-        import networks.mlpwd
-        network = networks.mlpwd.GeneralizedMultiLayerPerceptron(
-            input=x,
-            layer_shapes=layer_shapes,
-            layer_nonlinearities=layer_nonlinearities,
-            layer_dropout_parameters=layer_dropout_parameters,
-            layer_dropout_styles=layer_dropout_styles,
-            #layer_latent_feature_alphas=layer_latent_feature_alphas,
-            objective_to_minimize=objective_to_minimize,
-            )
-    '''
-
+    
     import networks.mlp
     network = networks.mlp.MultiLayerPerceptron(
         input=x,
         layer_shapes=layer_shapes,
         layer_nonlinearities=layer_nonlinearities,
-        layer_dropout_parameters=layer_dropout_parameters,
-        layer_dropout_styles=layer_dropout_styles,
+        layer_activation_parameters=layer_activation_parameters,
+        layer_activation_styles=layer_activation_styles,
         objective_to_minimize=objective_to_minimize,
         )
     
@@ -367,9 +352,9 @@ def launch_mlp():
     
     if number_of_pretrain_epochs>0:
         network.pretrain_with_dae(data_x, layer_corruption_levels, number_of_epochs=number_of_pretrain_epochs)
-        
-        model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
-        cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
         
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
@@ -384,7 +369,7 @@ def launch_mlp():
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_mlp_params = network.get_all_params(trainable=True)
     updates = lasagne.updates.nesterov_momentum(train_loss, all_mlp_params, learning_rate, momentum=0.95)
-
+    
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
@@ -400,7 +385,7 @@ def launch_mlp():
         outputs=[train_loss, train_accuracy],
         updates=updates
     )
-
+    
     # Compile a second function computing the validation train_loss and accuracy:
     validate_function = theano.function(
         inputs=[x, y],
