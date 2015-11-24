@@ -297,7 +297,7 @@ def launch_mlp():
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
 
-    activate_latent_features = True;
+    activate_latent_features = False;
     if activate_latent_features:
         import networks.lfmlp
         network = networks.lfmlp.LatentFeatureMultiLayerPerceptron(
