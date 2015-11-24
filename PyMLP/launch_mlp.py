@@ -156,7 +156,7 @@ def launch_mlp():
     if len(layer_dropout_styles) == 1:
         layer_dropout_styles = [layer_dropout_styles for layer_index in xrange(number_of_layers)]
     assert len(layer_dropout_styles) == number_of_layers;
-    assert (layer_dropout_style in set("bernoulli", "beta-bernoulli") for layer_dropout_style in layer_dropout_styles)
+    assert (layer_dropout_style in set("bernoulli", "beta-bernoulli", "reciprocal-beta-bernoulli") for layer_dropout_style in layer_dropout_styles)
     
     for layer_index in xrange(number_of_layers - 1):
         if layer_dropout_styles[layer_index] == "bernoulli":

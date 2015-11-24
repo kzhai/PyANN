@@ -48,9 +48,9 @@ class DenoisingAutoEncoderLayer(Layer):
 
         \tilde{x} ~ q_D(\tilde{x}|x)                                     (1)
 
-        y = s(W_encode \tilde{x} + b)                                           (2)
+        y = s(W_encoder \tilde{x} + b)                                           (2)
 
-        x = s(W_encode' y  + b')                                                (3)
+        x = s(W_encoder' y  + b')                                                (3)
 
         L(x,z) = -sum_{k=1}^d [x_k \log z_k + (1-x_k) \log( 1-z_k)]      (4)
 
@@ -60,12 +60,12 @@ class DenoisingAutoEncoderLayer(Layer):
                  incoming,
                  num_units,
                  corruption_level,
-                 W_encode=init.GlorotUniform(),
+                 W_encoder=init.GlorotUniform(),
                  b_encoder=init.Constant(0.),
                  b_decoder=init.Constant(0.),
                  encoder_nonlinearity=nonlinearities.sigmoid,
                  decoder_nonlinearity=nonlinearities.sigmoid,
-                 W_decode=None,
+                 W_decoder=None,
                  **kwargs):
         super(DenoisingAutoEncoderLayer, self).__init__(incoming, **kwargs)
         
@@ -80,11 +80,11 @@ class DenoisingAutoEncoderLayer(Layer):
         
         num_inputs = int(np.prod(self.input_shape[1:]))
 
-        self.W_encode = self.add_param(W_encode, (num_inputs, num_units), name="W_encode")
-        if W_decode is None:
-            self.W_decode = self.W_encode.T
+        self.W_encoder = self.add_param(W_encoder, (num_inputs, num_units), name="W_encoder")
+        if W_decoder is None:
+            self.W_decoder = self.W_encoder.T
         else:
-            self.W_decode = self.add_param(W_decode, (num_units, num_inputs), name="W_decode")
+            self.W_decoder = self.add_param(W_decoder, (num_units, num_inputs), name="W_decoder")
         
         if b_encoder is None:
             self.b_encoder = None
@@ -116,7 +116,7 @@ class DenoisingAutoEncoderLayer(Layer):
             # batch of feature vectors.
             input = input.flatten(2)
 
-        activation = T.dot(input, self.W_encode)
+        activation = T.dot(input, self.W_encoder)
         if self.b_encoder is not None:
             activation = activation + self.b_encoder.dimshuffle('x', 0)
         
@@ -127,7 +127,7 @@ class DenoisingAutoEncoderLayer(Layer):
         Computes the decoder output given the encoder output
         """
         
-        activation = T.dot(input, self.W_decode)
+        activation = T.dot(input, self.W_decoder)
         if self.b_decoder is not None:
             activation = activation + self.b_decoder.dimshuffle('x', 0)
             
