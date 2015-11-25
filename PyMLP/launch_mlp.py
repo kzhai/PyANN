@@ -137,30 +137,45 @@ def launch_mlp():
     assert options.objective_to_minimize != None
     objective_to_minimize = options.objective_to_minimize;
     objective_to_minimize = getattr(lasagne.objectives, objective_to_minimize)
-    
-    layer_activation_parameters = options.layer_activation_parameters;
-    if layer_activation_parameters is not None:
-        layer_activation_parameter_tokens = layer_activation_parameters.split(",")
-        if len(layer_activation_parameter_tokens) == 1:
-            layer_activation_parameters = [float(layer_activation_parameters) for layer_index in xrange(number_of_layers)]
-        else:
-            assert len(layer_activation_parameter_tokens) == number_of_layers;
-            layer_activation_parameters = [float(layer_activation_parameter) for layer_activation_parameter in layer_activation_parameter_tokens]
-    else:
-        layer_activation_parameters = [0 for layer_index in xrange(number_of_layers)]
-    assert (layer_activation_parameter >= 0 for layer_activation_parameter in layer_activation_parameters)
-    # assert (layer_activation_parameter <= 1 for layer_activation_parameter in layer_activation_parameters)
-    
+
     layer_activation_styles = options.layer_activation_styles;
     layer_activation_styles = layer_activation_styles.split(",")
     if len(layer_activation_styles) == 1:
         layer_activation_styles = [layer_activation_styles for layer_index in xrange(number_of_layers)]
     assert len(layer_activation_styles) == number_of_layers;
-    assert (layer_activation_style in set("bernoulli", "beta-bernoulli", "reciprocal-beta-bernoulli") for layer_activation_style in layer_activation_styles)
+    for layer_activation_style in layer_activation_styles:
+        assert layer_activation_style in set(["bernoulli", "beta_bernoulli", "reciprocal_beta_bernoulli"])
     
-    for layer_index in xrange(number_of_layers - 1):
+    layer_activation_parameters = options.layer_activation_parameters;
+    # if layer_activation_parameters is not None:
+    layer_activation_parameter_tokens = layer_activation_parameters.split(",")
+    if len(layer_activation_parameter_tokens) == 1:
+        layer_activation_parameters = [layer_activation_parameters for layer_index in xrange(number_of_layers)]
+    elif len(layer_activation_parameter_tokens) == number_of_layers:
+        layer_activation_parameters = layer_activation_parameter_tokens
+        # [float(layer_activation_parameter) for layer_activation_parameter in layer_activation_parameter_tokens]
+    else:
+        sys.stderr.write("error: unrecognized configuration for layer_activation_parameters %s\n" % layer_activation_parameters);
+        sys.exit()
+    # assert (layer_activation_parameter >= 0 for layer_activation_parameter in layer_activation_parameters)
+    # assert (layer_activation_parameter <= 1 for layer_activation_parameter in layer_activation_parameters)
+    
+    for layer_index in xrange(number_of_layers):
         if layer_activation_styles[layer_index] == "bernoulli":
+            layer_activation_parameters[layer_index] = float(layer_activation_parameters[layer_index])
             assert layer_activation_parameters[layer_index] <= 1;
+            assert layer_activation_parameters[layer_index] > 0;
+        elif layer_activation_styles[layer_index] == "beta_bernoulli" or layer_activation_styles[layer_index] == "reciprocal_beta_bernoulli":
+            layer_activation_parameter_tokens = layer_activation_parameters[layer_index].split("+");
+            if len(layer_activation_parameter_tokens) == 1:
+                layer_activation_parameters[layer_index] = (float(layer_activation_parameter_tokens[0]), 1.0)
+            elif len(layer_activation_parameter_tokens) == 2:
+                layer_activation_parameters[layer_index] = (float(layer_activation_parameter_tokens[0]), float(layer_activation_parameter_tokens[1]))
+            else:
+                sys.stderr.write("error: unrecognized configuration for layer_activation_style %s\n" % layer_activation_styles[layer_index]);
+                sys.exit()
+            assert layer_activation_parameters[layer_index][0] > 0;
+            assert layer_activation_parameters[layer_index][1] > 0;
     
     '''
     layer_latent_feature_alphas = options.layer_latent_feature_alphas;
@@ -350,7 +365,7 @@ def launch_mlp():
     # PRE-TRAIN MODEL #
     ###################
     
-    if number_of_pretrain_epochs>0:
+    if number_of_pretrain_epochs > 0:
         network.pretrain_with_dae(data_x, layer_corruption_levels, number_of_epochs=number_of_pretrain_epochs)
     
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))

@@ -44,24 +44,23 @@ class MultiLayerPerceptron(network.Network):
                 network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
                 
                 # network = lasagne.layers.DropoutLayer(network, p=layer_activation_parameters[layer_index - 1])
-            elif layer_activation_styles[layer_index - 1] == "beta-bernoulli":
+            elif layer_activation_styles[layer_index - 1] == "beta_bernoulli":
                 previous_layer_shape = layer_shapes[layer_index - 1]
                 
-                shape_alpha = layer_activation_parameters[layer_index - 1];
-                shape_beta = 1.0;
+                shape_alpha, shape_beta = layer_activation_parameters[layer_index - 1];
                 
                 activation_probability = numpy.random.beta(shape_alpha, shape_beta, size=previous_layer_shape);
                 
                 network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
-            elif layer_activation_styles[layer_index - 1] == "reciprocal-beta-bernoulli":
+            elif layer_activation_styles[layer_index - 1] == "reciprocal_beta_bernoulli":
                 previous_layer_shape = layer_shapes[layer_index - 1]
                 
-                shape_alpha = layer_activation_parameters[layer_index - 1] / numpy.arange(1, previous_layer_shape + 1);
-                shape_beta = 1.0;
+                shape_alpha, shape_beta = layer_activation_parameters[layer_index - 1];
+                ranked_shape_alpha = shape_alpha / numpy.arange(1, previous_layer_shape + 1); 
                 
                 activation_probability = numpy.zeros(previous_layer_shape);
                 for index in xrange(previous_layer_shape):
-                    activation_probability[index] = numpy.random.beta(shape_alpha[index], shape_beta);
+                    activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
                 
                 network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
             elif layer_activation_styles[layer_index - 1] == "reciprocal":
@@ -71,7 +70,7 @@ class MultiLayerPerceptron(network.Network):
                 
                 network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
             else:
-                sys.stderr.write("erro: unrecognized configuration...\n");
+                sys.stderr.write("error: unrecognized configuration...\n");
                 sys.exit();
             
             layer_shape = layer_shapes[layer_index]
