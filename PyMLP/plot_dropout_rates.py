@@ -92,7 +92,7 @@ def plot_dropout_rates():
 def plot_snapshot(model_path, layer_index, figure_path=None):
     network = cPickle.load(open(model_path, 'rb'));
     
-    layers = lasagne.layers.get_all_layers(network._network)
+    layers = lasagne.layers.get_all_layers(network.network)
     
     dropout_layers = [layer for layer in layers if isinstance(layer, GeneralizedDropoutLayer)];
     

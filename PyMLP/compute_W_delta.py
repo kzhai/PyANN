@@ -85,7 +85,7 @@ def compute_delta(model_directory, layer_index, image_size):
 
         model_file_path = os.path.join(model_directory, model_file_name);
         network = cPickle.load(open(model_file_path, 'rb'));
-        layers = lasagne.layers.get_all_layers(network._network)
+        layers = lasagne.layers.get_all_layers(network.network)
         
         if layer_index < 0 or layer_index >= len(layers):
             sys.stderr.write("error: invalid layer index %d..." % layer_index);

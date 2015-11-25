@@ -30,7 +30,7 @@ class MultiLayerPerceptron(network.Network):
             layer_activation_styles=None,
             objective_to_minimize=None,
             ):
-        self._input = input;
+        self.input_layer = input;
         
         assert len(layer_shapes) == len(layer_nonlinearities) + 1
         assert len(layer_activation_parameters) == len(layer_nonlinearities)
@@ -78,13 +78,13 @@ class MultiLayerPerceptron(network.Network):
             layer_nonlinearity = layer_nonlinearities[layer_index - 1];
             network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
             
-        self._network = network;
+        self.network = network;
 
         assert objective_to_minimize != None;
-        self._objective_to_minimize = objective_to_minimize;
+        self.objective_to_minimize = objective_to_minimize;
 
     def get_objective_to_minimize(self, label):
-        train_loss = theano.tensor.mean(self._objective_to_minimize(self.get_output(), label))
+        train_loss = theano.tensor.mean(self.objective_to_minimize(self.get_output(), label))
         train_loss += self.L1_regularizer();
         train_loss += self.L2_regularizer();
         
@@ -203,13 +203,13 @@ class MultiLayerPerceptron(network.Network):
             # Compile a function performing a training step on a mini-batch (by giving
             # the updates dictionary) and returning the corresponding training pretrain_loss:
             pretrain_function = theano.function(
-                inputs=[self._input],
+                inputs=[self.input_layer],
                 outputs=[pretrain_loss,
-                         self._input,
-                         # denoising_auto_encoder._network.get_encoder_output_for(self._input),
-                         # denoising_auto_encoder._network.get_decoder_output_for(self._input),
-                         # denoising_auto_encoder._network.get_output_for(self._input)
-                         lasagne.layers.get_output(denoising_auto_encoder._network, self._input),
+                         self.input_layer,
+                         # denoising_auto_encoder.network.get_encoder_output_for(self.input_layer),
+                         # denoising_auto_encoder.network.get_decoder_output_for(self.input_layer),
+                         # denoising_auto_encoder.network.get_output_for(self.input_layer)
+                         lasagne.layers.get_output(denoising_auto_encoder.network, self.input_layer),
                          ],
                 updates=updates
             )

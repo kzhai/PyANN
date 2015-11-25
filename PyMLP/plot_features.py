@@ -89,7 +89,7 @@ def launch_test():
 def plot_snapshot(model_path, layer_index, image_size, tile_size, figure_path=None):
     network = cPickle.load(open(model_path, 'rb'));
     
-    layers = lasagne.layers.get_all_layers(network._network)
+    layers = lasagne.layers.get_all_layers(network.network)
     
     if layer_index<0 or layer_index>=len(layers):
         sys.stderr.write("error: invalid layer index %d..." % layer_index);
