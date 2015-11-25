@@ -19,7 +19,7 @@ import network
 
 from layers.dropout import GeneralizedDropoutLayer
 
-from networks.dae import DenoisingAutoEncoderNetwork
+from networks.dae import DenoisingAutoEncoder
 
 class MultiLayerPerceptron(network.Network):
     def __init__(self,
@@ -140,7 +140,7 @@ class MultiLayerPerceptron(network.Network):
             # layer_corruption_level = layer_corruption_levels[hidden_layer_index - 1];
             layer_corruption_level = layer_corruption_levels[hidden_layer_index / 2 - 1];
             
-            denoising_auto_encoder = DenoisingAutoEncoderNetwork(
+            denoising_auto_encoder = DenoisingAutoEncoder(
                 input_layer=input_layer,
                 layer_shape=hidden_layer_shape,
                 encoder_nonlinearity=hidden_layer_nonlinearity,
@@ -149,8 +149,8 @@ class MultiLayerPerceptron(network.Network):
                 objective_to_minimize=theano.tensor.nnet.binary_crossentropy,
                 # objective_to_minimize=lasagne.objectives.binary_crossentropy,
                 corruption_level=layer_corruption_level,
-                L1_regularizer_lambdas=L1_regularizer_lambdas,
-                L2_regularizer_lambdas=L2_regularizer_lambdas,
+                #L1_regularizer_lambdas=L1_regularizer_lambdas,
+                #L2_regularizer_lambdas=L2_regularizer_lambdas,
                 W_encode=hidden_layer.W,
                 b_encoder=hidden_layer.b,
                 )
