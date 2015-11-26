@@ -408,7 +408,7 @@ def launch_sdae():
             
             print 'training sdae layer %i, epoch %d, average cost %f, time elapsed %f' % (dae_index + 1, epoch_index, numpy.mean(average_pretrain_loss), end_time - start_time)
 
-        model_file_path = os.path.join(output_directory, 'layer-%d.pkl' % (dae_index + 1))
+        model_file_path = os.path.join(output_directory, 'model-layer-%d.pkl' % (dae_index + 1))
         cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
         
     model_file_path = os.path.join(output_directory, 'model.pkl')

@@ -158,7 +158,8 @@ class MultiLayerPerceptron(network.Network):
             denoising_auto_encoders.append(denoising_auto_encoder);
 
         return denoising_auto_encoders;
-
+    
+    """
     def pretrain_with_dae(self, data_x, layer_corruption_levels=None, number_of_epochs=50, minibatch_size=1, learning_rate=1e-3, momentum=0.95):
         denoising_auto_encoders = self.__build_dae_network(layer_corruption_levels);
         pretrain_functions = [];
@@ -239,3 +240,4 @@ class MultiLayerPerceptron(network.Network):
                 end_time = time.time()
                 
                 print 'pre-training layer %i, epoch %d, average cost %f, time elapsed %f' % (dae_index + 1, pretrain_epoch_index, numpy.mean(average_pretrain_loss), end_time - start_time)
+    """

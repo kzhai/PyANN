@@ -32,7 +32,7 @@ def get_filter(input_shape, retain_probability, rng=RandomStreams()):
             #filter = rng.binomial(size=input_shape, n=1, p=0.5, dtype=theano.config.floatX);
             filter = self._srng.normal(size=input_shape, avg=0.0, std=1.0, dtype=theano.config.floatX);
     '''
-            
+    
     return filter
 
 class GeneralizedDropoutLayer(Layer):

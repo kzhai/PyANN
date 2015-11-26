@@ -17,8 +17,6 @@ import lasagne
 
 import network
 
-from layers.dropout import GeneralizedDropoutLayer
-
 from networks.dae import DenoisingAutoEncoder
 
 class StackedDenoisingAutoEncoder():

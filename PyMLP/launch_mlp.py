@@ -47,7 +47,7 @@ def parse_args():
                         
                         dae_regularizer_lambdas="0",
                         layer_corruption_levels="0",
-                        number_of_pretrain_epochs=0,
+                        #number_of_pretrain_epochs=0,
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -91,13 +91,14 @@ def parse_args():
                       help="L1 regularization lambda [0]")
     parser.add_option("--L2_regularizer_lambdas", type="string", dest="L2_regularizer_lambdas",
                       help="L2 regularization lambda [0]")
+    
     parser.add_option("--dae_regularizer_lambdas", type="string", dest="dae_regularizer_lambdas",
                       help="dae regularization lambda [0]")
-    
     parser.add_option("--layer_corruption_levels", type="string", dest="layer_corruption_levels",
                       help="layer corruption level for pre-training [0], either one number of a list of numbers, example, '0.2' represents 0.2 corruption level for all denoising auto encoders, or '0.2,0.5' represents 0.2 corruption level for first denoising auto encoder layer and 0.5 for second one respectively");
-    parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
-                      help="number of pretrain epochs [0 - no pre-training]");
+                      
+    #parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
+                      #help="number of pretrain epochs [0 - no pre-training]");
                       
     (options, args) = parser.parse_args();
     return options;
@@ -228,8 +229,6 @@ def launch_mlp():
     assert (layer_corruption_level >= 0 for layer_corruption_level in layer_corruption_levels)
     assert (layer_corruption_level <= 1 for layer_corruption_level in layer_corruption_levels)
     
-    number_of_pretrain_epochs = options.number_of_pretrain_epochs;
-    
     # parameter set 1
     assert(options.input_directory != None);
     assert(options.output_directory != None);
@@ -286,7 +285,7 @@ def launch_mlp():
     options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
     
     options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
-    options_output_file.write("number_of_pretrain_epochs=%s\n" % (number_of_pretrain_epochs));
+    #options_output_file.write("number_of_pretrain_epochs=%s\n" % (number_of_pretrain_epochs));
     
     options_output_file.close()
 
@@ -316,7 +315,7 @@ def launch_mlp():
     print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
     
     print "layer_corruption_levels=%s" % (layer_corruption_levels);
-    print "number_of_pretrain_epochs=%s" % (number_of_pretrain_epochs);
+    #print "number_of_pretrain_epochs=%s" % (number_of_pretrain_epochs);
     print "========== ========== ========== ========== =========="
     
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
@@ -365,8 +364,10 @@ def launch_mlp():
     # PRE-TRAIN MODEL #
     ###################
     
+    '''
     if number_of_pretrain_epochs > 0:
         network.pretrain_with_dae(data_x, layer_corruption_levels, number_of_epochs=number_of_pretrain_epochs)
+    '''
     
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
