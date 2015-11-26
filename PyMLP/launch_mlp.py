@@ -47,7 +47,7 @@ def parse_args():
                         
                         dae_regularizer_lambdas="0",
                         layer_corruption_levels="0",
-                        #number_of_pretrain_epochs=0,
+                        # number_of_pretrain_epochs=0,
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -97,8 +97,8 @@ def parse_args():
     parser.add_option("--layer_corruption_levels", type="string", dest="layer_corruption_levels",
                       help="layer corruption level for pre-training [0], either one number of a list of numbers, example, '0.2' represents 0.2 corruption level for all denoising auto encoders, or '0.2,0.5' represents 0.2 corruption level for first denoising auto encoder layer and 0.5 for second one respectively");
                       
-    #parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
-                      #help="number of pretrain epochs [0 - no pre-training]");
+    # parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
+                      # help="number of pretrain epochs [0 - no pre-training]");
                       
     (options, args) = parser.parse_args();
     return options;
@@ -285,7 +285,7 @@ def launch_mlp():
     options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
     
     options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
-    #options_output_file.write("number_of_pretrain_epochs=%s\n" % (number_of_pretrain_epochs));
+    # options_output_file.write("number_of_pretrain_epochs=%s\n" % (number_of_pretrain_epochs));
     
     options_output_file.close()
 
@@ -315,7 +315,7 @@ def launch_mlp():
     print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
     
     print "layer_corruption_levels=%s" % (layer_corruption_levels);
-    #print "number_of_pretrain_epochs=%s" % (number_of_pretrain_epochs);
+    # print "number_of_pretrain_epochs=%s" % (number_of_pretrain_epochs);
     print "========== ========== ========== ========== =========="
     
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
@@ -441,12 +441,12 @@ def launch_mlp():
                     best_iteration_index = iteration_index
                     
                     # save the best model
-                    print 'best model found at epoch_index %i, minibatch_index %i, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
+                    print 'best model found at epoch_index %i, minibatch_index %i, average_validate_accuracy %f%%' % (epoch_index, minibatch_index + 1, average_validate_accuracy * 100)
                 
-                    best_model_file_path = os.path.join(output_directory, 'best_model.pkl')
+                    best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
                 
-                print 'epoch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, average_validate_loss, average_validate_accuracy * 100)
+                # print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
                     
         clock_epoch = time.time() - clock_epoch;
     
