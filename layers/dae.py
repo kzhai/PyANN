@@ -8,7 +8,7 @@ from lasagne import nonlinearities
 
 from theano.tensor.shared_randomstreams import RandomStreams
 
-def get_filter_mask(input, retain_probability=0, rng=RandomStreams()):
+def get_filter_mask(input, retain_probability=1, rng=RandomStreams()):
     """This function keeps ``1-retain_probability`` entries of the inputs the
     same and zero-out randomly selected subset of size ``coruption_level``
     Note : first argument of theano.rng.binomial is the shape(size) of
