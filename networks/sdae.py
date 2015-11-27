@@ -21,7 +21,7 @@ from networks.dae import DenoisingAutoEncoder
 
 class StackedDenoisingAutoEncoder():
     def __init__(self,
-            input=None,
+            input_data=None,
             layer_shapes=None,
             layer_nonlinearities=None,
             
@@ -36,7 +36,7 @@ class StackedDenoisingAutoEncoder():
         # assert len(layer_activation_parameters) == len(layer_nonlinearities)
         # assert len(layer_activation_styles) == len(layer_nonlinearities)
         
-        network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input)
+        network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input_data)
         for layer_index in xrange(1, len(layer_shapes)):
             layer_shape = layer_shapes[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index - 1];
@@ -60,8 +60,8 @@ class StackedDenoisingAutoEncoder():
             layer_corruption_level = layer_corruption_levels[hidden_layer_index - 1];
             
             denoising_auto_encoder = DenoisingAutoEncoder(
-                input=input_layer,
-                layer_shape=hidden_layer_shape,
+                input_layer,
+                hidden_layer_shape,
                 encoder_nonlinearity=hidden_layer_nonlinearity,
                 #decoder_nonlinearity=lasagne.nonlinearities.identity,
                 decoder_nonlinearity=lasagne.nonlinearities.sigmoid,

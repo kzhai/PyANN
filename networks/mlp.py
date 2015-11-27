@@ -23,20 +23,25 @@ from networks.dae import DenoisingAutoEncoder
 
 class MultiLayerPerceptron(network.Network):
     def __init__(self,
-            input=None,
+            input_data=None,
             layer_shapes=None,
             layer_nonlinearities=None,
             layer_activation_parameters=None,
             layer_activation_styles=None,
             objective_to_minimize=None,
+            pretrained_model=None
             ):
-        self.input_layer = input;
+        self.input = input_data;
         
         assert len(layer_shapes) == len(layer_nonlinearities) + 1
         assert len(layer_activation_parameters) == len(layer_nonlinearities)
         assert len(layer_activation_styles) == len(layer_nonlinearities)
         
-        network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input)
+        pretrained_network_layers = None;
+        if pretrained_model != None:
+            pretrained_network_layers = lasagne.layers.get_all_layers(pretrained_model.network);
+        
+        network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input_data)
         for layer_index in xrange(1, len(layer_shapes)):
             if layer_activation_styles[layer_index - 1] == "bernoulli":
                 previous_layer_shape = layer_shapes[layer_index - 1]
@@ -75,8 +80,20 @@ class MultiLayerPerceptron(network.Network):
             
             layer_shape = layer_shapes[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index - 1];
-            network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
             
+            if pretrained_network_layers == None:
+                network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
+            else:
+                pretrained_layer = pretrained_network_layers[layer_index];
+                assert isinstance(pretrained_layer, lasagne.layers.DenseLayer)
+                assert pretrained_layer.nonlinearity == layer_nonlinearity
+                assert pretrained_layer.num_units == layer_shape
+                network = lasagne.layers.DenseLayer(network,
+                                                    layer_shape,
+                                                    W=pretrained_layer.W,
+                                                    b=pretrained_layer.b,
+                                                    nonlinearity=layer_nonlinearity) 
+                
         self.network = network;
 
         assert objective_to_minimize != None;
@@ -131,7 +148,7 @@ class MultiLayerPerceptron(network.Network):
         for hidden_layer_index in xrange(2, len(layers) - 1, 2):
             hidden_layer = layers[hidden_layer_index];
             # this is to get around the dropout layer
-            # input_layer = hidden_layer.input_layer
+            # input = hidden_layer.input
             input_layer = layers[hidden_layer_index - 2];
             hidden_layer_shape = hidden_layer.num_units;
             hidden_layer_nonlinearity = hidden_layer.nonlinearity
@@ -141,7 +158,7 @@ class MultiLayerPerceptron(network.Network):
             layer_corruption_level = layer_corruption_levels[hidden_layer_index / 2 - 1];
             
             denoising_auto_encoder = DenoisingAutoEncoder(
-                input_layer=input_layer,
+                input=input_layer,
                 layer_shape=hidden_layer_shape,
                 encoder_nonlinearity=hidden_layer_nonlinearity,
                 decoder_nonlinearity=lasagne.nonlinearities.sigmoid,
@@ -149,8 +166,8 @@ class MultiLayerPerceptron(network.Network):
                 objective_to_minimize=theano.tensor.nnet.binary_crossentropy,
                 # objective_to_minimize=lasagne.objectives.binary_crossentropy,
                 corruption_level=layer_corruption_level,
-                #L1_regularizer_lambdas=L1_regularizer_lambdas,
-                #L2_regularizer_lambdas=L2_regularizer_lambdas,
+                # L1_regularizer_lambdas=L1_regularizer_lambdas,
+                # L2_regularizer_lambdas=L2_regularizer_lambdas,
                 W_encode=hidden_layer.W,
                 b_encoder=hidden_layer.b,
                 )
@@ -203,13 +220,13 @@ class MultiLayerPerceptron(network.Network):
             # Compile a function performing a training step on a mini-batch (by giving
             # the updates dictionary) and returning the corresponding training pretrain_loss:
             pretrain_function = theano.function(
-                inputs=[self.input_layer],
+                inputs=[self.input],
                 outputs=[pretrain_loss,
-                         self.input_layer,
-                         # denoising_auto_encoder.network.get_encoder_output_for(self.input_layer),
-                         # denoising_auto_encoder.network.get_decoder_output_for(self.input_layer),
-                         # denoising_auto_encoder.network.get_output_for(self.input_layer)
-                         lasagne.layers.get_output(denoising_auto_encoder.network, self.input_layer),
+                         self.input,
+                         # denoising_auto_encoder.network.get_encoder_output_for(self.input),
+                         # denoising_auto_encoder.network.get_decoder_output_for(self.input),
+                         # denoising_auto_encoder.network.get_output_for(self.input)
+                         lasagne.layers.get_output(denoising_auto_encoder.network, self.input),
                          ],
                 updates=updates
             )

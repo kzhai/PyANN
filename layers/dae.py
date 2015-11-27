@@ -8,7 +8,7 @@ from lasagne import nonlinearities
 
 from theano.tensor.shared_randomstreams import RandomStreams
 
-def get_corruption_mask(input, retain_probability=0, rng=RandomStreams()):
+def get_filter_mask(input, retain_probability=0, rng=RandomStreams()):
     """This function keeps ``1-retain_probability`` entries of the inputs the
     same and zero-out randomly selected subset of size ``coruption_level``
     Note : first argument of theano.rng.binomial is the shape(size) of
@@ -30,7 +30,7 @@ def get_corruption_mask(input, retain_probability=0, rng=RandomStreams()):
             correctly as it only support float32 for now.
     """
     
-    return rng.binomial(size=input.shape, n=1, p=1 - retain_probability, dtype=theano.config.floatX)
+    return rng.binomial(size=input.shape, n=1, p=retain_probability, dtype=theano.config.floatX)
 
 class DenoisingAutoEncoderLayer(Layer):
     """Denoising Auto-Encoder class (dA)
@@ -134,10 +134,8 @@ class DenoisingAutoEncoderLayer(Layer):
         return self.decoder_nonlinearity(activation);
     
     def get_output_for(self, input, **kwargs):
-        corruption_mask = get_corruption_mask(input, self.corruption_level);
-        inverse_corruption_mask = 1 - corruption_mask;
-        input = corruption_mask * input
-        #input = self.get_corrupted_input(input);
+        filter_mask = get_filter_mask(input, 1 - self.corruption_level);
+        input *= filter_mask
         
         if input.ndim > 2:
             # if the input has more than two dimensions, flatten it into a
@@ -145,12 +143,3 @@ class DenoisingAutoEncoderLayer(Layer):
             input = input.flatten(2)
 
         return self.get_decoder_output_for(self.get_encoder_output_for(input))
-    
-    '''
-    def get_input(self, input):
-        return input
-    
-    def get_corrupted_input(self, input):
-        corruption_mask = get_corruption_mask(input, self.corruption_level);
-        return corruption_mask * input
-    '''

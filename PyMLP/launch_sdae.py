@@ -342,7 +342,7 @@ def launch_sdae():
     
     import networks.sdae
     network = networks.sdae.StackedDenoisingAutoEncoder(
-        input=x,
+        input_data=x,
         layer_shapes=layer_shapes,
         layer_nonlinearities=layer_nonlinearities,
         
@@ -372,11 +372,10 @@ def launch_sdae():
         train_function = theano.function(
             inputs=[x],
             outputs=[train_loss,
-                     denoising_auto_encoder.input_layer,
-                     # denoising_auto_encoder.network.get_encoder_output_for(self.input_layer),
-                     # denoising_auto_encoder.network.get_decoder_output_for(self.input_layer),
-                     # denoising_auto_encoder.network.get_output_for(self.input_layer)
-                     lasagne.layers.get_output(denoising_auto_encoder.network, denoising_auto_encoder.input_layer),
+                     denoising_auto_encoder.input,
+                     # denoising_auto_encoder.network.get_encoder_output_for(self.input),
+                     # denoising_auto_encoder.network.get_decoder_output_for(self.input),
+                     # denoising_auto_encoder.network.get_output_for(self.input)
                      ],
             updates=updates
         )
@@ -384,6 +383,19 @@ def launch_sdae():
         train_functions.append(train_function);
     
     number_of_minibatches = train_set_x.shape[0] / minibatch_size
+
+    '''
+    for dae_index in xrange(len(denoising_auto_encoders)):
+        print "current layer:", denoising_auto_encoders[dae_index]
+        print denoising_auto_encoders[dae_index].get_output_shape()
+        dae_layer = denoising_auto_encoders[dae_index].network;
+        print lasagne.layers.get_output_shape(dae_layer)
+        
+        minibatch_x = train_set_x[0:2, :];
+        function_output = train_functions[dae_index](minibatch_x)
+        
+        print function_output[0], function_output[1].shape
+    '''
 
     # start_time = timeit.default_timer()
     for dae_index in xrange(len(denoising_auto_encoders)):

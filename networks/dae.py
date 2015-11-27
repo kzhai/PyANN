@@ -63,7 +63,7 @@ class DenoisingAutoEncoder(network.Network):
         L(x,z) = -sum_{k=1}^d [x_k \log z_k + (1-x_k) \log( 1-z_k)]      (4)
     """
     def __init__(self,
-            input=None,
+            input_layer=None,
             layer_shape=100,
             encoder_nonlinearity=lasagne.nonlinearities.sigmoid,
             decoder_nonlinearity=lasagne.nonlinearities.identity,
@@ -74,10 +74,10 @@ class DenoisingAutoEncoder(network.Network):
             b_encoder=init.Constant(0.),
             b_decoder=init.Constant(0.),
             **kwargs):
-        self.input_layer = lasagne.layers.get_output(input);
+        self.input = lasagne.layers.get_output(input_layer);
         
         network = DenoisingAutoEncoderLayer(
-            input,
+            input_layer,
             layer_shape,
             corruption_level,
             W_encoder=W_encoder,
@@ -91,11 +91,8 @@ class DenoisingAutoEncoder(network.Network):
         assert objective_to_minimize != None;
         self.objective_to_minimize = objective_to_minimize;
         
-        #self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
-        #self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
-    
     def get_objective_to_minimize(self):
-        train_loss = theano.tensor.mean(theano.tensor.sum(self.objective_to_minimize(self.get_output(), self.input_layer), axis=1))
+        train_loss = theano.tensor.mean(theano.tensor.sum(self.objective_to_minimize(self.get_output(), self.input), axis=1))
         
         train_loss += self.L1_regularizer()
         train_loss += self.L2_regularizer();

@@ -22,6 +22,7 @@ def parse_args():
     parser.set_defaults(# parameter set 1
                         input_directory=None,
                         output_directory=None,
+                        pretrained_model_file=None,
                         
                         # parameter set 2
                         number_of_epochs=-1,
@@ -47,6 +48,7 @@ def parse_args():
                         
                         dae_regularizer_lambdas="0",
                         layer_corruption_levels="0",
+                        
                         # number_of_pretrain_epochs=0,
                         )
     # parameter set 1
@@ -54,6 +56,8 @@ def parse_args():
                       help="input directory [None]");
     parser.add_option("--output_directory", type="string", dest="output_directory",
                       help="output directory [None]");
+    parser.add_option("--pretrained_model_file", type="string", dest="pretrained_model_file",
+                      help="pretrained model file [None]");
                       
     # parameter set 2
     parser.add_option("--minibatch_size", type="int", dest="minibatch_size",
@@ -237,6 +241,12 @@ def launch_mlp():
     input_directory = input_directory.rstrip("/");
     dataset_name = os.path.basename(input_directory);
     
+    pretrained_model_file = options.pretrained_model_file;
+    pretrained_model = None;
+    if pretrained_model_file != None:
+        assert os.path.exists(pretrained_model_file)
+        pretrained_model = cPickle.load(open(pretrained_model_file, 'rb'));
+    
     output_directory = options.output_directory;
     if not os.path.exists(output_directory):
         os.mkdir(output_directory);
@@ -264,13 +274,15 @@ def launch_mlp():
     # parameter set 1
     options_output_file.write("input_directory=" + input_directory + "\n");
     options_output_file.write("dataset_name=" + dataset_name + "\n");
+    options_output_file.write("pretrained_model_file=" + pretrained_model_file + "\n");
     # options_output_file.write("vocabulary_path=" + str(dict_file) + "\n");
     # parameter set 2
     options_output_file.write("number_of_epochs=%d\n" % (number_of_epochs));
+    options_output_file.write("snapshot_interval=%d\n" % (snapshot_interval))
     options_output_file.write("minibatch_size=" + str(minibatch_size) + "\n");
-    # parameter set 3
     options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
-
+    # parameter set 3
+    
     # parameter set 4
     options_output_file.write("layer_shapes=%s\n" % (layer_shapes));
     options_output_file.write("layer_nonlinearities=%s\n" % (layer_nonlinearities));
@@ -294,13 +306,15 @@ def launch_mlp():
     print "output_directory=" + output_directory
     print "input_directory=" + input_directory
     print "dataset_name=" + dataset_name
+    print "pretrained_model_file=" + pretrained_model_file
     # print "dictionary file=" + str(dict_file)
     # parameter set 2
     print "number_of_epochs=%d" % (number_of_epochs);
     print "snapshot_interval=" + str(snapshot_interval);
     print "minibatch_size=" + str(minibatch_size)
-    # parameter set 3
     print "learning_rate=" + str(learning_rate)
+    # parameter set 3
+    
     # parameter set 4
     print "layer_shapes=%s" % (layer_shapes)
     print "layer_nonlinearities=%s" % (layer_nonlinearities)
@@ -354,6 +368,7 @@ def launch_mlp():
         layer_activation_parameters=layer_activation_parameters,
         layer_activation_styles=layer_activation_styles,
         objective_to_minimize=objective_to_minimize,
+        pretrained_model=pretrained_model
         )
     
     network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
