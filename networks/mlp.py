@@ -81,13 +81,20 @@ class MultiLayerPerceptron(network.Network):
             layer_shape = layer_shapes[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index - 1];
             
-            if pretrained_network_layers == None:
+            if pretrained_network_layers == None or len(pretrained_network_layers) <= layer_index:
                 network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
+                
+                print type(network.W), network.W.dtype
+                print type(network.b), network.b.dtype
             else:
                 pretrained_layer = pretrained_network_layers[layer_index];
                 assert isinstance(pretrained_layer, lasagne.layers.DenseLayer)
-                assert pretrained_layer.nonlinearity == layer_nonlinearity
+                assert pretrained_layer.nonlinearity == layer_nonlinearity, (pretrained_layer.nonlinearity, layer_nonlinearity)
                 assert pretrained_layer.num_units == layer_shape
+                
+                print type(pretrained_layer.W), pretrained_layer.W.dtype
+                print type(pretrained_layer.b), pretrained_layer.b.dtype
+                
                 network = lasagne.layers.DenseLayer(network,
                                                     layer_shape,
                                                     W=pretrained_layer.W,

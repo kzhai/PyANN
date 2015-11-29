@@ -16,6 +16,7 @@ import optparse
 import lasagne
 
 import networks
+import networks.sdae
 
 def parse_args():
     parser = optparse.OptionParser()
@@ -362,7 +363,7 @@ def launch_mlp():
     
     import networks.mlp
     network = networks.mlp.MultiLayerPerceptron(
-        input=x,
+        input_data=x,
         layer_shapes=layer_shapes,
         layer_nonlinearities=layer_nonlinearities,
         layer_activation_parameters=layer_activation_parameters,
