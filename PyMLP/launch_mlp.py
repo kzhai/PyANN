@@ -274,7 +274,7 @@ def launch_mlp():
     # parameter set 1
     options_output_file.write("input_directory=" + input_directory + "\n");
     options_output_file.write("dataset_name=" + dataset_name + "\n");
-    options_output_file.write("pretrained_model_file=" + pretrained_model_file + "\n");
+    options_output_file.write("pretrained_model_file=" + str(pretrained_model_file) + "\n");
     # options_output_file.write("vocabulary_path=" + str(dict_file) + "\n");
     # parameter set 2
     options_output_file.write("number_of_epochs=%d\n" % (number_of_epochs));
@@ -306,7 +306,7 @@ def launch_mlp():
     print "output_directory=" + output_directory
     print "input_directory=" + input_directory
     print "dataset_name=" + dataset_name
-    print "pretrained_model_file=" + pretrained_model_file
+    print "pretrained_model_file=%s" % pretrained_model_file
     # print "dictionary file=" + str(dict_file)
     # parameter set 2
     print "number_of_epochs=%d" % (number_of_epochs);
