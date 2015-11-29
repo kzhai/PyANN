@@ -73,7 +73,7 @@ def launch_test():
         print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
     #'''
     
-    model_file_path = os.path.join(model_directory, "best_model.pkl");
+    model_file_path = os.path.join(model_directory, "model.pkl");
     prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
     #prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
     print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
