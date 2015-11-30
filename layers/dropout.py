@@ -46,9 +46,9 @@ class GeneralizedDropoutLayer(Layer):
     incoming : a :class:`Layer` instance or a tuple
         the layer feeding into this layer, or the expected input shape
     activation_probability : float or scalar tensor
-        The probability of setting a value to zero
+        The probability of setting a value to 1
     rescale : bool
-        If true the input is rescaled with input / (1-activation_probability) when deterministic
+        If true the input is rescaled with input / activation_probability when deterministic
         is False.
 
     Notes
@@ -58,7 +58,7 @@ class GeneralizedDropoutLayer(Layer):
     During training you should set deterministic to false and during
     testing you should set deterministic to true.
 
-    If rescale is true the input is scaled with input / (1-activation_probability) when
+    If rescale is true the input is scaled with input / activation_probability when
     deterministic is false, see references for further discussion. Note that
     this implementation scales the input at training time.
 
@@ -106,7 +106,7 @@ class GeneralizedDropoutLayer(Layer):
         deterministic : bool
             If true dropout and scaling is disabled, see notes
         """
-        if deterministic or numpy.all(self.activation_probability == 0):
+        if deterministic or numpy.all(self.activation_probability == 1):
             return input
         else:
             retain_prob = self.activation_probability

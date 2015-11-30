@@ -145,8 +145,8 @@ def launch_mlp():
     objective_to_minimize = getattr(lasagne.objectives, objective_to_minimize)
 
     layer_activation_styles = options.layer_activation_styles;
-    layer_activation_styles = layer_activation_styles.split(",")
-    if len(layer_activation_styles) == 1:
+    layer_activation_style_tokens = layer_activation_styles.split(",")
+    if len(layer_activation_style_tokens) == 1:
         layer_activation_styles = [layer_activation_styles for layer_index in xrange(number_of_layers)]
     assert len(layer_activation_styles) == number_of_layers;
     for layer_activation_style in layer_activation_styles:
