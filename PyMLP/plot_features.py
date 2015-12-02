@@ -16,18 +16,20 @@ import lasagne
 
 import matplotlib.pyplot
 
+import layers.dropout
+
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
-                        input_directory=None,
+                        # input_directory=None,
                         model_directory=None,
                         layer_index=1,
                         image_size="28,28",
-                        tile_size="10,10"
+                        tile_size="32,32"
                         )
     # parameter set 1
-    parser.add_option("--input_directory", type="string", dest="input_directory",
-                      help="input directory [None]");
+    # parser.add_option("--input_directory", type="string", dest="input_directory",
+                      # help="input directory [None]");
     parser.add_option("--model_directory", type="string", dest="model_directory",
                       help="output directory [None]");
     parser.add_option("--layer_index", type="int", dest="layer_index",
@@ -35,7 +37,7 @@ def parse_args():
     parser.add_option("--image_size", type="string", dest="image_size",
                       help="image size [28,28]");
     parser.add_option("--tile_size", type="string", dest="tile_size",
-                      help="tile size [10,10]");
+                      help="tile size [32,32]");
 
     (options, args) = parser.parse_args();
     return options;
@@ -49,12 +51,12 @@ def launch_test():
     options = parse_args();
 
     # parameter set 1
-    #assert(options.input_directory != None);
+    # assert(options.input_directory != None);
     assert(options.model_directory != None);
     
-    #input_directory = options.input_directory;
-    #input_directory = input_directory.rstrip("/");
-    #dataset_name = os.path.basename(input_directory);
+    # input_directory = options.input_directory;
+    # input_directory = input_directory.rstrip("/");
+    # dataset_name = os.path.basename(input_directory);
     model_directory = options.model_directory;
     layer_index = options.layer_index;
     image_size = options.image_size;
@@ -65,37 +67,79 @@ def launch_test():
     print "========== ========== ========== ========== =========="
     # parameter set 1
     print "model_directory=" + model_directory
-    #print "input_directory=" + input_directory
-    #print "dataset_name=" + dataset_name
+    # print "input_directory=" + input_directory
+    # print "dataset_name=" + dataset_name
     print "layer_index=" + str(layer_index)
     print "image_size=%s" % str(image_size)
     print "tile_size=%s" % str(tile_size)
     print "========== ========== ========== ========== =========="
     
+    '''
     for model_file_name in os.listdir(model_directory):
         if not model_file_name.startswith("model-"):
             continue;
         snapshot_index = int(model_file_name.split(".")[0].split("-")[1]);
         
         model_file_path = os.path.join(model_directory, model_file_name);
-        figure_file_path = os.path.join(model_directory, "layer-%d_figure-%d.pdf" % (layer_index, snapshot_index))
-        plot_snapshot(model_file_path, layer_index, image_size, tile_size, figure_file_path)
+        figure_file_path = os.path.join(model_directory, "feature-%d_figure-%d.pdf" % (layer_index, snapshot_index))
+        plot_features_for_snapshot(model_file_path, layer_index - 1, image_size, tile_size, figure_file_path)
+    '''
     
-    '''
-    model_file_path = os.path.join(model_directory, "best_model.pkl");
-    plot_snapshot(model_file_path)
-    '''
+    model_file_path = os.path.join(model_directory, "model.pkl");
+    
+    figure_file_path = os.path.join(model_directory, "feature-%d.pdf" % (layer_index))
+    plot_features_for_snapshot(model_file_path, layer_index - 1, image_size, tile_size, figure_file_path)
+    
+    figure_file_path = os.path.join(model_directory, "activation-%d.pdf" % (layer_index))
+    plot_activations_for_snapshot(model_file_path, layer_index, tile_size, figure_file_path)
 
-def plot_snapshot(model_path, layer_index, image_size, tile_size, figure_path=None):
+def plot_activations_for_snapshot(model_path, layer_index, tile_size, figure_path=None):
     network = cPickle.load(open(model_path, 'rb'));
     
-    layers = lasagne.layers.get_all_layers(network.network)
+    dropout_layers = lasagne.layers.get_all_layers(network.network)
+    dropout_layers = [layer for layer in dropout_layers if isinstance(layer, layers.dropout.GeneralizedDropoutLayer)]
     
-    if layer_index<0 or layer_index>=len(layers):
+    if layer_index < 0 or layer_index >= len(dropout_layers):
         sys.stderr.write("error: invalid layer index %d..." % layer_index);
         return;
 
-    layer = layers[layer_index]
+    layer = dropout_layers[layer_index]
+    print layer.activation_probability.shape
+
+    image = numpy.reshape(layer.activation_probability, tile_size);
+    print image.shape
+    
+    fig, ax = matplotlib.pyplot.subplots()
+    
+    #ax.imshow(image, cmap=matplotlib.pyplot.cm.gray, interpolation='nearest')
+    ax.imshow(image, cmap=matplotlib.pyplot.cm.gray)
+    #ax.set_title('dropped spines')
+    
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    
+    # Only show ticks on the left and bottom spines
+    ax.yaxis.set_ticks_position('left')
+    ax.xaxis.set_ticks_position('bottom')
+    
+    if figure_path == None:
+        matplotlib.pyplot.show();
+    else:
+        matplotlib.pyplot.savefig(figure_path);
+
+def plot_features_for_snapshot(model_path, layer_index, image_size, tile_size, figure_path=None):
+    network = cPickle.load(open(model_path, 'rb'));
+    
+    dense_layers = lasagne.layers.get_all_layers(network.network)
+    dense_layers = [layer for layer in dense_layers if isinstance(layer, lasagne.layers.DenseLayer)]
+    
+    if layer_index < 0 or layer_index >= len(dense_layers):
+        sys.stderr.write("error: invalid layer index %d..." % layer_index);
+        return;
+
+    layer = dense_layers[layer_index]
     print layer.W.get_value(borrow=True).shape
 
     # start-snippet-4
@@ -110,19 +154,19 @@ def plot_snapshot(model_path, layer_index, image_size, tile_size, figure_path=No
     fig, ax = matplotlib.pyplot.subplots()
 
     ax.imshow(images, cmap=matplotlib.pyplot.cm.gray, interpolation='nearest')
-    #ax.set_title('dropped spines')
+    # ax.set_title('dropped spines')
     
     # Move left and bottom spines outward by 10 points
-    #ax.spines['left'].set_position(('outward', 10))
-    #ax.spines['bottom'].set_position(('outward', 10))
+    # ax.spines['left'].set_position(('outward', 10))
+    # ax.spines['bottom'].set_position(('outward', 10))
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     # Only show ticks on the left and bottom spines
-    #ax.yaxis.set_ticks_position('left')
-    #ax.xaxis.set_ticks_position('bottom')
+    # ax.yaxis.set_ticks_position('left')
+    # ax.xaxis.set_ticks_position('bottom')
     
     if figure_path == None:
         matplotlib.pyplot.show();
@@ -190,7 +234,7 @@ def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
             out_array = numpy.zeros((out_shape[0], out_shape[1], 4),
                                     dtype=X.dtype)
 
-        #colors default to 0, alpha defaults to 1 (opaque)
+        # colors default to 0, alpha defaults to 1 (opaque)
         if output_pixel_vals:
             channel_defaults = [0, 0, 0, 255]
         else:
