@@ -371,7 +371,7 @@ def launch_cnn():
     data_x = numpy.reshape(data_x, input_shape);
     
     # number_of_train = int(round(0.85 * len(data_y)));
-    number_of_train = 50000
+    number_of_train = 500000
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
     
