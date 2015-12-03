@@ -374,7 +374,7 @@ def launch_cnn():
     
     # number_of_train = int(round(0.85 * len(data_y)));
     # number_of_train = 500000
-    number_of_train = len(data_y) - 6000
+    number_of_train = 600000
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
     
@@ -448,7 +448,7 @@ def launch_cnn():
     validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y))
     # As a bonus, also create an expression for the classification accuracy:
     validate_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(validate_prediction, axis=1), y), dtype=theano.config.floatX)
-
+    
     # Compile a function performing a training step on a mini-batch (by giving
     # the updates dictionary) and returning the corresponding training train_loss:
     train_function = theano.function(
@@ -486,26 +486,26 @@ def launch_cnn():
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
             average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
-
+            
             # And a full pass over the validation data:
             if (iteration_index + 1) % validation_interval == 0:
                 average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
                 # if we got the best validation score until now
-                if average_validate_accuracy > highest_prediction_accuracy:
+                if average_validate_accuracy >= highest_prediction_accuracy:
                     highest_prediction_accuracy = average_validate_accuracy
                     best_iteration_index = iteration_index
                     
                     # save the best model
-                    print 'best model found at epoch_index %i, minibatch_index %i, average_validate_accuracy %f%%' % (epoch_index, minibatch_index + 1, average_validate_accuracy * 100)
+                    print 'best model found at epoch_index %i, minibatch_index %i, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
                 
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
                 
-                # print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+                print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
                     
         clock_epoch = time.time() - clock_epoch;
     
-        print 'epoch_index %i, average_train_loss %f, average_train_accuracy %f%%, running time %fs' % (epoch_index, average_train_loss, average_train_accuracy * 100, clock_epoch)
+        #print 'epoch_index %i, average_train_loss %f, average_train_accuracy %f%%, running time %fs' % (epoch_index, average_train_loss, average_train_accuracy * 100, clock_epoch)
         
         if (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
