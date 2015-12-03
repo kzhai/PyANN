@@ -400,7 +400,7 @@ def launch_cnn():
     import networks.cnn
     network = networks.cnn.ConvolutionalNeuralNetwork(
         input_data=x,
-        input_shape=input_shape,
+        input_shape=tuple(input_shape),
         convolution_filter_numbers=convolution_filter_numbers,
         convolution_nonlinearities=convolution_nonlinearities,
         dense_shapes=dense_shapes,
