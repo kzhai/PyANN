@@ -39,7 +39,7 @@ class ConvolutionalNeuralNetwork(network.Network):
             activation_styles=None,
             
             convolution_filter_size=(5, 5),
-            maxpooling_size=(3, 3),
+            maxpooling_size=(2, 2),
             #pooling_stride=None,
             pooling_stride=(2, 2),
             

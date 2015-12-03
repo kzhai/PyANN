@@ -1,5 +1,7 @@
 import os
 import sys
+sys.path.insert(1, "/homes/kzhai/.local/lib/python2.7/site-packages")
+
 import timeit
 
 import cPickle
