@@ -40,7 +40,7 @@ class ConvolutionalNeuralNetwork(network.Network):
             
             convolution_filter_size=(5, 5),
             maxpooling_size=(3, 3),
-            #pooling_stride=None,
+            # pooling_stride=None,
             pooling_stride=(2, 2),
             
             objective_to_minimize=None,
@@ -81,6 +81,10 @@ class ConvolutionalNeuralNetwork(network.Network):
             
             print "before maxpooling", lasagne.layers.get_output_shape(network)
             # Max-pooling layer of factor 2 in both dimensions:
+            filter_size_for_pooling = lasagne.layers.get_output_shape(network)[2:]
+            if numpy.any(filter_size_for_pooling < pooling_size):
+                print "warning: filter size %s is smaller than pooling size %s, skip pooling layer" % (lasagne.layers.get_output_shape(network), pooling_size)
+                continue;
             network = lasagne.layers.MaxPool2DLayer(network,
                                                     pool_size=pooling_size,
                                                     stride=pooling_stride,
