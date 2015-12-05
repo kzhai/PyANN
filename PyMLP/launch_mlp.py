@@ -399,8 +399,8 @@ def launch_mlp():
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
-    all_mlp_params = network.get_all_params(trainable=True)
-    updates = lasagne.updates.nesterov_momentum(train_loss, all_mlp_params, learning_rate, momentum=0.95)
+    all_params = network.get_all_params(trainable=True)
+    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, learning_rate, momentum=0.95)
     
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
