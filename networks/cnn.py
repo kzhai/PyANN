@@ -41,7 +41,7 @@ class ConvolutionalNeuralNetwork(network.Network):
             convolution_filter_size=(5, 5),
             maxpooling_size=(2, 2),
             pooling_stride=None,
-            #pooling_stride=(1, 1),
+            # pooling_stride=(1, 1),
             
             objective_to_minimize=None,
             ):
@@ -68,9 +68,10 @@ class ConvolutionalNeuralNetwork(network.Network):
             # conv_filter_size = convolution_filter_sizes[conv_layer_index]
             conv_filter_size = convolution_filter_size;
             
-            print "before convolution", lasagne.layers.get_output_shape(network)
+            #print "before convolution", lasagne.layers.get_output_shape(network)
             # Convolutional layer with 32 kernels of size 5x5. Strided and padded convolutions are supported as well; see the docstring.
             network = lasagne.layers.Conv2DLayer(network,
+                                                 #W=W,
                                                  num_filters=conv_filter_number,
                                                  filter_size=conv_filter_size,
                                                  nonlinearity=conv_nonlinearity,
@@ -79,7 +80,7 @@ class ConvolutionalNeuralNetwork(network.Network):
             # pooling_size = maxpooling_sizes[conv_layer_index];
             pooling_size = maxpooling_size
             
-            print "before maxpooling", lasagne.layers.get_output_shape(network)
+            #print "before maxpooling", lasagne.layers.get_output_shape(network)
             # Max-pooling layer of factor 2 in both dimensions:
             filter_size_for_pooling = lasagne.layers.get_output_shape(network)[2:]
             if numpy.any(filter_size_for_pooling < pooling_size):
@@ -92,7 +93,6 @@ class ConvolutionalNeuralNetwork(network.Network):
             
         assert len(dense_shapes) == len(dense_nonlinearities)
         for layer_index in xrange(len(dense_shapes)):
-            # previous_layer_shape = dense_shapes[layer_index]
             input_layer_shape = lasagne.layers.get_output_shape(network)[1:]
             previous_layer_shape = numpy.prod(input_layer_shape)
             
@@ -118,31 +118,21 @@ class ConvolutionalNeuralNetwork(network.Network):
             
             activation_probability = numpy.reshape(activation_probability, input_layer_shape)
 
-            print "before dropout", lasagne.layers.get_output_shape(network)
+            #print "before dropout", lasagne.layers.get_output_shape(network)
             network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
             
             layer_shape = dense_shapes[layer_index]
-            layer_nonlinearity = dense_nonlinearities[layer_index - 1];
+            layer_nonlinearity = dense_nonlinearities[layer_index];
             
-            print "before dense", lasagne.layers.get_output_shape(network)
+            #print "before dense", lasagne.layers.get_output_shape(network)
             network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
             
-        print lasagne.layers.get_output_shape(network)
-        
         self.network = network;
 
         assert objective_to_minimize != None;
         self.objective_to_minimize = objective_to_minimize;
-
-    def get_objective_to_minimize(self, label):
-        train_loss = theano.tensor.mean(self.objective_to_minimize(self.get_output(), label))
-        train_loss += self.L1_regularizer();
-        train_loss += self.L2_regularizer();
-        
-        train_loss += self.dae_regularizer();
-        
-        return train_loss
     
+    """
     def dae_regularizer(self):
         if self._layer_dae_regularizer_lambdas == None:
             return 0;
@@ -210,7 +200,7 @@ class ConvolutionalNeuralNetwork(network.Network):
             denoising_auto_encoders.append(denoising_auto_encoder);
 
         return denoising_auto_encoders;
-    
+    """
     """
     def pretrain_with_dae(self, data_x, layer_corruption_levels=None, number_of_epochs=50, minibatch_size=1, learning_rate=1e-3, momentum=0.95):
         denoising_auto_encoders = self.__build_dae_network(layer_corruption_levels);

@@ -32,7 +32,7 @@ def parse_args():
                         number_of_epochs=-1,
                         learning_rate=1e-3,
                         minibatch_size=100,
-                        snapshot_interval=10,
+                        snapshot_interval=1,
                         validation_interval=1000,
                         objective_to_minimize=None,
                         
@@ -54,8 +54,8 @@ def parse_args():
                         L1_regularizer_lambdas="0",
                         L2_regularizer_lambdas="0",
                         
-                        dae_regularizer_lambdas="0",
-                        layer_corruption_levels="0",
+                        # dae_regularizer_lambdas="0",
+                        # layer_corruption_levels="0",
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -111,10 +111,12 @@ def parse_args():
     parser.add_option("--L2_regularizer_lambdas", type="string", dest="L2_regularizer_lambdas",
                       help="L2 regularization lambda [0]")
     
+    '''
     parser.add_option("--dae_regularizer_lambdas", type="string", dest="dae_regularizer_lambdas",
                       help="dae regularization lambda [0]")
     parser.add_option("--layer_corruption_levels", type="string", dest="layer_corruption_levels",
                       help="layer corruption level for pre-training [0], either one number of a list of numbers, example, '0.2' represents 0.2 corruption level for all denoising auto encoders, or '0.2,0.5' represents 0.2 corruption level for first denoising auto encoder layer and 0.5 for second one respectively");
+    '''
                       
     (options, args) = parser.parse_args();
     return options;
@@ -234,6 +236,8 @@ def launch_cnn():
         L2_regularizer_lambdas = [float(L2_regularizer_lambda_token) for L2_regularizer_lambda_token in L2_regularizer_lambda_tokens]
     assert len(L2_regularizer_lambdas) == number_of_layers;
     
+    # parameter set 6
+    '''
     dae_regularizer_lambdas = options.dae_regularizer_lambdas
     dae_regularizer_lambda_tokens = dae_regularizer_lambdas.split(",")
     if len(dae_regularizer_lambda_tokens) == 1:
@@ -242,7 +246,6 @@ def launch_cnn():
         dae_regularizer_lambdas = [float(dae_regularizer_lambda_token) for dae_regularizer_lambda_token in dae_regularizer_lambda_tokens]
     assert len(dae_regularizer_lambdas) == number_of_layers - 1;
     
-    # parameter set 6 
     layer_corruption_levels = options.layer_corruption_levels;
     layer_corruption_level_tokens = layer_corruption_levels.split(",")
     if len(layer_corruption_level_tokens) == 1:
@@ -253,6 +256,7 @@ def launch_cnn():
     assert len(layer_corruption_levels) == number_of_layers - 1;
     assert (layer_corruption_level >= 0 for layer_corruption_level in layer_corruption_levels)
     assert (layer_corruption_level <= 1 for layer_corruption_level in layer_corruption_levels)
+    '''
     
     # parameter set 1
     assert(options.input_shape != None);
@@ -324,8 +328,8 @@ def launch_cnn():
     options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
     options_output_file.write("L2_regularizer_lambdas=%s\n" % (L2_regularizer_lambdas));
     
-    options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
-    options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
+    # options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
+    # options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
     
     options_output_file.close()
 
@@ -358,8 +362,8 @@ def launch_cnn():
     print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
     print "L2_regularizer_lambdas=%s" % (L2_regularizer_lambdas);
     
-    print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
-    print "layer_corruption_levels=%s" % (layer_corruption_levels);
+    # print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
+    # print "layer_corruption_levels=%s" % (layer_corruption_levels);
     print "========== ========== ========== ========== =========="
     
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
@@ -414,16 +418,14 @@ def launch_cnn():
     
     network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
     network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
-    network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
+    # network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
     
     ###################
     # PRE-TRAIN MODEL #
     ###################
     
-    '''
-    if number_of_pretrain_epochs > 0:
-        network.pretrain_with_dae(data_x, layer_corruption_levels, number_of_epochs=number_of_pretrain_epochs)
-    '''
+    # if number_of_pretrain_epochs > 0:
+        # network.pretrain_with_dae(data_x, layer_corruption_levels, number_of_epochs=number_of_pretrain_epochs)
     
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
@@ -439,8 +441,10 @@ def launch_cnn():
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
-    all_mlp_params = network.get_all_params(trainable=True)
-    updates = lasagne.updates.nesterov_momentum(train_loss, all_mlp_params, learning_rate, momentum=0.95)
+    all_params = network.get_all_params(trainable=True)
+    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, learning_rate, momentum=0.95)
+    # updates = lasagne.updates.adagrad(train_loss, all_params, learning_rate);
+    # updates = lasagne.updates.sgd(train_loss, all_params, learning_rate);
     
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
@@ -457,6 +461,9 @@ def launch_cnn():
         outputs=[train_loss, train_accuracy],
         updates=updates
     )
+    
+    # theano.printing.debugprint(train_function.maker.fgraph.outputs[0])
+    # sys.exit()
     
     # Compile a second function computing the validation train_loss and accuracy:
     validate_function = theano.function(
@@ -489,8 +496,9 @@ def launch_cnn():
             average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
             
             # And a full pass over the validation data:
-            if (iteration_index + 1) % validation_interval == 0:
+            if (iteration_index + 1) % validation_interval == 0 or iteration_index % number_of_minibatches == 0:
                 average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
+                # print average_validate_prediction
                 # if we got the best validation score until now
                 if average_validate_accuracy >= highest_prediction_accuracy:
                     highest_prediction_accuracy = average_validate_accuracy
@@ -502,11 +510,11 @@ def launch_cnn():
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
                 
-                print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
-                    
+                # print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+                
         clock_epoch = time.time() - clock_epoch;
     
-        #print 'epoch_index %i, average_train_loss %f, average_train_accuracy %f%%, running time %fs' % (epoch_index, average_train_loss, average_train_accuracy * 100, clock_epoch)
+        # print 'epoch_index %i, average_train_loss %f, average_train_accuracy %f%%, running time %fs' % (epoch_index, average_train_loss, average_train_accuracy * 100, clock_epoch)
         
         if (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
