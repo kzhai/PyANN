@@ -30,8 +30,8 @@ def parse_args():
                         
                         # parameter set 2
                         number_of_epochs=-1,
-                        learning_rate=1e-3,
-                        minibatch_size=100,
+                        learning_rate=1e-2,
+                        minibatch_size=-1,
                         snapshot_interval=10,
                         validation_interval=1000,
                         objective_to_minimize=None,
@@ -373,9 +373,8 @@ def launch_cnn():
     data_x = numpy.reshape(data_x, input_shape);
     
     # number_of_train = int(round(0.85 * len(data_y)));
-    # number_of_train = 500000
-    # number_of_train = 600000
-    number_of_train = 50000
+    #number_of_train = 50000
+    number_of_train = 598000
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
     
