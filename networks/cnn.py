@@ -21,6 +21,29 @@ from layers.dropout import GeneralizedDropoutLayer
 
 from networks.dae import DenoisingAutoEncoder
 
+def sample_activation_probability(input_size, activation_style, activation_parameter):
+    activation_probability = None;
+    if activation_style == "bernoulli":
+        activation_probability = numpy.zeros(input_size) + activation_parameter;
+    elif activation_style == "beta_bernoulli":
+        shape_alpha, shape_beta = activation_parameter;
+        
+        activation_probability = numpy.random.beta(shape_alpha, shape_beta, size=input_size);
+    elif activation_style == "reciprocal_beta_bernoulli":
+        shape_alpha, shape_beta = activation_parameter;
+        ranked_shape_alpha = shape_alpha / numpy.arange(1, input_size + 1); 
+        
+        activation_probability = numpy.zeros(input_size);
+        for index in xrange(input_size):
+            activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
+    elif activation_style == "reciprocal":
+        activation_probability = activation_parameter / numpy.arange(1, input_size + 1);
+        activation_probability = numpy.clip(activation_probability, 0., 1.);
+    else:
+        sys.stderr.write("error: unrecognized configuration...\n");
+
+    return activation_probability
+
 class ConvolutionalNeuralNetwork(network.Network):
     def __init__(self,
             input_data=None,
@@ -46,22 +69,33 @@ class ConvolutionalNeuralNetwork(network.Network):
             objective_to_minimize=None,
             ):
         self.input = input_data;
-        
-        assert len(dense_shapes) == len(dense_nonlinearities)
-        
-        # assert len(activation_parameters) == len(dense_nonlinearities)
-        # assert len(activation_styles) == len(dense_nonlinearities)
+
+        assert len(activation_parameters) == len(dense_nonlinearities) + len(convolution_nonlinearities)
+        assert len(activation_styles) == len(dense_nonlinearities) + len(convolution_nonlinearities)
         
         # network = lasagne.layers.InputLayer(shape=(None, dense_shapes[0]), input_var=input_data)
         network = lasagne.layers.InputLayer(shape=input_shape, input_var=input_data)
         
-        # This time we do not apply input dropout, as it tends to work less well for convolutional layers.
+        dropout_layer_index = 0;
         
+        # This time we do not apply input dropout, as it tends to work less well for convolutional layers.
         assert len(convolution_filter_numbers) == len(convolution_nonlinearities);
-        # assert len(convolution_filter_numbers) == len(convolution_filter_sizes);
-        # assert len(convolution_filter_numbers) == len(maxpooling_sizes);
         
         for conv_layer_index in xrange(len(convolution_filter_numbers)):
+            input_layer_shape = lasagne.layers.get_output_shape(network)[1:]
+            previous_layer_shape = numpy.prod(input_layer_shape)
+            
+            activation_probability = sample_activation_probability(previous_layer_shape, activation_styles[dropout_layer_index], activation_parameters[dropout_layer_index]);
+            dropout_layer_index += 1;
+            if activation_probability is None:
+                sys.exit();
+            
+            print activation_probability
+            activation_probability = numpy.reshape(activation_probability, input_layer_shape)
+            print "before dropout", lasagne.layers.get_output_shape(network)
+            
+            network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
+            
             conv_filter_number = convolution_filter_numbers[conv_layer_index];
             conv_nonlinearity = convolution_nonlinearities[conv_layer_index];
             
@@ -71,7 +105,7 @@ class ConvolutionalNeuralNetwork(network.Network):
             print "before convolution", lasagne.layers.get_output_shape(network)
             # Convolutional layer with 32 kernels of size 5x5. Strided and padded convolutions are supported as well; see the docstring.
             network = lasagne.layers.Conv2DLayer(network,
-                                                 #W=W,
+                                                 # W=W,
                                                  num_filters=conv_filter_number,
                                                  filter_size=conv_filter_size,
                                                  nonlinearity=conv_nonlinearity,
@@ -95,27 +129,12 @@ class ConvolutionalNeuralNetwork(network.Network):
         for layer_index in xrange(len(dense_shapes)):
             input_layer_shape = lasagne.layers.get_output_shape(network)[1:]
             previous_layer_shape = numpy.prod(input_layer_shape)
-            
-            if activation_styles[layer_index] == "bernoulli":
-                activation_probability = numpy.zeros(previous_layer_shape) + activation_parameters[layer_index];
-            elif activation_styles[layer_index] == "beta_bernoulli":
-                shape_alpha, shape_beta = activation_parameters[layer_index];
-                
-                activation_probability = numpy.random.beta(shape_alpha, shape_beta, size=previous_layer_shape);
-            elif activation_styles[layer_index] == "reciprocal_beta_bernoulli":
-                shape_alpha, shape_beta = activation_parameters[layer_index];
-                ranked_shape_alpha = shape_alpha / numpy.arange(1, previous_layer_shape + 1); 
-                
-                activation_probability = numpy.zeros(previous_layer_shape);
-                for index in xrange(previous_layer_shape):
-                    activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
-            elif activation_styles[layer_index] == "reciprocal":
-                activation_probability = activation_parameters[layer_index] / numpy.arange(1, previous_layer_shape + 1);
-                activation_probability = numpy.clip(activation_probability, 0., 1.);
-            else:
-                sys.stderr.write("error: unrecognized configuration...\n");
+            activation_probability = sample_activation_probability(previous_layer_shape, activation_styles[dropout_layer_index], activation_parameters[dropout_layer_index]);
+            dropout_layer_index += 1;
+            if activation_probability is None:
                 sys.exit();
             
+            print activation_probability
             activation_probability = numpy.reshape(activation_probability, input_layer_shape)
 
             print "before dropout", lasagne.layers.get_output_shape(network)

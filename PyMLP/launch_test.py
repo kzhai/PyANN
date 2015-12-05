@@ -64,32 +64,32 @@ def launch_test():
     ######################
     print '... testing the model'
     
-    #'''
+    # '''
     for model_file_name in os.listdir(model_directory):
         if not model_file_name.startswith("model-"):
             continue;
-        #snapshot_index = int(model_file_name.split("-")[-1]);
+        # snapshot_index = int(model_file_name.split("-")[-1]);
         
         model_file_path = os.path.join(model_directory, model_file_name);
         prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
         print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
-    #'''
+    # '''
     
     model_file_path = os.path.join(model_directory, "model.pkl");
     prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
-    #prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
+    # prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
     print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
 
 def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     # allocate symbolic variables for the data
-    # x = theano.tensor.matrix('x')  # the data is presented as rasterized images
-    x = theano.tensor.tensor4('x')  # the data is presented as rasterized images
+    x = theano.tensor.matrix('x')  # the data is presented as rasterized images
+    # x = theano.tensor.tensor4('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     
     network = cPickle.load(open(input_snapshot_path, 'rb'));
     
     # This is to establish the computational graph
-    #network.get_all_layers()[0].input_var = x
+    # network.get_all_layers()[0].input_var = x
     network.set_input_variable(x);
     
     # Create a train_loss expression for validation/testing. The crucial difference
