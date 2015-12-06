@@ -24,7 +24,7 @@ from networks.dae import DenoisingAutoEncoder
 def sample_activation_probability(input_size, activation_style, activation_parameter):
     activation_probability = None;
     if activation_style == "bernoulli":
-        activation_probability = numpy.zeros(input_size, dtype=numpy.float32) + activation_parameter;
+        activation_probability = numpy.zeros(input_size) + activation_parameter;
     elif activation_style == "beta_bernoulli":
         shape_alpha, shape_beta = activation_parameter;
         
@@ -41,8 +41,9 @@ def sample_activation_probability(input_size, activation_style, activation_param
         activation_probability = numpy.clip(activation_probability, 0., 1.);
     else:
         sys.stderr.write("error: unrecognized configuration...\n");
+        sys.exit();
 
-    return activation_probability
+    return activation_probability.astype(numpy.float32)
 
 class ConvolutionalNeuralNetwork(network.Network):
     def __init__(self,
@@ -87,8 +88,6 @@ class ConvolutionalNeuralNetwork(network.Network):
             
             activation_probability = sample_activation_probability(previous_layer_shape, activation_styles[dropout_layer_index], activation_parameters[dropout_layer_index]);
             dropout_layer_index += 1;
-            if activation_probability is None:
-                sys.exit();
             
             print activation_probability
             activation_probability = numpy.reshape(activation_probability, input_layer_shape)
@@ -131,8 +130,6 @@ class ConvolutionalNeuralNetwork(network.Network):
             previous_layer_shape = numpy.prod(input_layer_shape)
             activation_probability = sample_activation_probability(previous_layer_shape, activation_styles[dropout_layer_index], activation_parameters[dropout_layer_index]);
             dropout_layer_index += 1;
-            if activation_probability is None:
-                sys.exit();
             
             print activation_probability
             activation_probability = numpy.reshape(activation_probability, input_layer_shape)
