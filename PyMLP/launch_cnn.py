@@ -33,7 +33,7 @@ def parse_args():
                         learning_rate=1e-2,
                         minibatch_size=1,
                         snapshot_interval=1,
-                        validation_interval=1000,
+                        validation_interval=100,
                         objective_to_minimize=None,
                         
                         # parameter set 3
