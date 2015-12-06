@@ -24,7 +24,7 @@ from networks.dae import DenoisingAutoEncoder
 def sample_activation_probability(input_size, activation_style, activation_parameter):
     activation_probability = None;
     if activation_style == "bernoulli":
-        activation_probability = numpy.zeros(input_size) + activation_parameter;
+        activation_probability = numpy.zeros(input_size, dtype=numpy.float32) + activation_parameter;
     elif activation_style == "beta_bernoulli":
         shape_alpha, shape_beta = activation_parameter;
         
