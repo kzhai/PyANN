@@ -21,6 +21,30 @@ from layers.dropout import GeneralizedDropoutLayer
 
 from networks.dae import DenoisingAutoEncoder
 
+def sample_activation_probability(input_size, activation_style, activation_parameter):
+    activation_probability = None;
+    if activation_style == "bernoulli":
+        activation_probability = numpy.zeros(input_size) + activation_parameter;
+    elif activation_style == "beta_bernoulli":
+        shape_alpha, shape_beta = activation_parameter;
+        
+        activation_probability = numpy.random.beta(shape_alpha, shape_beta, size=input_size);
+    elif activation_style == "reciprocal_beta_bernoulli":
+        shape_alpha, shape_beta = activation_parameter;
+        ranked_shape_alpha = shape_alpha / numpy.arange(1, input_size + 1); 
+        
+        activation_probability = numpy.zeros(input_size);
+        for index in xrange(input_size):
+            activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
+    elif activation_style == "reciprocal":
+        activation_probability = activation_parameter / numpy.arange(1, input_size + 1);
+        activation_probability = numpy.clip(activation_probability, 0., 1.);
+    else:
+        sys.stderr.write("error: unrecognized configuration...\n");
+        sys.exit();
+
+    return activation_probability.astype(numpy.float32)
+
 class MultiLayerPerceptron(network.Network):
     def __init__(self,
             input_data=None,
@@ -44,28 +68,9 @@ class MultiLayerPerceptron(network.Network):
         network = lasagne.layers.InputLayer(shape=(None, layer_shapes[0]), input_var=input_data)
         for layer_index in xrange(1, len(layer_shapes)):
             previous_layer_shape = layer_shapes[layer_index - 1]
-            if layer_activation_styles[layer_index - 1] == "bernoulli":
-                activation_probability = numpy.zeros(previous_layer_shape) + layer_activation_parameters[layer_index - 1];
-                
-                # network = lasagne.layers.DropoutLayer(network, p=layer_activation_parameters[layer_index - 1])
-            elif layer_activation_styles[layer_index - 1] == "beta_bernoulli":
-                shape_alpha, shape_beta = layer_activation_parameters[layer_index - 1];
-                
-                activation_probability = numpy.random.beta(shape_alpha, shape_beta, size=previous_layer_shape);
-            elif layer_activation_styles[layer_index - 1] == "reciprocal_beta_bernoulli":
-                shape_alpha, shape_beta = layer_activation_parameters[layer_index - 1];
-                ranked_shape_alpha = shape_alpha / numpy.arange(1, previous_layer_shape + 1); 
-                
-                activation_probability = numpy.zeros(previous_layer_shape);
-                for index in xrange(previous_layer_shape):
-                    activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
-            elif layer_activation_styles[layer_index - 1] == "reciprocal":
-                activation_probability = layer_activation_parameters[layer_index - 1] / numpy.arange(1, previous_layer_shape + 1);
-                activation_probability = numpy.clip(activation_probability, 0., 1.);
-            else:
-                sys.stderr.write("error: unrecognized configuration...\n");
-                sys.exit();
-                
+            
+            activation_probability = sample_activation_probability(previous_layer_shape, layer_activation_styles[layer_index - 1], layer_activation_parameters[layer_index - 1]);
+            
             network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
             
             layer_shape = layer_shapes[layer_index]
@@ -73,17 +78,11 @@ class MultiLayerPerceptron(network.Network):
             
             if pretrained_network_layers == None or len(pretrained_network_layers) <= layer_index:
                 network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
-                
-                print type(network.W), network.W.dtype
-                print type(network.b), network.b.dtype
             else:
                 pretrained_layer = pretrained_network_layers[layer_index];
                 assert isinstance(pretrained_layer, lasagne.layers.DenseLayer)
                 assert pretrained_layer.nonlinearity == layer_nonlinearity, (pretrained_layer.nonlinearity, layer_nonlinearity)
                 assert pretrained_layer.num_units == layer_shape
-                
-                print type(pretrained_layer.W), pretrained_layer.W.dtype
-                print type(pretrained_layer.b), pretrained_layer.b.dtype
                 
                 network = lasagne.layers.DenseLayer(network,
                                                     layer_shape,
