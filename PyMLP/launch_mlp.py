@@ -148,6 +148,13 @@ def launch_mlp():
     layer_activation_style_tokens = layer_activation_styles.split(",")
     if len(layer_activation_style_tokens) == 1:
         layer_activation_styles = [layer_activation_styles for layer_index in xrange(number_of_layers)]
+    elif len(layer_activation_style_tokens) == number_of_layers:
+        layer_activation_styles = layer_activation_style_tokens
+        # [float(layer_activation_parameter) for layer_activation_parameter in layer_activation_parameter_tokens]
+    else:
+        sys.stderr.write("error: unrecognized configuration for layer_activation_styles %s\n" % layer_activation_styles);
+        sys.exit()
+        
     assert len(layer_activation_styles) == number_of_layers;
     for layer_activation_style in layer_activation_styles:
         assert layer_activation_style in set(["bernoulli", "beta_bernoulli", "reciprocal_beta_bernoulli"])

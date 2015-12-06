@@ -188,7 +188,7 @@ def launch_cnn():
     elif len(activation_styles_tokens) == number_of_layers:
         activation_styles = activation_styles_tokens
     else:
-        sys.stderr.write("error: unrecognized configuration for activation_parameters %s\n" % activation_parameters);
+        sys.stderr.write("error: unrecognized configuration for activation_styles %s\n" % activation_styles);
         sys.exit()
     assert len(activation_styles) == number_of_layers;
     for activation_style in activation_styles:
