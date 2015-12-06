@@ -185,6 +185,11 @@ def launch_cnn():
     activation_styles_tokens = activation_styles.split(",")
     if len(activation_styles_tokens) == 1:
         activation_styles = [activation_styles for layer_index in xrange(number_of_layers)]
+    elif len(activation_styles_tokens) == number_of_layers:
+        activation_styles = activation_styles_tokens
+    else:
+        sys.stderr.write("error: unrecognized configuration for activation_parameters %s\n" % activation_parameters);
+        sys.exit()
     assert len(activation_styles) == number_of_layers;
     for activation_style in activation_styles:
         assert activation_style in set(["bernoulli", "beta_bernoulli", "reciprocal_beta_bernoulli"])
