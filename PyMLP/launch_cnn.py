@@ -461,9 +461,6 @@ def launch_cnn():
         updates=updates
     )
     
-    # theano.printing.debugprint(train_function.maker.fgraph.outputs[0])
-    # sys.exit()
-    
     # Compile a second function computing the validation train_loss and accuracy:
     validate_function = theano.function(
         inputs=[x, y],
