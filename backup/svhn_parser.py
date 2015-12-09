@@ -38,7 +38,7 @@ def parse_svhn(input_directory, output_directory):
         
         labels_for_train = numpy.concatenate((labels_for_train, train_labels), axis=0);
         images_for_train = numpy.concatenate((images_for_train, train_images), axis=0);
-
+        
     print numpy.max(labels_for_train), numpy.min(labels_for_train)
     print numpy.max(images_for_train), numpy.min(images_for_train)    
     print labels_for_train.shape

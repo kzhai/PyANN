@@ -343,7 +343,7 @@ def launch_mlp():
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
     data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
     # data_x = numpy.asarray(data_x, numpy.float32) / 256
-    data_x = data_x / numpy.float32(256)
+    # data_x = data_x / numpy.float32(256)
     # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
     assert data_x.shape[0] == len(data_y);
     
