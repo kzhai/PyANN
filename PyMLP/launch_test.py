@@ -85,9 +85,32 @@ def launch_test():
     # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
     print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., -1)
 
-def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
+def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y, batch_size=1000):
     network = cPickle.load(open(input_snapshot_path, 'rb'));
+
+    prediction_loss_on_test_set = 0.;
+    prediction_accuracy_on_test_set = 0.;
     
+    assert test_set_x.shape[0] % batch_size == 0;
+    for x in xrange(0, test_set_x.shape[0], batch_size):
+        temp_test_set_x = test_set_x[x:x + batch_size];
+        temp_test_set_y = test_set_y[x:x + batch_size];
+        
+        test_prediction_distribution = lasagne.layers.get_output(network.network, temp_test_set_x, deterministic=True).eval()
+    
+        # prediction_loss_on_test_set = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction_distribution, y))
+
+        test_prediction = numpy.argmax(test_prediction_distribution, axis=1);
+        test_accuracy = numpy.equal(test_prediction, temp_test_set_y);
+        prediction_accuracy_on_test_set += numpy.sum(test_accuracy);
+    
+    prediction_accuracy_on_test_set /= test_set_x.shape[0];
+    
+    return prediction_loss_on_test_set, prediction_accuracy_on_test_set;
+
+def evaluate_snapshot_batch(input_snapshot_path, test_set_x, test_set_y):
+    network = cPickle.load(open(input_snapshot_path, 'rb'));
+
     test_prediction_distribution = lasagne.layers.get_output(network.network, test_set_x, deterministic=True).eval()
     
     # prediction_loss_on_test_set = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction_distribution, y))
