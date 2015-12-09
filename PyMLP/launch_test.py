@@ -21,12 +21,16 @@ def parse_args():
     parser.set_defaults(# parameter set 1
                         input_directory=None,
                         model_directory=None,
+                        batch_size=0,
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
                       help="input directory [None]");
     parser.add_option("--model_directory", type="string", dest="model_directory",
                       help="output directory [None]");
+
+    parser.add_option("--batch_size", type="int", dest="batch_size",
+                      help="batch size [0]");
 
     (options, args) = parser.parse_args();
     return options;
@@ -48,17 +52,21 @@ def launch_test():
     dataset_name = os.path.basename(input_directory);
     model_directory = options.model_directory;
 
+    test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
+    test_set_x = test_set_x / numpy.float32(256)
+    test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
+
+    batch_size = options.batch_size;
+    if batch_size<=0:
+        batch_size = test_set_x.shape[0];
+
     print "========== ========== ========== ========== =========="
     # parameter set 1
     print "model_directory=" + model_directory
     print "input_directory=" + input_directory
     print "dataset_name=" + dataset_name
-    # print "dictionary file=" + str(dict_file)
+    print "batch_size=" + str(batch_size)
     print "========== ========== ========== ========== =========="
-    
-    test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
-    test_set_x = test_set_x / numpy.float32(256)
-    test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
     
     ######################
     # BUILD ACTUAL MODEL #
@@ -72,7 +80,7 @@ def launch_test():
         # snapshot_index = int(model_file_name.split("-")[-1]);
         
         model_file_path = os.path.join(model_directory, model_file_name);
-        prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
+        prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, batch_size)
         # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
         
         snapshot_index = int(model_file_name.split(".")[0].split("-")[1])
@@ -80,7 +88,7 @@ def launch_test():
     # '''
     
     model_file_path = os.path.join(model_directory, "model.pkl");
-    prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
+    prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, batch_size)
     # prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
     # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
     print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., -1)
@@ -91,7 +99,7 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y, batch_size=10
     prediction_loss_on_test_set = 0.;
     prediction_accuracy_on_test_set = 0.;
     
-    assert test_set_x.shape[0] % batch_size == 0;
+    assert test_set_x.shape[0] % batch_size == 0, (test_set_x.shape[0], batch_size)
     for x in xrange(0, test_set_x.shape[0], batch_size):
         temp_test_set_x = test_set_x[x:x + batch_size];
         temp_test_set_y = test_set_y[x:x + batch_size];
