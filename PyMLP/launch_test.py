@@ -57,6 +57,7 @@ def launch_test():
     print "========== ========== ========== ========== =========="
     
     test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
+    test_set_x = test_set_x / numpy.float32(256)
     test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
     
     ######################
@@ -72,18 +73,36 @@ def launch_test():
         
         model_file_path = os.path.join(model_directory, model_file_name);
         prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
-        print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
+        # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
+        
+        snapshot_index = int(model_file_name.split(".")[0].split("-")[1])
+        print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., snapshot_index)
     # '''
     
     model_file_path = os.path.join(model_directory, "model.pkl");
     prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
     # prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
-    print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
+    # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
+    print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., -1)
 
 def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
+    network = cPickle.load(open(input_snapshot_path, 'rb'));
+    
+    test_prediction_distribution = lasagne.layers.get_output(network.network, test_set_x, deterministic=True).eval()
+    
+    # prediction_loss_on_test_set = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction_distribution, y))
+    prediction_loss_on_test_set = 0;
+
+    test_prediction = numpy.argmax(test_prediction_distribution, axis=1);
+    test_accuracy = numpy.equal(test_prediction, test_set_y);
+    prediction_accuracy_on_test_set = numpy.mean(test_accuracy);
+    
+    return prediction_loss_on_test_set, prediction_accuracy_on_test_set;
+
+def evaluate_snapshot_through_graph(input_snapshot_path, test_set_x, test_set_y):
     # allocate symbolic variables for the data
-    x = theano.tensor.matrix('x')  # the data is presented as rasterized images
-    # x = theano.tensor.tensor4('x')  # the data is presented as rasterized images
+    # x = theano.tensor.matrix('x')  # the data is presented as rasterized images
+    x = theano.tensor.tensor4('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     
     network = cPickle.load(open(input_snapshot_path, 'rb'));
