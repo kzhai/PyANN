@@ -53,11 +53,11 @@ def launch_test():
     model_directory = options.model_directory;
 
     test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
-    test_set_x = test_set_x / numpy.float32(256)
+    # test_set_x = test_set_x / numpy.float32(256)
     test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
 
     batch_size = options.batch_size;
-    if batch_size<=0:
+    if batch_size <= 0:
         batch_size = test_set_x.shape[0];
 
     print "========== ========== ========== ========== =========="
