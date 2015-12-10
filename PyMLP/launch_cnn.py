@@ -190,9 +190,10 @@ def launch_cnn():
     else:
         sys.stderr.write("error: unrecognized configuration for activation_styles %s\n" % activation_styles);
         sys.exit()
+        
     assert len(activation_styles) == number_of_layers;
     for activation_style in activation_styles:
-        assert activation_style in set(["bernoulli", "beta_bernoulli", "reciprocal_beta_bernoulli"])
+        assert activation_style in set(["bernoulli", "beta_bernoulli", "reciprocal_beta_bernoulli", "mixed_beta_bernoulli"])
     
     activation_parameters = options.activation_parameters;
     activation_parameter_tokens = activation_parameters.split(",")
@@ -212,7 +213,7 @@ def launch_cnn():
             activation_parameters[layer_index] = float(activation_parameters[layer_index])
             assert activation_parameters[layer_index] <= 1;
             assert activation_parameters[layer_index] > 0;
-        elif activation_styles[layer_index] == "beta_bernoulli" or activation_styles[layer_index] == "reciprocal_beta_bernoulli":
+        elif activation_styles[layer_index] == "beta_bernoulli" or activation_styles[layer_index] == "reciprocal_beta_bernoulli" or activation_styles[layer_index] == "mixed_beta_bernoulli":
             activation_parameter_tokens = activation_parameters[layer_index].split("+");
             if len(activation_parameter_tokens) == 1:
                 activation_parameters[layer_index] = (float(activation_parameter_tokens[0]), 1.0)
@@ -223,6 +224,8 @@ def launch_cnn():
                 sys.exit()
             assert activation_parameters[layer_index][0] > 0;
             assert activation_parameters[layer_index][1] > 0;
+            if activation_styles[layer_index] == "mixed_beta_bernoulli":
+                assert activation_parameters[layer_index][0] < 1;
     
     # parameter set 5
     L1_regularizer_lambdas = options.L1_regularizer_lambdas
