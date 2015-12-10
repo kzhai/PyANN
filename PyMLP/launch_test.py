@@ -73,7 +73,7 @@ def launch_test():
     ######################
     print '... testing the model'
     
-    # '''
+    '''
     for model_file_name in os.listdir(model_directory):
         if not model_file_name.startswith("model-"):
             continue;
@@ -85,7 +85,7 @@ def launch_test():
         
         snapshot_index = int(model_file_name.split(".")[0].split("-")[1])
         print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., snapshot_index)
-    # '''
+    '''
     
     model_file_path = os.path.join(model_directory, "model.pkl");
     prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, batch_size)
