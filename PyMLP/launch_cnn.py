@@ -515,7 +515,7 @@ def launch_cnn():
                 
         clock_epoch = time.time() - clock_epoch;
     
-        # print 'epoch_index %i, average_train_loss %f, average_train_accuracy %f%%, running time %fs' % (epoch_index, average_train_loss, average_train_accuracy * 100, clock_epoch)
+        print 'epoch_index %i, average_train_loss %f, average_train_accuracy %f%%, running time %fs' % (epoch_index, average_train_loss, average_train_accuracy * 100, clock_epoch)
         
         if (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
