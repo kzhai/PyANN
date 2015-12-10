@@ -32,7 +32,6 @@ def parse_args():
 
     parser.add_option("--batch_size", type="int", dest="batch_size",
                       help="batch size [0]");
-                      
     parser.add_option("--best_model_only", action="store_true", dest="best_model_only",
                       help="best model only");
 
@@ -57,7 +56,7 @@ def launch_test():
     model_directory = options.model_directory;
 
     test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
-    # test_set_x = test_set_x / numpy.float32(256)
+    #test_set_x = test_set_x / numpy.float32(256)
     test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
 
     batch_size = options.batch_size;
