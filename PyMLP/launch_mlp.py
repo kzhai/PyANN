@@ -157,7 +157,7 @@ def launch_mlp():
         
     assert len(layer_activation_styles) == number_of_layers;
     for layer_activation_style in layer_activation_styles:
-        assert layer_activation_style in set(["bernoulli", "beta_bernoulli", "reciprocal_beta_bernoulli"])
+        assert layer_activation_style in set(["bernoulli", "beta_bernoulli", "reciprocal_beta_bernoulli", "mixed_beta_bernoulli"])
     
     layer_activation_parameters = options.layer_activation_parameters;
     # if layer_activation_parameters is not None:
@@ -178,7 +178,7 @@ def launch_mlp():
             layer_activation_parameters[layer_index] = float(layer_activation_parameters[layer_index])
             assert layer_activation_parameters[layer_index] <= 1;
             assert layer_activation_parameters[layer_index] > 0;
-        elif layer_activation_styles[layer_index] == "beta_bernoulli" or layer_activation_styles[layer_index] == "reciprocal_beta_bernoulli":
+        elif layer_activation_styles[layer_index] == "beta_bernoulli" or layer_activation_styles[layer_index] == "reciprocal_beta_bernoulli" or layer_activation_styles[layer_index] == "mixed_beta_bernoulli":
             layer_activation_parameter_tokens = layer_activation_parameters[layer_index].split("+");
             if len(layer_activation_parameter_tokens) == 1:
                 layer_activation_parameters[layer_index] = (float(layer_activation_parameter_tokens[0]), 1.0)
@@ -189,6 +189,9 @@ def launch_mlp():
                 sys.exit()
             assert layer_activation_parameters[layer_index][0] > 0;
             assert layer_activation_parameters[layer_index][1] > 0;
+            
+            if layer_activation_styles[layer_index] == "mixed_beta_bernoulli":
+                assert layer_activation_parameters[layer_index][0] < 1;
     
     '''
     layer_latent_feature_alphas = options.layer_latent_feature_alphas;

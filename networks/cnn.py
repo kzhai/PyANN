@@ -17,33 +17,9 @@ import lasagne
 
 import network
 
-from layers.dropout import GeneralizedDropoutLayer
+from layers.dropout import GeneralizedDropoutLayer, sample_activation_probability
 
 from networks.dae import DenoisingAutoEncoder
-
-def sample_activation_probability(input_size, activation_style, activation_parameter):
-    activation_probability = None;
-    if activation_style == "bernoulli":
-        activation_probability = numpy.zeros(input_size) + activation_parameter;
-    elif activation_style == "beta_bernoulli":
-        shape_alpha, shape_beta = activation_parameter;
-        
-        activation_probability = numpy.random.beta(shape_alpha, shape_beta, size=input_size);
-    elif activation_style == "reciprocal_beta_bernoulli":
-        shape_alpha, shape_beta = activation_parameter;
-        ranked_shape_alpha = shape_alpha / numpy.arange(1, input_size + 1); 
-        
-        activation_probability = numpy.zeros(input_size);
-        for index in xrange(input_size):
-            activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
-    elif activation_style == "reciprocal":
-        activation_probability = activation_parameter / numpy.arange(1, input_size + 1);
-        activation_probability = numpy.clip(activation_probability, 0., 1.);
-    else:
-        sys.stderr.write("error: unrecognized configuration...\n");
-        sys.exit();
-
-    return activation_probability.astype(numpy.float32)
 
 class ConvolutionalNeuralNetwork(network.Network):
     def __init__(self,
