@@ -22,7 +22,7 @@ def parse_args():
                         input_directory=None,
                         model_directory=None,
                         batch_size=0,
-                        best_model_only=False,
+                        # best_model_only=False,
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -32,8 +32,8 @@ def parse_args():
 
     parser.add_option("--batch_size", type="int", dest="batch_size",
                       help="batch size [0]");
-    parser.add_option("--best_model_only", action="store_true", dest="best_model_only",
-                      help="best model only");
+    # parser.add_option("--best_model_only", action="store_true", dest="best_model_only",
+                      # help="best model only");
 
     (options, args) = parser.parse_args();
     return options;
@@ -73,26 +73,29 @@ def launch_test():
     print "========== ========== ========== ========== =========="
     '''
     
-    model_file_path = os.path.join(model_directory, "model.pkl");
-    prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, batch_size)
-    # prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
-    # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
-    print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., -1)
-    
-    if options.best_model_only:
-        return;
-        
-    for model_file_name in os.listdir(model_directory):
-        if not model_file_name.startswith("model-"):
-            continue;
-        # snapshot_index = int(model_file_name.split("-")[-1]);
-        
-        model_file_path = os.path.join(model_directory, model_file_name);
+    if os.path.isfile(model_directory):
+        model_file_path = model_directory
+        prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, batch_size)
+        # prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
+        # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
+        print '%f%%' % (prediction_accuracy_on_test_set * 100.)
+    else:    
+        model_file_path = os.path.join(model_directory, "model.pkl");
         prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, batch_size)
         # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
+        print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., -1)
         
-        snapshot_index = int(model_file_name.split(".")[0].split("-")[1])
-        print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., snapshot_index)
+        for model_file_name in os.listdir(model_directory):
+            if not model_file_name.startswith("model-"):
+                continue;
+            # snapshot_index = int(model_file_name.split("-")[-1]);
+            
+            model_file_path = os.path.join(model_directory, model_file_name);
+            prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, batch_size)
+            # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
+            
+            snapshot_index = int(model_file_name.split(".")[0].split("-")[1])
+            print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., snapshot_index)
 
 def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y, batch_size=1000):
     network = cPickle.load(open(input_snapshot_path, 'rb'));
