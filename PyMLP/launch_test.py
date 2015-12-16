@@ -85,6 +85,12 @@ def launch_test():
         # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
         print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., -1)
         
+        '''
+        for model_file_index in xrange(0, 101, 2):
+            model_file_name="model-%d.pkl" % model_file_index;
+            # snapshot_index = int(model_file_name.split("-")[-1]);
+        '''
+
         for model_file_name in os.listdir(model_directory):
             if not model_file_name.startswith("model-"):
                 continue;
