@@ -37,10 +37,10 @@ def parse_args():
                         # parameter set 4
                         layer_dimensions=None,
                         layer_nonlinearities=None,
+                        
                         objective_to_minimize=None,
                         
                         layer_activation_parameters="1",
-                        # layer_latent_feature_alphas="10",
                         layer_activation_styles="bernoulli",
 
                         # parameter set 5
@@ -50,7 +50,8 @@ def parse_args():
                         dae_regularizer_lambdas="0",
                         layer_corruption_levels="0",
                         
-                        # number_of_pretrain_epochs=0,
+                        # parameter set 6
+                        number_of_training_data=-1,
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -81,16 +82,17 @@ def parse_args():
                       help="dimension of different layer [None], example, '100,500,10' represents 3 layers contains 100, 500, and 10 neurons respectively");
     parser.add_option("--layer_nonlinearities", type="string", dest="layer_nonlinearities",
                       help="activation functions of different layer [None], example, 'tanh,softmax' represents 2 layers with tanh and softmax activation function respectively");
+                      
     parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
                       help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
                     
     parser.add_option("--layer_activation_parameters", type="string", dest="layer_activation_parameters",
                       help="dropout probability of different layer [1], either one number of a list of numbers, example, '0.2' represents 0.2 dropout rate for all input+hidden layers, or '0.2,0.5' represents 0.2 dropout rate for input layer and 0.5 dropout rate for first hidden layer respectively");
-    # parser.add_option("--layer_latent_feature_alphas", type="string", dest="layer_latent_feature_alphas",
-                      # help="alpha for latent feature ");
     parser.add_option("--layer_activation_styles", type="string", dest="layer_activation_styles",
                       help="dropout style different layer [bernoulli], example, 'bernoulli,beta-bernoulli' represents 2 layers with bernoulli and beta-bernoulli dropout respectively");
-                      
+    # parser.add_option("--layer_latent_feature_alphas", type="string", dest="layer_latent_feature_alphas",
+                      # help="alpha for latent feature ");
+                                            
     # parameter set 5
     parser.add_option("--L1_regularizer_lambdas", type="string", dest="L1_regularizer_lambdas",
                       help="L1 regularization lambda [0]")
@@ -101,7 +103,10 @@ def parse_args():
                       help="dae regularization lambda [0]")
     parser.add_option("--layer_corruption_levels", type="string", dest="layer_corruption_levels",
                       help="layer corruption level for pre-training [0], either one number of a list of numbers, example, '0.2' represents 0.2 corruption level for all denoising auto encoders, or '0.2,0.5' represents 0.2 corruption level for first denoising auto encoder layer and 0.5 for second one respectively");
-                      
+    
+    # parameter set 6
+    parser.add_option("--number_of_training_data", type="int", dest="number_of_training_data",
+                      help="training data size [-1]");
     # parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
                       # help="number of pretrain epochs [0 - no pre-training]");
                       
@@ -125,7 +130,7 @@ def launch_mlp():
     validation_interval = options.validation_interval;
     assert(options.snapshot_interval > 0);
     snapshot_interval = options.snapshot_interval;
-    
+
     # parameter set 3
     assert options.learning_rate > 0;
     learning_rate = options.learning_rate;
@@ -265,10 +270,48 @@ def launch_mlp():
     if not os.path.exists(output_directory):
         os.mkdir(output_directory);
     
+    #
+    #
+    #
+    #
+    #
+    
+    data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
+    data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
+    # data_x = numpy.asarray(data_x, numpy.float32) / 256
+    # data_x = data_x / numpy.float32(256)
+    # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
+    assert data_x.shape[0] == len(data_y);
+    
+    # parameter set 6
+    # assert(options.number_of_training_data <= 0);
+    number_of_training_data = options.number_of_training_data;
+    if number_of_training_data <= 1:
+        number_of_training_data = len(data_y);
+    assert number_of_training_data > 0 and number_of_training_data <= len(data_y)
+    
+    indices = range(len(data_y))
+    numpy.random.shuffle(indices);
+    
+    train_set_x = data_x[indices[:number_of_training_data], :]
+    train_set_y = data_y[indices[:number_of_training_data]]
+
+    valid_set_x = data_x[indices[number_of_training_data:], :]
+    valid_set_y = data_y[indices[number_of_training_data:]]
+    
+    print "successfully load data with %d for training and %d for validation..." % (train_set_x.shape[0], valid_set_x.shape[0])
+    
+    #
+    #
+    #
+    #
+    #
+    
     # create output directory
     now = datetime.datetime.now();
     suffix = now.strftime("%y%m%d-%H%M%S") + "";
     suffix += "-%s" % ("mlp");
+    suffix += "-T%d" % (number_of_training_data);
     suffix += "-E%d" % (number_of_epochs);
     suffix += "-S%d" % (snapshot_interval);
     suffix += "-B%d" % (minibatch_size);
@@ -279,24 +322,35 @@ def launch_mlp():
     
     output_directory = os.path.join(output_directory, suffix);
     os.mkdir(os.path.abspath(output_directory));
-        
+    
+    #
+    #
+    #
+    #
+    #
+
     # store all the options to a file
     options_output_file = open(output_directory + "option.txt", 'w');
+    
     # parameter set 1
     options_output_file.write("input_directory=" + input_directory + "\n");
     options_output_file.write("dataset_name=" + dataset_name + "\n");
     options_output_file.write("pretrained_model_file=" + str(pretrained_model_file) + "\n");
     # options_output_file.write("vocabulary_path=" + str(dict_file) + "\n");
+    
     # parameter set 2
     options_output_file.write("number_of_epochs=%d\n" % (number_of_epochs));
-    options_output_file.write("snapshot_interval=%d\n" % (snapshot_interval))
     options_output_file.write("minibatch_size=" + str(minibatch_size) + "\n");
-    options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
+    options_output_file.write("snapshot_interval=%d\n" % (snapshot_interval));
+    options_output_file.write("validation_interval=%d\n" % validation_interval);
+    
     # parameter set 3
+    options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
     
     # parameter set 4
     options_output_file.write("layer_shapes=%s\n" % (layer_shapes));
     options_output_file.write("layer_nonlinearities=%s\n" % (layer_nonlinearities));
+    
     options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
     
     options_output_file.write("layer_activation_parameters=%s\n" % (layer_activation_parameters));
@@ -305,13 +359,22 @@ def launch_mlp():
     # parameter set 5
     options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
     options_output_file.write("L2_regularizer_lambdas=%s\n" % (L2_regularizer_lambdas));
-    options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
     
+    options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
     options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
     # options_output_file.write("number_of_pretrain_epochs=%s\n" % (number_of_pretrain_epochs));
     
+    # paramter set 6
+    options_output_file.write("number_of_training_data=%d\n" % (number_of_training_data));
+    
     options_output_file.close()
-
+    
+    #
+    #
+    #
+    #
+    #
+    
     print "========== ========== ========== ========== =========="
     # parameter set 1
     print "output_directory=" + output_directory
@@ -321,14 +384,17 @@ def launch_mlp():
     # print "dictionary file=" + str(dict_file)
     # parameter set 2
     print "number_of_epochs=%d" % (number_of_epochs);
-    print "snapshot_interval=" + str(snapshot_interval);
     print "minibatch_size=" + str(minibatch_size)
-    print "learning_rate=" + str(learning_rate)
+    print "snapshot_interval=" + str(snapshot_interval);
+    print "validation_interval=%d" % validation_interval;
+    
     # parameter set 3
+    print "learning_rate=" + str(learning_rate)
     
     # parameter set 4
     print "layer_shapes=%s" % (layer_shapes)
     print "layer_nonlinearities=%s" % (layer_nonlinearities)
+    
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
     print "layer_activation_parameters=%s" % (layer_activation_parameters)
@@ -337,33 +403,14 @@ def launch_mlp():
     # parameter set 5
     print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
     print "L2_regularizer_lambdas=%s" % (L2_regularizer_lambdas);
-    print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
     
+    print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
     print "layer_corruption_levels=%s" % (layer_corruption_levels);
-    # print "number_of_pretrain_epochs=%s" % (number_of_pretrain_epochs);
+    
+    # paramter set 6
+    print "number_of_training_data=%d" % (number_of_training_data);
     print "========== ========== ========== ========== =========="
     
-    data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
-    data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
-    # data_x = numpy.asarray(data_x, numpy.float32) / 256
-    # data_x = data_x / numpy.float32(256)
-    # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
-    assert data_x.shape[0] == len(data_y);
-    
-    # number_of_train = int(round(0.85 * len(data_y)));
-    # number_of_train = 50000
-    number_of_train = 5877
-    indices = range(len(data_y))
-    numpy.random.shuffle(indices);
-    
-    train_set_x = data_x[indices[:number_of_train], :]
-    train_set_y = data_y[indices[:number_of_train]]
-
-    valid_set_x = data_x[indices[number_of_train:], :]
-    valid_set_y = data_y[indices[number_of_train:]]
-    
-    print "successfully load data with %d for training and %d for validation..." % (train_set_x.shape[0], valid_set_x.shape[0])
-
     ######################
     # BUILD ACTUAL MODEL #
     ######################
@@ -387,17 +434,9 @@ def launch_mlp():
     network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
     network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
     
-    ###################
-    # PRE-TRAIN MODEL #
-    ###################
-    
-    '''
-    if number_of_pretrain_epochs > 0:
-        network.pretrain_with_dae(data_x, layer_corruption_levels, number_of_epochs=number_of_pretrain_epochs)
-    '''
-    
-    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
-    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    ########################
+    # BUILD LOSS FUNCTIONS #
+    ########################
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
@@ -435,13 +474,17 @@ def launch_mlp():
         outputs=[validate_loss, validate_accuracy],
     )
     
-    ###############
-    # TRAIN MODEL #
-    ###############
+    ########################
+    # START MODEL TRAINING #
+    ########################
     
     highest_prediction_accuracy = 0
     best_iteration_index = 0
+    
     start_time = timeit.default_timer()
+    
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     # compute number of minibatches for training, validation and testing
     # number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
