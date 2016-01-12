@@ -63,7 +63,6 @@ def launch_test():
     if batch_size <= 0:
         batch_size = test_set_x.shape[0];
         
-    '''
     print "========== ========== ========== ========== =========="
     # parameter set 1
     print "model_directory=" + model_directory
@@ -71,7 +70,6 @@ def launch_test():
     print "dataset_name=" + dataset_name
     print "batch_size=" + str(batch_size)
     print "========== ========== ========== ========== =========="
-    '''
     
     if os.path.isfile(model_directory):
         model_file_path = model_directory
