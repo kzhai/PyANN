@@ -25,11 +25,11 @@ fi
 for MODEL_DIRECTORY in $OUTPUT_DIRECTORY/*
 do
     if [ -f "$MODEL_DIRECTORY" ]; then
-		continue
+	continue
     fi
 	
     if [ -f "$MODEL_DIRECTORY/model.pkl" ]; then
-		echo "Evaluating $MODEL_DIRECTORY"
-    	THEANO_FLAGS=mode=FAST_RUN,device=$GPU_DEVICE,floatX=float32 python -um PyMLP.launch_test --input_directory=$INPUT_DIRECTORY --model_directory=$MODEL_DIRECTORY/model.pkl --batch_size=$BATCH_SIZE
+	echo "Evaluating $MODEL_DIRECTORY"
+	THEANO_FLAGS=mode=FAST_RUN,device=$GPU_DEVICE,floatX=float32 python -um PyMLP.launch_test --input_directory=$INPUT_DIRECTORY --model_directory=$MODEL_DIRECTORY/model.pkl --batch_size=$BATCH_SIZE
     fi
 done
