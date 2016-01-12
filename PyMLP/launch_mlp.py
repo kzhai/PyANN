@@ -351,7 +351,8 @@ def launch_mlp():
     assert data_x.shape[0] == len(data_y);
     
     # number_of_train = int(round(0.85 * len(data_y)));
-    number_of_train = 50000
+    # number_of_train = 50000
+    number_of_train = 5877
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
     
@@ -397,7 +398,7 @@ def launch_mlp():
     
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-        
+    
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
     train_prediction = network.get_output()
@@ -459,7 +460,7 @@ def launch_mlp():
             average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
 
             # And a full pass over the validation data:
-            if (iteration_index + 1) % validation_interval == 0:
+            if (iteration_index + 1) % validation_interval == 0 and len(valid_set_y) > 0:
                 average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
                 # if we got the best validation score until now
                 if average_validate_accuracy > highest_prediction_accuracy:
@@ -473,7 +474,7 @@ def launch_mlp():
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
                 
                 # print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
-                    
+                
         clock_epoch = time.time() - clock_epoch;
     
         print 'epoch_index %i, average_train_loss %f, average_train_accuracy %f%%, running time %fs' % (epoch_index, average_train_loss, average_train_accuracy * 100, clock_epoch)
