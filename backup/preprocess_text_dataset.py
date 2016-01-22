@@ -30,16 +30,13 @@ def preprocess_directory(input_directory, output_directory):
     input_train_data = input_train_data.astype(numpy.float32)
     input_train_data /= numpy.sum(input_train_data, axis=1)[:, numpy.newaxis];
     
-    print input_train_data
-    sys.exit();
-    
     print input_train_data.dtype, input_train_data.shape, numpy.max(input_train_data), numpy.min(input_train_data);
     
     numpy.save(output_train_file, input_train_data)
     
     input_test_file = os.path.join(input_directory, "test.feature.npy")
     output_test_file = os.path.join(output_directory, "test.feature.npy")
-
+    
     input_test_data = scipy.load(input_test_file);
     
     input_test_data = input_test_data.astype(numpy.float32)
