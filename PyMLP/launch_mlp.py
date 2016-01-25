@@ -162,7 +162,7 @@ def launch_mlp():
         
     assert len(layer_activation_styles) == number_of_layers;
     for layer_activation_style in layer_activation_styles:
-        assert layer_activation_style in set(["bernoulli", "beta_bernoulli", "reciprocal_beta_bernoulli", "mixed_beta_bernoulli"])
+        assert layer_activation_style in set(["bernoulli", "beta_bernoulli", "reciprocal_beta_bernoulli", "reverse_reciprocal_beta_bernoulli", "mixed_beta_bernoulli"])
     
     layer_activation_parameters = options.layer_activation_parameters;
     # if layer_activation_parameters is not None:
