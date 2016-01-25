@@ -183,7 +183,7 @@ def launch_mlp():
             layer_activation_parameters[layer_index] = float(layer_activation_parameters[layer_index])
             assert layer_activation_parameters[layer_index] <= 1;
             assert layer_activation_parameters[layer_index] > 0;
-        elif layer_activation_styles[layer_index] == "beta_bernoulli" or layer_activation_styles[layer_index] == "reciprocal_beta_bernoulli" or layer_activation_styles[layer_index] == "mixed_beta_bernoulli":
+        elif layer_activation_styles[layer_index] == "beta_bernoulli" or layer_activation_styles[layer_index] == "reciprocal_beta_bernoulli" or layer_activation_styles[layer_index] == "reverse_reciprocal_beta_bernoulli" or layer_activation_styles[layer_index] == "mixed_beta_bernoulli":
             layer_activation_parameter_tokens = layer_activation_parameters[layer_index].split("+");
             if len(layer_activation_parameter_tokens) == 1:
                 layer_activation_parameters[layer_index] = (float(layer_activation_parameter_tokens[0]), 1.0)
