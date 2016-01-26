@@ -76,12 +76,12 @@ def launch_test():
         prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, batch_size)
         # prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
         # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
-        print '%f%%' % (prediction_accuracy_on_test_set * 100.)
+        print '%f%%\t%f%%' % (prediction_accuracy_on_test_set * 100., 100 - prediction_accuracy_on_test_set * 100.)
     else:    
         model_file_path = os.path.join(model_directory, "model.pkl");
         prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, batch_size)
         # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
-        print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., -1)
+        print '%f%%\t%f%%\t%d' % (prediction_accuracy_on_test_set * 100., 100 - prediction_accuracy_on_test_set * 100., -1)
         
         '''
         for model_file_index in xrange(0, 101, 2):
@@ -99,7 +99,7 @@ def launch_test():
             # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
             
             snapshot_index = int(model_file_name.split(".")[0].split("-")[1])
-            print '%f%%\t%d' % (prediction_accuracy_on_test_set * 100., snapshot_index)
+            print '%f%%\t%f%%\t%d' % (prediction_accuracy_on_test_set * 100., 100 - prediction_accuracy_on_test_set * 100., snapshot_index)
 
 def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y, batch_size=1000):
     network = cPickle.load(open(input_snapshot_path, 'rb'));
@@ -171,4 +171,3 @@ def evaluate_snapshot_through_graph(input_snapshot_path, test_set_x, test_set_y)
     
 if __name__ == '__main__':
     launch_test()
-    
