@@ -528,7 +528,7 @@ def launch_mlp():
         
     end_time = timeit.default_timer()
     print "Optimization complete..."
-    print "Best validation score of %f%% obtained at iteration %i" % (highest_prediction_accuracy * 100., best_iteration_index);
+    print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (highest_prediction_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' + 
                           os.path.split(__file__)[1] + 
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
