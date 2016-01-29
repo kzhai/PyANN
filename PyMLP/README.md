@@ -37,6 +37,8 @@ The generic argument to run PyMLP is
 
 You should be able to find the output at directory ```$OUTPUT_DIRECTORY/$DATASET_NAME```.
 
+	THEANO_FLAGS=mode=FAST_RUN,device=gpu1,floatX=float32 python -um launch_cnn --input_directory=./cifar10_3x32x32_centered_data/ --output_directory=./ --minibatch_size=100 --learning_rate=0.001 --number_of_epochs=1000 --snapshot_interval=10 --input_shape=3,32,32 --convolution_filter_numbers=96,128,256 --convolution_nonlinearities=rectify,rectify,rectify --dense_dimensions=2048,2048,10 --dense_nonlinearities=rectify,rectify,softmax --objective_to_minimize=categorical_crossentropy --activation_parameters=0.9,0.75,0.75,0.5,0.5,0.5 --activation_styles=bernoulli,bernoulli,bernoulli,bernoulli,bernoulli,bernoulli
+
 Under any cirsumstances, you may also get help information and usage hints by running the following command
 
 	python -m PyMLP.launch_train --help

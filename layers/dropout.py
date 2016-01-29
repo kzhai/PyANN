@@ -29,7 +29,7 @@ def sample_activation_probability(input_size, activation_style, activation_param
         activation_probability = numpy.random.beta(shape_alpha, shape_beta, size=input_size);
     elif activation_style == "reciprocal_beta_bernoulli":
         shape_alpha, shape_beta = activation_parameter;
-        ranked_shape_alpha = shape_alpha / numpy.arange(1, input_size + 1); 
+        ranked_shape_alpha = shape_alpha / numpy.arange(1, input_size + 1);
         activation_probability = numpy.zeros(input_size);
         for index in xrange(input_size):
             activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
@@ -47,6 +47,9 @@ def sample_activation_probability(input_size, activation_style, activation_param
             rank = index + 1;
             activation_probability[index] = numpy.random.beta(rank * scale / smooth, rank / smooth);
     elif activation_style == "reciprocal":
+        activation_probability = activation_parameter / numpy.arange(1, input_size + 1);
+        activation_probability = numpy.clip(activation_probability, 0., 1.);
+    elif activation_style == "exponential":
         activation_probability = activation_parameter / numpy.arange(1, input_size + 1);
         activation_probability = numpy.clip(activation_probability, 0., 1.);
     else:

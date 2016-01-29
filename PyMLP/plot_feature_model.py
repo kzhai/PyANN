@@ -65,7 +65,7 @@ def plot_feature_model():
         feature_model_parameter = float(feature_model_parameter)
         assert feature_model_parameter <= 1;
         assert feature_model_parameter > 0;
-    elif feature_model == "beta_bernoulli" or feature_model == "reciprocal_beta_bernoulli" or feature_model == "mixed_beta_bernoulli":
+    elif feature_model == "beta_bernoulli" or feature_model == "reciprocal_beta_bernoulli" or feature_model == "reverse_reciprocal_beta_bernoulli" or feature_model == "mixed_beta_bernoulli":
         feature_model_parameter_tokens = feature_model_parameter.split("+");
         if len(feature_model_parameter_tokens) == 1:
             feature_model_parameter = (float(feature_model_parameter_tokens[0]), 1.0)
@@ -76,7 +76,10 @@ def plot_feature_model():
             sys.exit()
         assert feature_model_parameter[0] > 0;
         assert feature_model_parameter[1] > 0;
-
+    elif feature_model == "reciprocal":
+        feature_model_parameter = float(feature_model_parameter)
+        assert feature_model_parameter > 0;
+        
     feature_dimension = options.feature_dimension;
     '''
     image_size = options.image_size;
@@ -95,54 +98,22 @@ def plot_feature_model():
     # print "tile_size=%s" % str(tile_size)
     print "========== ========== ========== ========== =========="
     
-    '''
-    for model_file_name in os.listdir(feature_model):
-        if not model_file_name.startswith("model-"):
-            continue;
-        snapshot_index = int(model_file_name.split(".")[0].split("-")[1]);
-        
-        model_file_path = os.path.join(feature_model, model_file_name);
-        figure_file_path = os.path.join(feature_model, "layer-%d_figure-%d.pdf" % (feature_model_parameter, snapshot_index))
-        plot_feature_mode(model_file_path, feature_model_parameter, figure_file_path)
-    
-    model_file_path = os.path.join(feature_model, "best_model.pkl");
-    figure_file_path = os.path.join(feature_model, "layer-%d_dropout-rates.pdf" % (feature_model_parameter))
-    '''
-    
-    '''
-    if feature_model == "bernoulli":
-        activation_probability = numpy.zeros(feature_dimension) + feature_model_parameter;
-    elif feature_model == "beta_bernoulli":
-        shape_alpha, shape_beta = feature_model_parameter;
-        activation_probability = numpy.random.beta(shape_alpha, shape_beta, size=feature_dimension);
-    elif feature_model == "reciprocal_beta_bernoulli":
-        shape_alpha, shape_beta = feature_model_parameter;
-        ranked_shape_alpha = shape_alpha / numpy.arange(1, feature_dimension + 1); 
-        
-        activation_probability = numpy.zeros(feature_dimension);
-        for index in xrange(feature_dimension):
-            activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
-    elif feature_model == "mixed_beta_bernoulli":
-        concentration, smooth = feature_model_parameter;
-        scale = concentration / (1. - concentration);
-        # ranked_shape_alpha = shape_alpha / numpy.arange(1, feature_dimension + 1); 
-        
-        activation_probability = numpy.zeros(feature_dimension);
-        for index in xrange(feature_dimension):
-            rank = index + 1;
-            activation_probability[index] = numpy.random.beta(rank * scale / smooth, rank / smooth);
-    elif feature_model == "reciprocal":
-        activation_probability = feature_model_parameter / numpy.arange(1, feature_dimension + 1);
-        activation_probability = numpy.clip(activation_probability, 0., 1.);
-    else:
-        sys.stderr.write("erro: unrecognized configuration...\n");
-        sys.exit();
-    '''
-    
     activation_probability = sample_activation_probability(feature_dimension, feature_model, feature_model_parameter)
-    plot_feature_mode(activation_probability)
+    plot_activation_probability_bin(activation_probability)
+    plot_activation_probability(activation_probability)
 
-def plot_feature_mode(activation_probability, bins=100, figure_path=None):
+def plot_activation_probability(activation_probability, figure_path=None):
+    # Make a normed histogram. It'll be multiplied by 100 later.
+    # n, bins, patches = matplotlib.pyplot.hist(activation_probability, bins=100, normed=1)
+    #n, bins, patches = matplotlib.pyplot.hist(activation_probability)
+    matplotlib.pyplot.barh(numpy.arange(len(activation_probability)), activation_probability, align='center', alpha=0.5)
+    
+    if figure_path == None:
+        matplotlib.pyplot.show();
+    else:
+        matplotlib.pyplot.savefig(figure_path);
+
+def plot_activation_probability_bin(activation_probability, bins=100, figure_path=None):
     # Make a normed histogram. It'll be multiplied by 100 later.
     # n, bins, patches = matplotlib.pyplot.hist(activation_probability, bins=100, normed=1)
     n, bins, patches = matplotlib.pyplot.hist(activation_probability, bins=bins)
