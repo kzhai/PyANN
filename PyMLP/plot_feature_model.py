@@ -25,6 +25,7 @@ def parse_args():
                         feature_model="bernoulli",
                         feature_model_parameter="1",
                         feature_dimension=1000,
+                        feature_model_file=None,
                         )
     # parameter set 1
     # parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -39,6 +40,9 @@ def parse_args():
                       # help="image size [28,28]");
     # parser.add_option("--tile_size", type="string", dest="tile_size",
                       # help="tile size [10,10]");
+                      
+    parser.add_option("--feature_model_file", type="string", dest="feature_model_file",
+                      help="feature model file [None]");
 
     (options, args) = parser.parse_args();
     return options;
@@ -81,6 +85,7 @@ def plot_feature_model():
         assert feature_model_parameter > 0;
         
     feature_dimension = options.feature_dimension;
+    figure_path = options.feature_model_file
     '''
     image_size = options.image_size;
     image_size = tuple([int(x) for x in image_size.split(",")])
@@ -99,10 +104,10 @@ def plot_feature_model():
     print "========== ========== ========== ========== =========="
     
     activation_probability = sample_activation_probability(feature_dimension, feature_model, feature_model_parameter)
-    plot_activation_probability_bin(activation_probability)
-    plot_activation_probability(activation_probability)
+    plot_activation_probability_hist(activation_probability, 100, figure_path)
+    #plot_activation_probability_barh(activation_probability)
 
-def plot_activation_probability(activation_probability, figure_path=None):
+def plot_activation_probability_barh(activation_probability, figure_path=None):
     # Make a normed histogram. It'll be multiplied by 100 later.
     # n, bins, patches = matplotlib.pyplot.hist(activation_probability, bins=100, normed=1)
     #n, bins, patches = matplotlib.pyplot.hist(activation_probability)
@@ -113,10 +118,11 @@ def plot_activation_probability(activation_probability, figure_path=None):
     else:
         matplotlib.pyplot.savefig(figure_path);
 
-def plot_activation_probability_bin(activation_probability, bins=100, figure_path=None):
+def plot_activation_probability_hist(activation_probability, bins, figure_path=None):
     # Make a normed histogram. It'll be multiplied by 100 later.
-    # n, bins, patches = matplotlib.pyplot.hist(activation_probability, bins=100, normed=1)
+    #n, bins, patches = matplotlib.pyplot.hist(activation_probability, bins=bins, normed=1)
     n, bins, patches = matplotlib.pyplot.hist(activation_probability, bins=bins)
+    matplotlib.pyplot.xlim((0, 1))
 
     if figure_path == None:
         matplotlib.pyplot.show();

@@ -40,12 +40,12 @@ def sample_activation_probability(input_size, activation_style, activation_param
         for index in xrange(input_size):
             activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
     elif activation_style == "mixed_beta_bernoulli":
-        beta_mean, smooth = activation_parameter;
+        beta_mean, shape_beta = activation_parameter;
         scale = beta_mean / (1. - beta_mean);
         activation_probability = numpy.zeros(input_size);
         for index in xrange(input_size):
             rank = index + 1;
-            activation_probability[index] = numpy.random.beta(rank * scale / smooth, rank / smooth);
+            activation_probability[index] = numpy.random.beta(rank * scale / shape_beta, rank / shape_beta);
     elif activation_style == "reciprocal":
         activation_probability = activation_parameter / numpy.arange(1, input_size + 1);
         activation_probability = numpy.clip(activation_probability, 0., 1.);

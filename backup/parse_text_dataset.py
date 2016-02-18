@@ -101,7 +101,7 @@ def parse_data(label_information, type_information, input_file, output_feature_f
     
     print data_features.dtype, data_features.shape, numpy.max(data_features), numpy.min(data_features)
     # data_features = data_features.astype(numpy.float32);
-    data_features = data_features.astype(numpy.uint16);
+    data_features = data_features.astype(numpy.uint8);
     print data_features.dtype, data_features.shape, numpy.max(data_features), numpy.min(data_features)
     data_labels = data_labels.astype(numpy.uint8);
     print data_labels.dtype, data_labels.shape, numpy.max(data_labels), numpy.min(data_labels)
