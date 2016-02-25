@@ -123,6 +123,8 @@ def plot_activation_probability_hist(activation_probability, bins, figure_path=N
     #n, bins, patches = matplotlib.pyplot.hist(activation_probability, bins=bins, normed=1)
     n, bins, patches = matplotlib.pyplot.hist(activation_probability, bins=bins)
     matplotlib.pyplot.xlim((0, 1))
+    matplotlib.pyplot.rc('font', size=30)
+    #matplotlib.pyplot.xlabel("dropout rate")
 
     if figure_path == None:
         matplotlib.pyplot.show();
