@@ -22,11 +22,11 @@ def main(data_directory):
     
     clf = sklearn.svm.SVC(kernel="rbf")
     clf.fit(train_set_x, train_set_y)
-    print "SVC+rbf", clf.score(test_set_x, test_set_y)
+    print "SVM (RBF kernel)\t%f" % clf.score(test_set_x, test_set_y)
     
     clf = sklearn.svm.LinearSVC()
     clf.fit(train_set_x, train_set_y)
-    print "LinearSVC", clf.score(test_set_x, test_set_y)
+    print "SVM (linear kernel)\t%f" % clf.score(test_set_x, test_set_y)
     
 if __name__ == "__main__":
     data_directory = sys.argv[1];

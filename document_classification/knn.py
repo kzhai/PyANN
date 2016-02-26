@@ -15,11 +15,15 @@ def main(data_directory):
     test_set_x = numpy.load(os.path.join(data_directory, "test.feature.npy"))
     test_set_y = numpy.load(os.path.join(data_directory, "test.label.npy"))
     
-    for n_neighbors in [1, 5, 10]:
+    for n_neighbors in [1, 3, 5, 10]:
         clf = sklearn.neighbors.KNeighborsClassifier(n_neighbors=n_neighbors)
         clf.fit(train_set_x, train_set_y)
-        print "kNN+%d" % n_neighbors, clf.score(test_set_x, test_set_y)
+        print "k-NN (k=%d)\t%f" % (n_neighbors, clf.score(test_set_x, test_set_y))
 
+    clf = sklearn.neighbors.NearestCentroid()
+    clf.fit(train_set_x, train_set_y)
+    print "nearest centroid\t%g" % clf.score(test_set_x, test_set_y)
+    
 if __name__ == "__main__":
     data_directory = sys.argv[1];
     main(data_directory)
