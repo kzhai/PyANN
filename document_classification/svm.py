@@ -16,9 +16,9 @@ def main(data_directory):
     test_set_x = numpy.load(os.path.join(data_directory, "test.feature.npy"))
     test_set_y = numpy.load(os.path.join(data_directory, "test.label.npy"))
     
-    clf = sklearn.svm.SVC(kernel="linear")
-    clf.fit(train_set_x, train_set_y)
-    print "SVC+linear", clf.score(test_set_x, test_set_y)
+    #clf = sklearn.svm.SVC(kernel="linear")
+    #clf.fit(train_set_x, train_set_y)
+    #print "SVC+linear", clf.score(test_set_x, test_set_y)
     
     clf = sklearn.svm.SVC(kernel="rbf")
     clf.fit(train_set_x, train_set_y)
