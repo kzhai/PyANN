@@ -3,7 +3,6 @@
 PYANN_HOME=$HOME/Workspace/PyANN
 
 INPUT_DIRECTORY=$1
-echo "python document_classification/cosim.py $INPUT_DIRECTORY\\_normalized"
 
 python document_classification/cosim.py $INPUT_DIRECTORY\_normalized
 wait
