@@ -18,7 +18,7 @@ def main(data_directory):
     cosine_similarity = numpy.dot(test_set_x, train_set_x_over_norm.T);
     most_similar_index = numpy.argmax(cosine_similarity, axis=1);
     predicted_label = train_set_y[most_similar_index]
-    print "Cosine similarity\t%f" % 1.0 * numpy.sum(predicted_label == test_set_y) / len(predicted_label)
+    print "Cosine similarity\t%f" % (1.0 * numpy.sum(predicted_label == test_set_y) / len(predicted_label))
 
 if __name__ == "__main__":
     data_directory = sys.argv[1];
