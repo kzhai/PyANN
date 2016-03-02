@@ -78,6 +78,10 @@ def launch_test():
     print "========== ========== ========== ========== =========="
     '''
     
+    model_directory = model_directory.rstrip("/");
+    model_settings = os.path.basename(model_directory);
+    model_settings = model_settings.split("-")[:2];
+    
     model_file_path = os.path.join(model_directory, "model.pkl");
     network = cPickle.load(open(model_file_path, 'rb'));
     
@@ -89,12 +93,12 @@ def launch_test():
     for layer_index in xrange(1, len(generalized_dropout_layers)):
         test_layer_output = lasagne.layers.get_output(generalized_dropout_layers[layer_index], test_set_x, deterministic=True).eval();
         
-        figure_path = os.path.join(model_directory, "layer%d.output.pdf" % layer_index)
+        figure_path = os.path.join(model_directory, "%s-layer%d.output.pdf" % ("-".join(model_settings), layer_index))
 
         # Make a normed histogram. It'll be multiplied by 100 later.
         n, bins, patches = matplotlib.pyplot.hist(test_layer_output, bins=100)
         matplotlib.pyplot.rc('font', size=30)
-        #matplotlib.pyplot.xlabel("dropout rate")
+        # matplotlib.pyplot.xlabel("dropout rate")
     
         matplotlib.pyplot.savefig(figure_path);
 
