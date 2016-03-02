@@ -93,7 +93,7 @@ def launch_test():
     for layer_index in xrange(1, len(generalized_dropout_layers)):
         test_layer_output = lasagne.layers.get_output(generalized_dropout_layers[layer_index], test_set_x, deterministic=True).eval();
         
-        figure_path = os.path.join(model_directory, "%s-layer%d.output.pdf" % ("-".join(model_settings), layer_index))
+        figure_path = os.path.join(model_directory, "%s-layer%d-output.pdf" % ("-".join(model_settings), layer_index))
 
         # Make a normed histogram. It'll be multiplied by 100 later.
         n, bins, patches = matplotlib.pyplot.hist(test_layer_output, bins=100)
