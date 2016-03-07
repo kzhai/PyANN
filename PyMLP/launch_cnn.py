@@ -23,8 +23,8 @@ import networks.sdae
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
-                        input_directory=None,
-                        output_directory=None,
+                        input_file=None,
+                        output_file=None,
                         # pretrained_model_file=None,
                         input_shape=None,
                         
@@ -58,9 +58,9 @@ def parse_args():
                         # layer_corruption_levels="0",
                         )
     # parameter set 1
-    parser.add_option("--input_directory", type="string", dest="input_directory",
+    parser.add_option("--input_file", type="string", dest="input_file",
                       help="input directory [None]");
-    parser.add_option("--output_directory", type="string", dest="output_directory",
+    parser.add_option("--output_file", type="string", dest="output_file",
                       help="output directory [None]");
     parser.add_option("--input_shape", type="string", dest="input_shape",
                       help="input shape [None]");
@@ -273,9 +273,9 @@ def launch_cnn():
     assert(options.input_directory != None);
     assert(options.output_directory != None);
     
-    input_directory = options.input_directory;
-    input_directory = input_directory.rstrip("/");
-    dataset_name = os.path.basename(input_directory);
+    input_file = options.input_directory;
+    input_file = input_file.rstrip("/");
+    dataset_name = os.path.basename(input_file);
     
     '''
     pretrained_model_file = options.pretrained_model_file;
@@ -285,12 +285,12 @@ def launch_cnn():
         pretrained_model = cPickle.load(open(pretrained_model_file, 'rb'));
     '''
     
-    output_directory = options.output_directory;
-    if not os.path.exists(output_directory):
-        os.mkdir(output_directory);
-    output_directory = os.path.join(output_directory, dataset_name);
-    if not os.path.exists(output_directory):
-        os.mkdir(output_directory);
+    output_file = options.output_directory;
+    if not os.path.exists(output_file):
+        os.mkdir(output_file);
+    output_file = os.path.join(output_file, dataset_name);
+    if not os.path.exists(output_file):
+        os.mkdir(output_file);
     
     # create output directory
     now = datetime.datetime.now();
@@ -304,13 +304,13 @@ def launch_cnn():
     # suffix += "-l2r%d" % (L2_regularizer_lambdas);
     suffix += "/";
     
-    output_directory = os.path.join(output_directory, suffix);
-    os.mkdir(os.path.abspath(output_directory));
+    output_file = os.path.join(output_file, suffix);
+    os.mkdir(os.path.abspath(output_file));
         
     # store all the options to a file
-    options_output_file = open(output_directory + "option.txt", 'w');
+    options_output_file = open(output_file + "option.txt", 'w');
     # parameter set 1
-    options_output_file.write("input_directory=" + input_directory + "\n");
+    options_output_file.write("input_file=" + input_file + "\n");
     options_output_file.write("dataset_name=" + dataset_name + "\n");
     options_output_file.write("input_shape=" + str(input_shape) + "\n")
     
@@ -343,8 +343,8 @@ def launch_cnn():
 
     print "========== ========== ========== ========== =========="
     # parameter set 1
-    print "output_directory=" + output_directory
-    print "input_directory=" + input_directory
+    print "output_file=" + output_file
+    print "input_file=" + input_file
     print "dataset_name=" + dataset_name
     print "input_shape=" + str(input_shape)
     
@@ -374,8 +374,8 @@ def launch_cnn():
     # print "layer_corruption_levels=%s" % (layer_corruption_levels);
     print "========== ========== ========== ========== =========="
     
-    data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
-    data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
+    data_x = numpy.load(os.path.join(input_file, "train.feature.npy"))
+    data_y = numpy.load(os.path.join(input_file, "train.label.npy"))
     # data_x = numpy.asarray(data_x, numpy.float32) / 256
     # data_x = data_x / numpy.float32(256)
     # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
@@ -435,7 +435,7 @@ def launch_cnn():
     # if number_of_pretrain_epochs > 0:
         # network.pretrain_with_dae(data_x, layer_corruption_levels, number_of_epochs=number_of_pretrain_epochs)
     
-    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+    model_file_path = os.path.join(output_file, 'model-%d.pkl' % (0))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
@@ -512,7 +512,7 @@ def launch_cnn():
                     # save the best model
                     print 'best model found at epoch_index %i, minibatch_index %i, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
                 
-                    best_model_file_path = os.path.join(output_directory, 'model.pkl')
+                    best_model_file_path = os.path.join(output_file, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
                 
                 # print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
@@ -522,7 +522,7 @@ def launch_cnn():
         print 'epoch_index %i, average_train_loss %f, average_train_accuracy %f%%, running time %fs' % (epoch_index, average_train_loss, average_train_accuracy * 100, clock_epoch)
         
         if (epoch_index + 1) % snapshot_interval == 0:
-            model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+            model_file_path = os.path.join(output_file, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
         
     end_time = timeit.default_timer()

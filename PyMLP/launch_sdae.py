@@ -20,8 +20,8 @@ import networks
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
-                        input_directory=None,
-                        output_directory=None,
+                        input_file=None,
+                        output_file=None,
                         
                         # parameter set 2
                         number_of_epochs=-1,
@@ -49,9 +49,9 @@ def parse_args():
                         # number_of_pretrain_epochs=0,
                         )
     # parameter set 1
-    parser.add_option("--input_directory", type="string", dest="input_directory",
+    parser.add_option("--input_file", type="string", dest="input_file",
                       help="input directory [None]");
-    parser.add_option("--output_directory", type="string", dest="output_directory",
+    parser.add_option("--output_file", type="string", dest="output_file",
                       help="output directory [None]");
                       
     # parameter set 2
@@ -221,16 +221,16 @@ def launch_sdae():
     assert(options.input_directory != None);
     assert(options.output_directory != None);
     
-    input_directory = options.input_directory;
-    input_directory = input_directory.rstrip("/");
-    dataset_name = os.path.basename(input_directory);
+    input_file = options.input_directory;
+    input_file = input_file.rstrip("/");
+    dataset_name = os.path.basename(input_file);
     
-    output_directory = options.output_directory;
-    if not os.path.exists(output_directory):
-        os.mkdir(output_directory);
-    output_directory = os.path.join(output_directory, dataset_name);
-    if not os.path.exists(output_directory):
-        os.mkdir(output_directory);
+    output_file = options.output_directory;
+    if not os.path.exists(output_file):
+        os.mkdir(output_file);
+    output_file = os.path.join(output_file, dataset_name);
+    if not os.path.exists(output_file):
+        os.mkdir(output_file);
     
     # create output directory
     now = datetime.datetime.now();
@@ -244,13 +244,13 @@ def launch_sdae():
     # suffix += "-l2r%d" % (L2_regularizer_lambdas);
     suffix += "/";
     
-    output_directory = os.path.join(output_directory, suffix);
-    os.mkdir(os.path.abspath(output_directory));
+    output_file = os.path.join(output_file, suffix);
+    os.mkdir(os.path.abspath(output_file));
         
     # store all the options to a file
-    options_output_file = open(output_directory + "option.txt", 'w');
+    options_output_file = open(output_file + "option.txt", 'w');
     # parameter set 1
-    options_output_file.write("input_directory=" + input_directory + "\n");
+    options_output_file.write("input_file=" + input_file + "\n");
     options_output_file.write("dataset_name=" + dataset_name + "\n");
     # options_output_file.write("vocabulary_path=" + str(dict_file) + "\n");
     # parameter set 2
@@ -279,8 +279,8 @@ def launch_sdae():
     
     print "========== ========== ========== ========== =========="
     # parameter set 1
-    print "output_directory=" + output_directory
-    print "input_directory=" + input_directory
+    print "output_file=" + output_file
+    print "input_file=" + input_file
     print "dataset_name=" + dataset_name
     # print "dictionary file=" + str(dict_file)
     # parameter set 2
@@ -306,8 +306,8 @@ def launch_sdae():
     # print "number_of_pretrain_epochs=%s" % (number_of_pretrain_epochs);
     print "========== ========== ========== ========== =========="
     
-    data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
-    data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
+    data_x = numpy.load(os.path.join(input_file, "train.feature.npy"))
+    data_y = numpy.load(os.path.join(input_file, "train.label.npy"))
     # data_x = numpy.asarray(data_x, numpy.float32) / 256
     data_x = data_x / numpy.float32(256)
     # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
@@ -420,10 +420,10 @@ def launch_sdae():
             
             print 'training sdae layer %i, epoch %d, average cost %f, time elapsed %f' % (dae_index + 1, epoch_index, numpy.mean(average_pretrain_loss), end_time - start_time)
 
-        model_file_path = os.path.join(output_directory, 'model-layer-%d.pkl' % (dae_index + 1))
+        model_file_path = os.path.join(output_file, 'model-layer-%d.pkl' % (dae_index + 1))
         cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
         
-    model_file_path = os.path.join(output_directory, 'model.pkl')
+    model_file_path = os.path.join(output_file, 'model.pkl')
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
 if __name__ == '__main__':
