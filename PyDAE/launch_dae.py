@@ -55,8 +55,8 @@ def build_dae(
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
-                        input_file=None,
-                        output_file=None,
+                        input_directory=None,
+                        output_directory=None,
                         
                         # parameter set 2
                         number_of_epochs=-1,

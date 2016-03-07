@@ -19,7 +19,7 @@ import lasagne
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
-                        input_file=None,
+                        input_directory=None,
                         model_directory=None,
                         batch_size=0,
                         # best_model_only=False,

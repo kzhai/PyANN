@@ -23,8 +23,8 @@ import networks.sdae
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
-                        input_file=None,
-                        output_file=None,
+                        input_directory=None,
+                        output_directory=None,
                         # pretrained_model_file=None,
                         input_shape=None,
                         
