@@ -32,7 +32,7 @@ To launch PyANN modules, first redirect to the parent directory of PyANN source 
 
 To launch multi-layer perceptron (MLP) on mnist example dataset,
 
-	python -um PyMLP.launch_mlp \
+	python -um PyMLP.launch_train \
 		--input_directory=../input/mnist_784/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
@@ -45,7 +45,7 @@ To launch multi-layer perceptron (MLP) on mnist example dataset,
 
 The generic argument to run MLP is
 
-	python -um PyMLP.launch_mlp \
+	python -um PyMLP.launch_train \
 		--input_directory=$INPUT_DIRECTORY/$DATASET_NAME \
 		--output_directory=$OUTPUT_DIRECTORY/ \
 		--minibatch_size=$MINI_BATCH_SIZE \
@@ -59,7 +59,7 @@ The generic argument to run MLP is
 
 To use it as a logistic regression model
 
-	python -um PyMLP.launch_mlp \
+	python -um PyMLP.launch_train \
 		--input_directory=$INPUT_DIRECTORY/$DATASET_NAME/ \
 		--output_directory=$OUTPUT_DIRECTORY \
 		--minibatch_size=$MINI_BATCH_SIZE \
@@ -70,7 +70,7 @@ To use it as a logistic regression model
 
 Under any cirsumstances, you may also get help information and usage hints by running the following command
 
-	python -um PyMLP.launch_mlp --help
+	python -um PyMLP.launch_train --help
 
 ### Launch convolutional neural network (CNN)
 
