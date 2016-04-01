@@ -33,7 +33,7 @@ To launch PyANN modules, first redirect to the parent directory of PyANN source 
 To launch multi-layer perceptron (MLP) on mnist example dataset,
 
 	python -um PyMLP.launch_mlp \
-		--input_directory=../input/mnist/ \
+		--input_directory=../input/mnist_784/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=1000 \
