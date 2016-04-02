@@ -27,11 +27,11 @@ def parse_args():
                         # parameter set 2
                         number_of_epochs=-1,
                         minibatch_size=100,
-                        snapshot_interval=10,
+                        snapshot_interval=-1,
                         validation_interval=1000,
                         
                         # parameter set 3
-                        learning_rate=1e-3,
+                        learning_rate=1e-2,
                         
                         # parameter set 4
                         layer_dimensions=None,
