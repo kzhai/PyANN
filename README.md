@@ -53,7 +53,7 @@ The generic argument to run MLP is
 	  	--learning_rate=$LEARNING_RATE \
 		--number_of_training_data=$NUMBER_OF_TRAINING_DATA \
 		--objective_to_minimize=$OBJECTIVE_TO_MINIMIZE \
-		--layer_dimensions=$DIM_1,$DIM_2,...,$DIM_n \
+		--layer_dimensions=$DIM_0,$DIM_1,...,$DIM_n \
 		--layer_nonlinearities=$F_1,$F_2,...,$F_n
 
 To use it as a logistic regression model
