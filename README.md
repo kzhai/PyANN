@@ -101,11 +101,42 @@ The generic argument to run CNN is
 		--convolution_filter=$CONV_FILTER_1,$CONV_FILTER_2,...,$CONV_FILTER_n \
 		--convolution_nonlinearities=$CONV_F_1,$CONV_F_2,...,$CONV_F_n \
 		--dense_dimensions=$DENSE_DIM_1,$DENSE_DIM_2,...,$DENSE_DIM_m \
-		--dense_nonlinearities=$DENSE_F_1,$DENSE_F_2,...,$DENSE_F_n 
+		--dense_nonlinearities=$DENSE_F_1,$DENSE_F_2,...,$DENSE_F_m
 
 Under any cirsumstances, you may also get help information and usage hints by running the following command
 
 	python -um PyCNN.launch_train --help
+
+### Launch stacked denoising auto-encoders (SDAE)
+
+To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,
+
+	python -um PyDAE.launch_train \
+		--input_directory=../input/mnist_784/ \
+		--output_directory=../output/ \
+		--minibatch_size=1 \
+		--number_of_epochs=100 \
+		--learning_rate=0.001 \
+		--objective_to_minimize=binary_crossentropy \
+		--layer_dimensions=784,1024,1024 \
+		--layer_nonlinearities=sigmoid,sigmoid \
+		--layer_corruption_levels=0.8,0.5
+  
+The generic argument to run SDAE is
+
+	python -um PyDAE.launch_train \
+		--input_directory=$INPUT_DIRECTORY/$DATASET_NAME \
+		--output_directory=$OUTPUT_DIRECTORY/ \
+		--minibatch_size=$MINI_BATCH_SIZE \
+		--number_of_epochs=$NUMBER_OF_EPOCHS \
+	  	--learning_rate=$LEARNING_RATE \
+		--objective_to_minimize=$OBJECTIVE_TO_MINIMIZE \
+		--layer_dimensions=$DIM_0,$DIM_1,...,$DIM_n \
+		--layer_nonlinearities=$F_1,$F_2,...,$F_n
+
+Under any cirsumstances, you may also get help information and usage hints by running the following command
+
+	python -um PyDAE.launch_train --help
 
 Model Output and Snapshot
 ----------
