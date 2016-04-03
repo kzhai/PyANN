@@ -111,7 +111,7 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 
 To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,
 
-	python -um PyDAE.launch_train \
+	python -um PySDAE.launch_train \
 		--input_directory=../input/mnist_784/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
@@ -124,7 +124,7 @@ To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,
   
 The generic argument to run SDAE is
 
-	python -um PyDAE.launch_train \
+	python -um PySDAE.launch_train \
 		--input_directory=$INPUT_DIRECTORY/$DATASET_NAME \
 		--output_directory=$OUTPUT_DIRECTORY/ \
 		--minibatch_size=$MINI_BATCH_SIZE \
@@ -136,7 +136,7 @@ The generic argument to run SDAE is
 
 Under any cirsumstances, you may also get help information and usage hints by running the following command
 
-	python -um PyDAE.launch_train --help
+	python -um PySDAE.launch_train --help
 
 Model Output and Snapshot
 ----------
