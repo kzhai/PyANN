@@ -133,7 +133,7 @@ The generic argument to run DAE is
 		--objective_to_minimize=$OBJECTIVE_TO_MINIMIZE \
 		--layer_dimension=$DIM \
 		--layer_nonlinearity=$F \
-		--layer_corruption_level=$COR
+		--layer_corruption_level=$CORR
 
 Under any cirsumstances, you may also get help information and usage hints by running the following command
 
