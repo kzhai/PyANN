@@ -83,10 +83,10 @@ To launch convolutional neural network (CNN) on mnist example dataset,
 		--learning_rate=0.001 \
 		--number_of_training_data=50000 \
 		--objective_to_minimize=categorical_crossentropy \
-		--convolution_filter=64,32 \
-		--convolution_nonlinearities=sigmoid,sigmoid \
-		--dense_dimensions=1024,1024,10 \
-		--dense_nonlinearities=sigmoid,sigmoid,softmax
+		--convolution_filter=32,64 \
+		--convolution_nonlinearities=tanh,tanh \
+		--dense_dimensions=1024,10 \
+		--dense_nonlinearities=tanh,softmax
 
 The generic argument to run CNN is
 
