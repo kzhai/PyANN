@@ -139,7 +139,6 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 
 	python -um PyDAE.launch_train --help
 
-
 ### Launch stacked denoising auto-encoders (SDAE)
 
 To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,

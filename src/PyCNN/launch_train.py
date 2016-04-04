@@ -442,7 +442,7 @@ def launch_cnn():
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     
     # network = lasagne.layers.InputLayer(shape=(None, dense_dimensions[0]), input_var=input_data)
-    network = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
+    network = lasagne.layers.InputLayer(shape=tuple(input_shape), input_var=x)
         
     import cnn
     network = cnn.ConvolutionalNeuralNetwork(
@@ -475,6 +475,8 @@ def launch_cnn():
     
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    
+    #print network.get_output_shape(train_set_x.shape)
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
@@ -536,7 +538,7 @@ def launch_cnn():
             
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
-            print minibatch_x.shape, minibatch_y.shape
+            #print minibatch_x.shape, minibatch_y.shape
             average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
             
             # And a full pass over the validation data:
