@@ -71,6 +71,7 @@ class MultiLayerPerceptron(network.Network):
 
     def get_objective_to_minimize(self, label):
         train_loss = theano.tensor.mean(self.objective_to_minimize(self.get_output(), label))
+        
         train_loss += self.L1_regularizer();
         train_loss += self.L2_regularizer();
         

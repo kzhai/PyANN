@@ -102,7 +102,7 @@ class DenoisingAutoEncoder(network.Network):
     def get_all_params(self, **tags):
         #return lasagne.layers.get_all_params(self.network, **tags);
         return self.network.get_params(**tags);
-    
+
     '''
     def get_decoder_shape_for(self, input_shape):
         return input_shape

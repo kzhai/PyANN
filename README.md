@@ -107,6 +107,39 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 
 	python -um PyCNN.launch_train --help
 
+### Launch denoising auto-encoders (DAE)
+
+To launch denoising auto-encoders (DAE) on mnist example dataset,
+
+	python -um PyDAE.launch_train \
+		--input_directory=../input/mnist_784/ \
+		--output_directory=../output/ \
+		--minibatch_size=1 \
+		--number_of_epochs=100 \
+		--learning_rate=0.001 \
+		--objective_to_minimize=binary_crossentropy \
+		--layer_dimension=1024 \
+		--layer_nonlinearity=sigmoid \
+		--layer_corruption_level=0.2
+  
+The generic argument to run DAE is
+
+	python -um PyDAE.launch_train \
+		--input_directory=$INPUT_DIRECTORY/$DATASET_NAME \
+		--output_directory=$OUTPUT_DIRECTORY/ \
+		--minibatch_size=$MINI_BATCH_SIZE \
+		--number_of_epochs=$NUMBER_OF_EPOCHS \
+	  	--learning_rate=$LEARNING_RATE \
+		--objective_to_minimize=$OBJECTIVE_TO_MINIMIZE \
+		--layer_dimension=$DIM \
+		--layer_nonlinearity=$F \
+		--layer_corruption_level=$COR
+
+Under any cirsumstances, you may also get help information and usage hints by running the following command
+
+	python -um PyDAE.launch_train --help
+
+
 ### Launch stacked denoising auto-encoders (SDAE)
 
 To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,
@@ -120,7 +153,7 @@ To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,
 		--objective_to_minimize=binary_crossentropy \
 		--layer_dimensions=784,1024,1024 \
 		--layer_nonlinearities=sigmoid,sigmoid \
-		--layer_corruption_levels=0.8,0.5
+		--layer_corruption_levels=0.2,0.2
   
 The generic argument to run SDAE is
 
@@ -131,8 +164,9 @@ The generic argument to run SDAE is
 		--number_of_epochs=$NUMBER_OF_EPOCHS \
 	  	--learning_rate=$LEARNING_RATE \
 		--objective_to_minimize=$OBJECTIVE_TO_MINIMIZE \
-		--layer_dimensions=$DIM_0,$DIM_1,...,$DIM_n \
-		--layer_nonlinearities=$F_1,$F_2,...,$F_n
+		--layer_dimensions=$DIM_1,...,$DIM_n \
+		--layer_nonlinearities=$F_1,$F_2,...,$F_n \
+		--layer_corruption_levels=$CORR_1,$CORR_2,...,$CORR_n
 
 Under any cirsumstances, you may also get help information and usage hints by running the following command
 
