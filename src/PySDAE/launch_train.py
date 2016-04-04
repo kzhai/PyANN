@@ -352,8 +352,8 @@ def launch_sdae():
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     # y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     
-    import networks.sdae
-    network = networks.sdae.StackedDenoisingAutoEncoder(
+    import sdae
+    network = sdae.StackedDenoisingAutoEncoder(
         input_data=x,
         layer_shapes=layer_shapes,
         layer_nonlinearities=layer_nonlinearities,

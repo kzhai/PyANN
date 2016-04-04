@@ -17,8 +17,8 @@ import optparse
 
 import lasagne
 
-import networks
-import networks.sdae
+# import networks
+# import networks.sdae
 
 def parse_args():
     parser = optparse.OptionParser()
@@ -313,7 +313,8 @@ def launch_cnn():
     # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
     assert data_x.shape[0] == len(data_y);
     
-    input_shape = data_x.shape
+    input_shape = list(data_x.shape[1:])
+    input_shape.insert(0, None)
     
     # parameter set 7
     number_of_training_data = options.number_of_training_data;
@@ -359,7 +360,7 @@ def launch_cnn():
     # parameter set 1
     options_output_file.write("input_directory=" + input_directory + "\n");
     options_output_file.write("dataset_name=" + dataset_name + "\n");
-    options_output_file.write("input_shape=" + str(input_shape) + "\n")
+    # options_output_file.write("input_shape=" + str(input_shape) + "\n")
     
     # parameter set 2
     options_output_file.write("number_of_epochs=%d\n" % (number_of_epochs));
@@ -398,7 +399,7 @@ def launch_cnn():
     print "output_directory=" + output_directory
     print "input_directory=" + input_directory
     print "dataset_name=" + dataset_name
-    print "input_shape=" + str(input_shape)
+    # print "input_shape=" + str(input_shape)
     
     # parameter set 2
     print "number_of_epochs=%d" % (number_of_epochs);
@@ -440,13 +441,13 @@ def launch_cnn():
     x = theano.tensor.tensor4('x')
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     
-    input_shape = list(input_shape);
-    input_shape[0] = None;
-    
-    import networks.cnn
-    network = networks.cnn.ConvolutionalNeuralNetwork(
-        input_data=x,
-        input_shape=tuple(input_shape),
+    # network = lasagne.layers.InputLayer(shape=(None, dense_dimensions[0]), input_var=input_data)
+    network = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
+        
+    import cnn
+    network = cnn.ConvolutionalNeuralNetwork(
+        network=network,
+        # input_shape=tuple(input_shape),
         
         convolution_filters=convolution_filters,
         convolution_nonlinearities=convolution_nonlinearities,

@@ -19,109 +19,66 @@ import network
 
 from layers.dropout import GeneralizedDropoutLayer, sample_activation_probability
 
-from networks.dae import DenoisingAutoEncoder
+# from networks.dae import DenoisingAutoEncoder
 
-class ConvolutionalNeuralNetwork(network.Network):
+class MultiLayerPerceptron(network.Network):
     def __init__(self,
-            input_data=None,
-            input_shape=None,
-            
-            convolution_filters=None,
-            convolution_nonlinearities=None,
-            # convolution_filter_sizes=None,
-            # maxpooling_sizes=None,
-            
-            dense_dimensions=None,
-            dense_nonlinearities=None,
-            
-            dense_activation_parameters=None,
-            dense_activation_styles=None,
-            
-            convolution_filter_size=(5, 5),
-            maxpooling_size=(2, 2),
-            pooling_stride=None,
-            # pooling_stride=(1, 1),
-            
+            network=None,
+            layer_shapes=None,
+            layer_nonlinearities=None,
+            layer_activation_parameters=None,
+            layer_activation_styles=None,
             objective_to_minimize=None,
+            pretrained_model=None
             ):
-        self.input = input_data;
-
-        assert len(dense_activation_parameters) == len(dense_nonlinearities) + len(convolution_nonlinearities)
-        assert len(dense_activation_styles) == len(dense_nonlinearities) + len(convolution_nonlinearities)
+        self.input = lasagne.layers.get_output(network);
         
-        # network = lasagne.layers.InputLayer(shape=(None, dense_dimensions[0]), input_var=input_data)
-        network = lasagne.layers.InputLayer(shape=input_shape, input_var=input_data)
+        assert len(layer_shapes) == len(layer_nonlinearities)
+        assert len(layer_shapes) == len(layer_activation_parameters)
+        assert len(layer_shapes) == len(layer_activation_styles) 
         
-        dropout_layer_index = 0;
+        pretrained_network_layers = None;
+        if pretrained_model != None:
+            pretrained_network_layers = lasagne.layers.get_all_layers(pretrained_model.network);
         
-        # This time we do not apply input dropout, as it tends to work less well for convolutional layers.
-        assert len(convolution_filters) == len(convolution_nonlinearities);
-        
-        for conv_layer_index in xrange(len(convolution_filters)):
-            input_layer_shape = lasagne.layers.get_output_shape(network)[1:]
-            previous_layer_shape = numpy.prod(input_layer_shape)
+        for layer_index in xrange(1, len(layer_shapes)):
+            previous_layer_shape = layer_shapes[layer_index - 1]
             
-            activation_probability = sample_activation_probability(previous_layer_shape, dense_activation_styles[dropout_layer_index], dense_activation_parameters[dropout_layer_index]);
-            dropout_layer_index += 1;
-            
-            activation_probability = numpy.reshape(activation_probability, input_layer_shape)
-            print "before dropout", lasagne.layers.get_output_shape(network)
+            activation_probability = sample_activation_probability(previous_layer_shape, layer_activation_styles[layer_index - 1], layer_activation_parameters[layer_index - 1]);
             
             network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
             
-            conv_filter_number = convolution_filters[conv_layer_index];
-            conv_nonlinearity = convolution_nonlinearities[conv_layer_index];
+            layer_shape = layer_shapes[layer_index]
+            layer_nonlinearity = layer_nonlinearities[layer_index - 1];
             
-            # conv_filter_size = convolution_filter_sizes[conv_layer_index]
-            conv_filter_size = convolution_filter_size;
-            
-            print "before convolution", lasagne.layers.get_output_shape(network)
-            # Convolutional layer with 32 kernels of size 5x5. Strided and padded convolutions are supported as well; see the docstring.
-            network = lasagne.layers.Conv2DLayer(network,
-                                                 # W=W,
-                                                 num_filters=conv_filter_number,
-                                                 filter_size=conv_filter_size,
-                                                 nonlinearity=conv_nonlinearity,
-                                                 )
-            
-            # pooling_size = maxpooling_sizes[conv_layer_index];
-            pooling_size = maxpooling_size
-            
-            print "before maxpooling", lasagne.layers.get_output_shape(network)
-            # Max-pooling layer of factor 2 in both dimensions:
-            filter_size_for_pooling = lasagne.layers.get_output_shape(network)[2:]
-            if numpy.any(filter_size_for_pooling < pooling_size):
-                print "warning: filter size %s is smaller than pooling size %s, skip pooling layer" % (lasagne.layers.get_output_shape(network), pooling_size)
-                continue;
-            network = lasagne.layers.MaxPool2DLayer(network,
-                                                    pool_size=pooling_size,
-                                                    stride=pooling_stride,
-                                                    )
-            
-        assert len(dense_dimensions) == len(dense_nonlinearities)
-        for layer_index in xrange(len(dense_dimensions)):
-            input_layer_shape = lasagne.layers.get_output_shape(network)[1:]
-            previous_layer_shape = numpy.prod(input_layer_shape)
-            activation_probability = sample_activation_probability(previous_layer_shape, dense_activation_styles[dropout_layer_index], dense_activation_parameters[dropout_layer_index]);
-            dropout_layer_index += 1;
-            
-            activation_probability = numpy.reshape(activation_probability, input_layer_shape)
-
-            print "before dropout", lasagne.layers.get_output_shape(network)
-            network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
-            
-            layer_shape = dense_dimensions[layer_index]
-            layer_nonlinearity = dense_nonlinearities[layer_index];
-            
-            print "before dense", lasagne.layers.get_output_shape(network)
-            network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
-            
+            if pretrained_network_layers == None or len(pretrained_network_layers) <= layer_index:
+                network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
+            else:
+                pretrained_layer = pretrained_network_layers[layer_index];
+                assert isinstance(pretrained_layer, lasagne.layers.DenseLayer)
+                assert pretrained_layer.nonlinearity == layer_nonlinearity, (pretrained_layer.nonlinearity, layer_nonlinearity)
+                assert pretrained_layer.num_units == layer_shape
+                
+                network = lasagne.layers.DenseLayer(network,
+                                                    layer_shape,
+                                                    W=pretrained_layer.W,
+                                                    b=pretrained_layer.b,
+                                                    nonlinearity=layer_nonlinearity) 
+                
         self.network = network;
 
         assert objective_to_minimize != None;
         self.objective_to_minimize = objective_to_minimize;
+
+    def get_objective_to_minimize(self, label):
+        train_loss = theano.tensor.mean(self.objective_to_minimize(self.get_output(), label))
+        train_loss += self.L1_regularizer();
+        train_loss += self.L2_regularizer();
+        
+        train_loss += self.dae_regularizer();
+        
+        return train_loss
     
-    """
     def dae_regularizer(self):
         if self._layer_dae_regularizer_lambdas == None:
             return 0;
@@ -189,7 +146,7 @@ class ConvolutionalNeuralNetwork(network.Network):
             denoising_auto_encoders.append(denoising_auto_encoder);
 
         return denoising_auto_encoders;
-    """
+    
     """
     def pretrain_with_dae(self, data_x, layer_corruption_levels=None, number_of_epochs=50, minibatch_size=1, learning_rate=1e-3, momentum=0.95):
         denoising_auto_encoders = self.__build_dae_network(layer_corruption_levels);

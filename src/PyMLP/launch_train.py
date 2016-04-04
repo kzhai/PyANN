@@ -137,7 +137,7 @@ def launch_mlp():
     # parameter set 4
     assert options.layer_dimensions != None
     layer_shapes = [int(dimensionality) for dimensionality in options.layer_dimensions.split(",")]
-    number_of_layers = len(layer_shapes) - 1;
+    number_of_layers = len(layer_shapes);
 
     assert options.layer_nonlinearities != None
     layer_nonlinearities = options.layer_nonlinearities.split(",")
@@ -282,6 +282,9 @@ def launch_mlp():
     # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
     assert data_x.shape[0] == len(data_y);
     
+    input_shape = list(data_x.shape[1:]);
+    input_shape.insert(0, None)
+    
     # parameter set 6
     # assert(options.number_of_training_data <= 0);
     number_of_training_data = options.number_of_training_data;
@@ -417,9 +420,11 @@ def launch_mlp():
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     
-    import networks.mlp
-    network = networks.mlp.MultiLayerPerceptron(
-        input_data=x,
+    network = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
+    
+    import mlp
+    network = mlp.MultiLayerPerceptron(
+        network=network,
         layer_shapes=layer_shapes,
         layer_nonlinearities=layer_nonlinearities,
         layer_activation_parameters=layer_activation_parameters,
