@@ -150,7 +150,7 @@ To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,
 		--number_of_epochs=100 \
 		--learning_rate=0.001 \
 		--objective_to_minimize=binary_crossentropy \
-		--layer_dimensions=784,1024,1024 \
+		--layer_dimensions=1024,1024 \
 		--layer_nonlinearities=sigmoid,sigmoid \
 		--layer_corruption_levels=0.2,0.2
   

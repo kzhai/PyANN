@@ -129,7 +129,7 @@ def launch_sdae():
     # parameter set 4
     assert options.layer_dimensions != None
     layer_shapes = [int(dimensionality) for dimensionality in options.layer_dimensions.split(",")]
-    number_of_layers = len(layer_shapes) - 1;
+    number_of_layers = len(layer_shapes);
 
     assert options.layer_nonlinearities != None
     layer_nonlinearities = options.layer_nonlinearities.split(",")
@@ -245,6 +245,9 @@ def launch_sdae():
     # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
     assert data_x.shape[0] == len(data_y);
     
+    input_shape = list(data_x.shape[1:])
+    input_shape.insert(0, None)
+    
     # number_of_train = int(round(0.85 * len(data_y)));
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
@@ -353,8 +356,9 @@ def launch_sdae():
     # y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     
     import sdae
+    network = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
     network = sdae.StackedDenoisingAutoEncoder(
-        input_data=x,
+        network=network,
         layer_shapes=layer_shapes,
         layer_nonlinearities=layer_nonlinearities,
         
