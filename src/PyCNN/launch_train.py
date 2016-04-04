@@ -536,6 +536,7 @@ def launch_cnn():
             
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
+            print minibatch_x.shape, minibatch_y.shape
             average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
             
             # And a full pass over the validation data:
@@ -552,12 +553,11 @@ def launch_cnn():
                 
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-                
-                # print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+        
+        average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
+        print 'epoch_index %i, average_validate_loss %f, average_validate_accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, clock_epoch)
                 
         clock_epoch = time.time() - clock_epoch;
-    
-        print 'epoch_index %i, average_train_loss %f, average_train_accuracy %f%%, running time %fs' % (epoch_index, average_train_loss, average_train_accuracy * 100, clock_epoch)
         
         if (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))

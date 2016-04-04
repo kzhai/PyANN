@@ -520,12 +520,12 @@ def launch_mlp():
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
                 
                 #print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
-                
-        clock_epoch = time.time() - clock_epoch;
         
         average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
         print 'epoch_index %i, average_validate_loss %f, average_validate_accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, clock_epoch)
-        
+                        
+        clock_epoch = time.time() - clock_epoch;
+
         if (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
