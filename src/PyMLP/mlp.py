@@ -41,15 +41,14 @@ class MultiLayerPerceptron(network.Network):
         if pretrained_model != None:
             pretrained_network_layers = lasagne.layers.get_all_layers(pretrained_model.network);
         
-        for layer_index in xrange(1, len(layer_shapes)):
-            previous_layer_shape = layer_shapes[layer_index - 1]
-            
-            activation_probability = sample_activation_probability(previous_layer_shape, layer_activation_styles[layer_index - 1], layer_activation_parameters[layer_index - 1]);
+        for layer_index in xrange(len(layer_shapes)):
+            previous_layer_shape = lasagne.layers.get_output_shape(network)[1:];
+            activation_probability = sample_activation_probability(previous_layer_shape, layer_activation_styles[layer_index], layer_activation_parameters[layer_index]);
             
             network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
             
             layer_shape = layer_shapes[layer_index]
-            layer_nonlinearity = layer_nonlinearities[layer_index - 1];
+            layer_nonlinearity = layer_nonlinearities[layer_index];
             
             if pretrained_network_layers == None or len(pretrained_network_layers) <= layer_index:
                 network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
@@ -64,7 +63,7 @@ class MultiLayerPerceptron(network.Network):
                                                     W=pretrained_layer.W,
                                                     b=pretrained_layer.b,
                                                     nonlinearity=layer_nonlinearity) 
-                
+            
         self.network = network;
 
         assert objective_to_minimize != None;

@@ -56,9 +56,9 @@ class DenoisingAutoEncoder(network.Network):
 
         \tilde{x} ~ q_D(\tilde{x}|x)                                     (1)
 
-        y = s(W_encode \tilde{x} + b)                                           (2)
+        y = s(W_encode \tilde{x} + b)                                    (2)
 
-        x = s(W_encode' y  + b')                                                (3)
+        x = s(W_encode' y  + b')                                         (3)
 
         L(x,z) = -sum_{k=1}^d [x_k \log z_k + (1-x_k) \log( 1-z_k)]      (4)
     """

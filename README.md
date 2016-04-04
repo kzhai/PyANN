@@ -40,7 +40,7 @@ To launch multi-layer perceptron (MLP) on mnist example dataset,
 		--learning_rate=0.001 \
 		--number_of_training_data=50000 \
 		--objective_to_minimize=categorical_crossentropy \
-		--layer_dimensions=784,1024,1024,10 \
+		--layer_dimensions=1024,1024,10 \
 		--layer_nonlinearities=sigmoid,sigmoid,softmax
 
 The generic argument to run MLP is
@@ -53,7 +53,7 @@ The generic argument to run MLP is
 	  	--learning_rate=$LEARNING_RATE \
 		--number_of_training_data=$NUMBER_OF_TRAINING_DATA \
 		--objective_to_minimize=$OBJECTIVE_TO_MINIMIZE \
-		--layer_dimensions=$DIM_0,$DIM_1,...,$DIM_n \
+		--layer_dimensions=$DIM_1,...,$DIM_n \
 		--layer_nonlinearities=$F_1,$F_2,...,$F_n
 
 To use it as a logistic regression model
@@ -64,7 +64,7 @@ To use it as a logistic regression model
 		--minibatch_size=$MINI_BATCH_SIZE \
 		--number_of_epochs=$NUMBER_OF_EPOCHS \
 		--learning_rate=$LEARNING_RATE \
-		--layer_dimensions=$DIM_IN,$DIM_OUT \
+		--layer_dimensions=$DIM_OUT \
 		--layer_nonlinearities=softmax
 
 Under any cirsumstances, you may also get help information and usage hints by running the following command
