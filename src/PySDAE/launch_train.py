@@ -25,8 +25,8 @@ def parse_args():
                         
                         # parameter set 2
                         number_of_epochs=-1,
-                        minibatch_size=100,
-                        snapshot_interval=100,
+                        minibatch_size=1,
+                        snapshot_interval=10,
                         # validation_interval=1000,
                         
                         # parameter set 3

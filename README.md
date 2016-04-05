@@ -115,7 +115,7 @@ To launch denoising auto-encoders (DAE) on mnist example dataset,
 		--input_directory=../input/mnist_784/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
-		--number_of_epochs=20 \
+		--number_of_epochs=15 \
 		--learning_rate=0.001 \
 		--objective_to_minimize=binary_crossentropy \
 		--layer_dimension=1024 \
@@ -147,7 +147,7 @@ To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,
 		--input_directory=../input/mnist_784/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
-		--number_of_epochs=10 \
+		--number_of_epochs=15 \
 		--learning_rate=0.001 \
 		--objective_to_minimize=binary_crossentropy \
 		--layer_dimensions=1024,1024,1024 \
@@ -170,6 +170,37 @@ The generic argument to run SDAE is
 Under any cirsumstances, you may also get help information and usage hints by running the following command
 
 	python -um PySDAE.launch_train --help
+
+### Launch restricted Boltzmann machine (RBM)
+
+To launch restricted Boltzmann machine (RBM) on mnist example dataset,
+
+	python -um PyRBM.launch_train \
+		--input_directory=../input/mnist_784/ \
+		--output_directory=../output/ \
+		--minibatch_size=1 \
+		--number_of_epochs=15 \
+		--learning_rate=0.1 \
+		--layer_dimension=512 \
+		--number_of_gibbs_steps=15 \
+		--persistent
+		
+The generic argument to run RBM is
+
+	python -um PyRBM.launch_train \
+		--input_directory=$INPUT_DIRECTORY/$DATASET_NAME \
+		--output_directory=$OUTPUT_DIRECTORY/ \
+		--minibatch_size=$MINI_BATCH_SIZE \
+		--number_of_epochs=$NUMBER_OF_EPOCHS \
+	  	--learning_rate=$LEARNING_RATE \
+		--objective_to_minimize=$OBJECTIVE_TO_MINIMIZE \
+		--layer_dimensions=$DIM_1,...,$DIM_n \
+		--layer_nonlinearities=$F_1,$F_2,...,$F_n \
+		--layer_corruption_levels=$CORR_1,$CORR_2,...,$CORR_n
+
+Under any cirsumstances, you may also get help information and usage hints by running the following command
+
+	python -um PyRBM.launch_train --help
 
 Model Output and Snapshot
 ----------
