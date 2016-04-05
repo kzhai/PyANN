@@ -142,8 +142,7 @@ def evaluate_snapshot_batch(input_snapshot_path, test_set_x, test_set_y):
 
 def evaluate_snapshot_through_graph(input_snapshot_path, test_set_x, test_set_y):
     # allocate symbolic variables for the data
-    # x = theano.tensor.matrix('x')  # the data is presented as rasterized images
-    x = theano.tensor.tensor4('x')  # the data is presented as rasterized images
+    x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     
     network = cPickle.load(open(input_snapshot_path, 'rb'));
