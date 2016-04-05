@@ -442,11 +442,11 @@ def launch_cnn():
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     
     # network = lasagne.layers.InputLayer(shape=(None, dense_dimensions[0]), input_var=input_data)
-    network = lasagne.layers.InputLayer(shape=tuple(input_shape), input_var=x)
+    input_layer = lasagne.layers.InputLayer(shape=tuple(input_shape), input_var=x)
         
     import cnn
     network = cnn.ConvolutionalNeuralNetwork(
-        network=network,
+        input_network=input_layer,
         # input_shape=tuple(input_shape),
         
         convolution_filters=convolution_filters,

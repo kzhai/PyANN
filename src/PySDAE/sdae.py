@@ -24,7 +24,7 @@ from theano.tensor.shared_randomstreams import RandomStreams
 
 class StackedDenoisingAutoEncoder(network.Network):
     def __init__(self,
-            network=None,
+            input_network=None,
             layer_shapes=None,
             layer_nonlinearities=None,
             
@@ -35,6 +35,8 @@ class StackedDenoisingAutoEncoder(network.Network):
             
             objective_to_minimize=lasagne.objectives.binary_crossentropy,
             ):
+        self.input = lasagne.layers.get_output(input_network);
+
         assert len(layer_shapes) == len(layer_nonlinearities)
         assert len(layer_shapes) == len(layer_corruption_levels)
         # assert len(layer_activation_parameters) == len(layer_nonlinearities)
@@ -42,6 +44,7 @@ class StackedDenoisingAutoEncoder(network.Network):
         assert len(layer_shapes) == len(L1_regularizer_lambdas)
         assert len(layer_shapes) == len(L2_regularizer_lambdas)
         
+        network = input_network;
         denoising_auto_encoders = [];
         for layer_index in xrange(len(layer_shapes)):
             layer_shape = layer_shapes[layer_index]

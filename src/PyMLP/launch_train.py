@@ -136,8 +136,8 @@ def launch_mlp():
     
     # parameter set 4
     assert options.layer_dimensions != None
-    layer_shapes = [int(dimensionality) for dimensionality in options.layer_dimensions.split(",")]
-    number_of_layers = len(layer_shapes);
+    layer_dimensions = [int(dimensionality) for dimensionality in options.layer_dimensions.split(",")]
+    number_of_layers = len(layer_dimensions);
 
     assert options.layer_nonlinearities != None
     layer_nonlinearities = options.layer_nonlinearities.split(",")
@@ -350,7 +350,7 @@ def launch_mlp():
     options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
     
     # parameter set 4
-    options_output_file.write("layer_shapes=%s\n" % (layer_shapes));
+    options_output_file.write("layer_dimensions=%s\n" % (layer_dimensions));
     options_output_file.write("layer_nonlinearities=%s\n" % (layer_nonlinearities));
     
     options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
@@ -395,7 +395,7 @@ def launch_mlp():
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
     # parameter set 4
-    print "layer_shapes=%s" % (layer_shapes)
+    print "layer_dimensions=%s" % (layer_dimensions)
     print "layer_nonlinearities=%s" % (layer_nonlinearities)
     
     print "layer_activation_parameters=%s" % (layer_activation_parameters)
@@ -420,12 +420,12 @@ def launch_mlp():
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     
-    network = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
+    input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
     
     import mlp
     network = mlp.MultiLayerPerceptron(
-        network=network,
-        layer_shapes=layer_shapes,
+        input_network=input_layer,
+        layer_dimensions=layer_dimensions,
         layer_nonlinearities=layer_nonlinearities,
         layer_activation_parameters=layer_activation_parameters,
         layer_activation_styles=layer_activation_styles,

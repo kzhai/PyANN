@@ -106,7 +106,7 @@ def launch_train():
     
     # parameter set 4
     assert options.layer_dimension > 0;
-    layer_shape = options.layer_dimension
+    layer_dimension = options.layer_dimension
 
     assert options.layer_nonlinearity != None
     layer_nonlinearity = getattr(lasagne.nonlinearities, options.layer_nonlinearity)
@@ -192,7 +192,7 @@ def launch_train():
     options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
     options_output_file.write("objective_to_minimize=" + str(objective_to_minimize) + "\n");
     # parameter set 4
-    options_output_file.write("layer_shape=%s\n" % (layer_shape));
+    options_output_file.write("layer_dimension=%s\n" % (layer_dimension));
     options_output_file.write("layer_nonlinearity=%s\n" % (layer_nonlinearity));
     options_output_file.write("layer_corruption_level=%s\n" % (layer_corruption_level));
     # parameter set 5
@@ -215,7 +215,7 @@ def launch_train():
     print "learning_rate=" + str(learning_rate)
     print "objective_to_minimize=" + str(objective_to_minimize)
     # parameter set 4
-    print "layer_shape=%s" % (layer_shape)
+    print "layer_dimension=%s" % (layer_dimension)
     print "layer_nonlinearity=%s" % (layer_nonlinearity)
     print "layer_corruption_level=%s" % (layer_corruption_level)
     # parameter set 5
@@ -241,8 +241,8 @@ def launch_train():
     
     import dae
     network = dae.DenoisingAutoEncoder(
-            input_layer=input_layer,
-            layer_shape=100,
+            input_network=input_layer,
+            layer_dimension=layer_dimension,
             encoder_nonlinearity=layer_nonlinearity,
             decoder_nonlinearity=layer_nonlinearity,
             objective_to_minimize=objective_to_minimize,

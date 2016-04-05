@@ -23,7 +23,7 @@ from layers.dropout import GeneralizedDropoutLayer, sample_activation_probabilit
 
 class ConvolutionalNeuralNetwork(network.Network):
     def __init__(self,
-            network=None,
+            input_network=None,
             # input_shape=None,
             
             convolution_filters=None,
@@ -44,7 +44,7 @@ class ConvolutionalNeuralNetwork(network.Network):
             
             objective_to_minimize=None,
             ):
-        self.input = lasagne.layers.get_output(network);
+        self.input = lasagne.layers.get_output(input_network);
 
         assert len(dense_activation_parameters) == len(dense_nonlinearities) + len(convolution_nonlinearities)
         assert len(dense_activation_styles) == len(dense_nonlinearities) + len(convolution_nonlinearities)
@@ -54,6 +54,7 @@ class ConvolutionalNeuralNetwork(network.Network):
         # This time we do not apply input dropout, as it tends to work less well for convolutional layers.
         assert len(convolution_filters) == len(convolution_nonlinearities);
         
+        network = input_network;
         for conv_layer_index in xrange(len(convolution_filters)):
             input_layer_shape = lasagne.layers.get_output_shape(network)[1:]
             previous_layer_shape = numpy.prod(input_layer_shape)

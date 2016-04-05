@@ -23,43 +23,44 @@ from layers.dropout import GeneralizedDropoutLayer, sample_activation_probabilit
 
 class MultiLayerPerceptron(network.Network):
     def __init__(self,
-            network=None,
-            layer_shapes=None,
+            input_network=None,
+            layer_dimensions=None,
             layer_nonlinearities=None,
             layer_activation_parameters=None,
             layer_activation_styles=None,
             objective_to_minimize=None,
             pretrained_model=None
             ):
-        self.input = lasagne.layers.get_output(network);
+        self.input = lasagne.layers.get_output(input_network);
         
-        assert len(layer_shapes) == len(layer_nonlinearities)
-        assert len(layer_shapes) == len(layer_activation_parameters)
-        assert len(layer_shapes) == len(layer_activation_styles) 
+        assert len(layer_dimensions) == len(layer_nonlinearities)
+        assert len(layer_dimensions) == len(layer_activation_parameters)
+        assert len(layer_dimensions) == len(layer_activation_styles) 
         
         pretrained_network_layers = None;
         if pretrained_model != None:
             pretrained_network_layers = lasagne.layers.get_all_layers(pretrained_model.network);
         
-        for layer_index in xrange(len(layer_shapes)):
-            previous_layer_shape = lasagne.layers.get_output_shape(network)[1:];
-            activation_probability = sample_activation_probability(previous_layer_shape, layer_activation_styles[layer_index], layer_activation_parameters[layer_index]);
+        network = input_network;
+        for layer_index in xrange(len(layer_dimensions)):
+            previous_layer_dimension = lasagne.layers.get_output_shape(network)[1:];
+            activation_probability = sample_activation_probability(previous_layer_dimension, layer_activation_styles[layer_index], layer_activation_parameters[layer_index]);
             
             network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
             
-            layer_shape = layer_shapes[layer_index]
+            layer_dimension = layer_dimensions[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index];
             
             if pretrained_network_layers == None or len(pretrained_network_layers) <= layer_index:
-                network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
+                network = lasagne.layers.DenseLayer(network, layer_dimension, nonlinearity=layer_nonlinearity)
             else:
                 pretrained_layer = pretrained_network_layers[layer_index];
                 assert isinstance(pretrained_layer, lasagne.layers.DenseLayer)
                 assert pretrained_layer.nonlinearity == layer_nonlinearity, (pretrained_layer.nonlinearity, layer_nonlinearity)
-                assert pretrained_layer.num_units == layer_shape
+                assert pretrained_layer.num_units == layer_dimension
                 
                 network = lasagne.layers.DenseLayer(network,
-                                                    layer_shape,
+                                                    layer_dimension,
                                                     W=pretrained_layer.W,
                                                     b=pretrained_layer.b,
                                                     nonlinearity=layer_nonlinearity) 

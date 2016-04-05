@@ -63,8 +63,8 @@ class DenoisingAutoEncoder(network.Network):
         L(x,z) = -sum_{k=1}^d [x_k \log z_k + (1-x_k) \log( 1-z_k)]      (4)
     """
     def __init__(self,
-            input_layer=None,
-            layer_shape=100,
+            input_network=None,
+            layer_dimension=100,
             encoder_nonlinearity=lasagne.nonlinearities.sigmoid,
             decoder_nonlinearity=lasagne.nonlinearities.identity,
             objective_to_minimize=lasagne.objectives.squared_error,
@@ -74,11 +74,12 @@ class DenoisingAutoEncoder(network.Network):
             b_encoder=init.Constant(0.),
             b_decoder=init.Constant(0.),
             **kwargs):
-        self.input = lasagne.layers.get_output(input_layer);
+        self.input = lasagne.layers.get_output(input_network);
         
+        network = input_network;
         network = DenoisingAutoEncoderLayer(
-            input_layer,
-            layer_shape,
+            network,
+            layer_dimension,
             corruption_level,
             W_encoder=W_encoder,
             b_encoder=b_encoder,
