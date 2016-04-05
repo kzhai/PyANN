@@ -489,7 +489,8 @@ def launch_cnn():
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
-    all_params = network.get_all_params(trainable=True)
+    all_params = network.get_network_params(trainable=True)
+    #all_params = network.get_all_params(trainable=True)
     updates = lasagne.updates.nesterov_momentum(train_loss, all_params, learning_rate, momentum=0.95)
     # updates = lasagne.updates.adagrad(train_loss, all_params, learning_rate);
     # updates = lasagne.updates.sgd(train_loss, all_params, learning_rate);

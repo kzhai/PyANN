@@ -63,8 +63,8 @@ class DenoisingAutoEncoder(network.Network):
         L(x,z) = -sum_{k=1}^d [x_k \log z_k + (1-x_k) \log( 1-z_k)]      (4)
     """
     def __init__(self,
-            input_network=None,
-            layer_dimension=100,
+            input_network,
+            layer_dimension,
             encoder_nonlinearity=lasagne.nonlinearities.sigmoid,
             decoder_nonlinearity=lasagne.nonlinearities.identity,
             objective_to_minimize=lasagne.objectives.squared_error,
@@ -74,8 +74,8 @@ class DenoisingAutoEncoder(network.Network):
             b_encoder=init.Constant(0.),
             b_decoder=init.Constant(0.),
             **kwargs):
-        self.input = lasagne.layers.get_output(input_network);
-        
+        super(DenoisingAutoEncoder, self).__init__(input_network)
+
         network = input_network;
         network = DenoisingAutoEncoderLayer(
             network,
@@ -93,7 +93,7 @@ class DenoisingAutoEncoder(network.Network):
         self.objective_to_minimize = objective_to_minimize;
         
     def get_objective_to_minimize(self):
-        train_loss = theano.tensor.mean(theano.tensor.sum(self.objective_to_minimize(self.get_output(), self.input), axis=1))
+        train_loss = theano.tensor.mean(theano.tensor.sum(self.objective_to_minimize(self.get_output(), lasagne.layers.get_output(self.input_network)), axis=1))
         
         train_loss += self.L1_regularizer()
         train_loss += self.L2_regularizer();
@@ -101,7 +101,7 @@ class DenoisingAutoEncoder(network.Network):
         return train_loss
     
     def get_all_params(self, **tags):
-        #return lasagne.layers.get_all_params(self.network, **tags);
+        # return lasagne.layers.get_all_params(self.network, **tags);
         return self.network.get_params(**tags);
 
     '''

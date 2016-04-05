@@ -35,7 +35,7 @@ class StackedDenoisingAutoEncoder(network.Network):
             
             objective_to_minimize=lasagne.objectives.binary_crossentropy,
             ):
-        self.input = lasagne.layers.get_output(input_network);
+        super(StackedDenoisingAutoEncoder, self).__init__(input_network, **kwargs)
 
         assert len(layer_shapes) == len(layer_nonlinearities)
         assert len(layer_shapes) == len(layer_corruption_levels)

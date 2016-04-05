@@ -44,7 +44,7 @@ class ConvolutionalNeuralNetwork(network.Network):
             
             objective_to_minimize=None,
             ):
-        self.input = lasagne.layers.get_output(input_network);
+        super(ConvolutionalNeuralNetwork, self).__init__(input_network)
 
         assert len(dense_activation_parameters) == len(dense_nonlinearities) + len(convolution_nonlinearities)
         assert len(dense_activation_styles) == len(dense_nonlinearities) + len(convolution_nonlinearities)

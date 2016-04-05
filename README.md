@@ -114,8 +114,8 @@ To launch denoising auto-encoders (DAE) on mnist example dataset,
 	python -um PyDAE.launch_train \
 		--input_directory=../input/mnist_784/ \
 		--output_directory=../output/ \
-		--minibatch_size=1 \
-		--number_of_epochs=100 \
+		--minibatch_size=100 \
+		--number_of_epochs=10 \
 		--learning_rate=0.001 \
 		--objective_to_minimize=binary_crossentropy \
 		--layer_dimension=1024 \
@@ -146,8 +146,8 @@ To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,
 	python -um PySDAE.launch_train \
 		--input_directory=../input/mnist_784/ \
 		--output_directory=../output/ \
-		--minibatch_size=1 \
-		--number_of_epochs=100 \
+		--minibatch_size=100 \
+		--number_of_epochs=10 \
 		--learning_rate=0.001 \
 		--objective_to_minimize=binary_crossentropy \
 		--layer_dimensions=1024,1024 \

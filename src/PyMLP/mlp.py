@@ -31,8 +31,8 @@ class MultiLayerPerceptron(network.Network):
             objective_to_minimize=None,
             pretrained_model=None
             ):
-        self.input = lasagne.layers.get_output(input_network);
-        
+        super(MultiLayerPerceptron, self).__init__(input_network)
+
         assert len(layer_dimensions) == len(layer_nonlinearities)
         assert len(layer_dimensions) == len(layer_activation_parameters)
         assert len(layer_dimensions) == len(layer_activation_styles) 

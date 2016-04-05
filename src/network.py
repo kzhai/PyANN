@@ -1,3 +1,5 @@
+from itertools import chain
+
 import abc
 import os
 import sys
@@ -15,6 +17,8 @@ import datetime
 import optparse
 
 import lasagne
+import lasagne.layers
+import lasagne.utils
 
 def mean_categorical_crossentropy(network, label):
     # Create a train_loss expression for training, i.e., a scalar objective we want
@@ -47,7 +51,10 @@ def updates(loss_function, learning_rate):
 '''
 
 class Network(object):
-    __metaclass__ = abc.ABCMeta
+    # __metaclass__ = abc.ABCMeta
+    def __init__(self, input_network):
+        #self.input_network = lasagne.layers.get_output(input_network);
+        self.input_network = input_network;
     
     '''
     def __init__(self,
@@ -107,21 +114,40 @@ class Network(object):
     
     def get_output_shape(self, input_shapes=None):
         return lasagne.layers.get_output_shape(self.network, input_shapes);
-    
+
     def get_all_layers(self, treat_as_input=None):
-        return lasagne.layers.get_all_layers(self.network, treat_as_input=None);
+        return lasagne.layers.get_all_layers(self.network, treat_as_input);
+        
+    def get_network_output(self, inputs=None, **kwargs):
+        return lasagne.layers.get_output(self.network, inputs, **kwargs)
     
-    def get_all_params(self, **tags):
-        return lasagne.layers.get_all_params(self.network, **tags);
+    def get_network_output_shape(self, input_shapes=None):
+        return lasagne.layers.get_output_shape(self.network, input_shapes);
+        
+    def get_network_layers(self):
+        return lasagne.layers.get_all_layers(layer=self.network, treat_as_input=[self.input_network]);
+        
+    def get_network_params(self, **tags):
+        #return lasagne.layers.get_all_params(self.get_all_layers()[1:], **tags);
+        params = chain.from_iterable(l.get_params(**tags) for l in self.get_network_layers()[1:])
+        return lasagne.utils.unique(params)
     
     def count_params(self, **tags):
-        return lasagne.layers.count_params(self.network, **tags);
+        #return lasagne.layers.count_params(self.get_all_layers()[1:], **tags);
+        params = self.get_network_params(**tags)
+        shapes = [p.get_value().shape for p in params]
+        counts = [numpy.prod(shape) for shape in shapes]
+        return sum(counts)
     
-    def get_all_param_values(self, **tags):
-        return lasagne.layers.get_all_param_values(self.network, **tags);
+    def get_network_param_values(self, **tags):
+        #return lasagne.layers.get_all_param_values(self.get_all_layers()[1:], **tags);
+        params = self.get_network_params(**tags)
+        return [p.get_value() for p in params]
     
+    '''
     def set_all_param_values(self, values, **tags):
         lasagne.layers.set_all_param_values(self.network, values, **tags)
+    '''
     
     def set_input_variable(self, input):
         '''This is to establish the computational graph'''
