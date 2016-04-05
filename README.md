@@ -146,14 +146,14 @@ To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,
 	python -um PySDAE.launch_train \
 		--input_directory=../input/mnist_784/ \
 		--output_directory=../output/ \
-		--minibatch_size=100 \
+		--minibatch_size=1 \
 		--number_of_epochs=10 \
 		--learning_rate=0.001 \
 		--objective_to_minimize=binary_crossentropy \
-		--layer_dimensions=1024,1024 \
-		--layer_nonlinearities=sigmoid,sigmoid \
-		--layer_corruption_levels=0.2,0.2
-  
+		--layer_dimensions=1024,1024,1024 \
+		--layer_nonlinearities=sigmoid,sigmoid,sigmoid \
+		--layer_corruption_levels=0.1,0.2,0.3
+
 The generic argument to run SDAE is
 
 	python -um PySDAE.launch_train \

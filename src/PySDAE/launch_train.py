@@ -380,6 +380,12 @@ def launch_sdae():
         # Create update expressions for training, i.e., how to modify the
         # parameters at each training step. Here, we'll use Stochastic Gradient
         # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
+
+        #print network.get_all_params(trainable=True)
+        #print denoising_auto_encoder.get_network_params(trainable=True)
+        #print denoising_auto_encoder.count_network_params(trainable=True)
+        #print denoising_auto_encoder.get_all_params(trainable=True);
+        #print denoising_auto_encoder.count_all_params(trainable=True);
         
         all_dae_params = denoising_auto_encoder.get_network_params(trainable=True)
         # all_dae_params = lasagne.layers.get_all_params(denoising_auto_encoder, trainable=True)
@@ -390,7 +396,7 @@ def launch_sdae():
         train_function = theano.function(
             inputs=[x],
             outputs=[train_loss,
-                     denoising_auto_encoder.input,
+                     lasagne.layers.get_output(denoising_auto_encoder.input_network),
                      # denoising_auto_encoder.network.get_encoder_output_for(self.input),
                      # denoising_auto_encoder.network.get_decoder_output_for(self.input),
                      # denoising_auto_encoder.network.get_output_for(self.input)

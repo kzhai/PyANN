@@ -117,7 +117,13 @@ class Network(object):
 
     def get_all_layers(self, treat_as_input=None):
         return lasagne.layers.get_all_layers(self.network, treat_as_input);
-        
+    
+    def get_all_params(self, **tags):
+        return lasagne.layers.get_all_params(self.network, **tags);
+    
+    def count_all_params(self, **tags):
+        return lasagne.layers.count_params(self.network, **tags);
+    
     def get_network_output(self, inputs=None, **kwargs):
         return lasagne.layers.get_output(self.network, inputs, **kwargs)
     
@@ -125,14 +131,13 @@ class Network(object):
         return lasagne.layers.get_output_shape(self.network, input_shapes);
         
     def get_network_layers(self):
-        return lasagne.layers.get_all_layers(layer=self.network, treat_as_input=[self.input_network]);
+        return lasagne.layers.get_all_layers(self.network, [self.input_network]);
         
     def get_network_params(self, **tags):
-        #return lasagne.layers.get_all_params(self.get_all_layers()[1:], **tags);
         params = chain.from_iterable(l.get_params(**tags) for l in self.get_network_layers()[1:])
         return lasagne.utils.unique(params)
     
-    def count_params(self, **tags):
+    def count_network_params(self, **tags):
         #return lasagne.layers.count_params(self.get_all_layers()[1:], **tags);
         params = self.get_network_params(**tags)
         shapes = [p.get_value().shape for p in params]
