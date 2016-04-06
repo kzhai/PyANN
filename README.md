@@ -193,10 +193,9 @@ The generic argument to run RBM is
 		--minibatch_size=$MINI_BATCH_SIZE \
 		--number_of_epochs=$NUMBER_OF_EPOCHS \
 	  	--learning_rate=$LEARNING_RATE \
-		--objective_to_minimize=$OBJECTIVE_TO_MINIMIZE \
-		--layer_dimensions=$DIM_1,...,$DIM_n \
-		--layer_nonlinearities=$F_1,$F_2,...,$F_n \
-		--layer_corruption_levels=$CORR_1,$CORR_2,...,$CORR_n
+		--layer_dimension=$DIM \
+		--number_of_gibbs_steps=$NUMBER_OF_GIBBS_STEPS \
+		--persistent
 
 Under any cirsumstances, you may also get help information and usage hints by running the following command
 

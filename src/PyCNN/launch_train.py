@@ -17,9 +17,6 @@ import optparse
 
 import lasagne
 
-# import networks
-# import networks.sdae
-
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
@@ -523,7 +520,11 @@ def launch_cnn():
     
     highest_prediction_accuracy = 0
     best_iteration_index = 0
+    
     start_time = timeit.default_timer()
+    
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     # compute number of minibatches for training, validation and testing
     # number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
@@ -552,20 +553,23 @@ def launch_cnn():
                     best_iteration_index = iteration_index
                     
                     # save the best model
-                    print 'best model found at epoch_index %i, minibatch_index %i, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
+                    print 'best model found at epoch %i, minibatch %i, average validate accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
                 
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
         
         average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
-        print 'epoch_index %i, average_validate_loss %f, average_validate_accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, clock_epoch)
+        print 'epoch %i, average validate loss %f, average validate accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, clock_epoch)
                 
         clock_epoch = time.time() - clock_epoch;
         
         if (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-        
+    
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    
     end_time = timeit.default_timer()
     print "Optimization complete..."
     print "Best validation score of %f%% obtained at iteration %i" % (highest_prediction_accuracy * 100., best_iteration_index);

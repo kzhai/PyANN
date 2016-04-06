@@ -15,8 +15,6 @@ import optparse
 
 import lasagne
 
-import networks
-
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
@@ -405,44 +403,35 @@ def launch_sdae():
         )
         
         train_functions.append(train_function);
+
+    ###############
+    # TRAIN MODEL #
+    ###############
+
+    start_time = timeit.default_timer()
+    
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     number_of_minibatches = train_set_x.shape[0] / minibatch_size
-
-    '''
+    
     for dae_index in xrange(len(denoising_auto_encoders)):
-        print "current layer:", denoising_auto_encoders[dae_index]
-        print denoising_auto_encoders[dae_index].get_output_shape()
-        dae_layer = denoising_auto_encoders[dae_index].network;
-        print lasagne.layers.get_output_shape(dae_layer)
-        
-        minibatch_x = train_set_x[0:2, :];
-        function_output = train_functions[dae_index](minibatch_x)
-        
-        print function_output[0], function_output[1].shape
-    '''
-
-    # start_time = timeit.default_timer()
-    for dae_index in xrange(len(denoising_auto_encoders)):
-        # denoising_auto_encoder = denoising_auto_encoders[dae_index]
-        # layer_corruption_level = layer_corruption_levels[dae_index]
         for epoch_index in xrange(number_of_epochs):
-            start_time = time.time()
-             
-            average_pretrain_loss = []
+            clock_epoch = time.time()
+            
+            average_train_losses = []
             for minibatch_index in xrange(number_of_minibatches):
                 iteration_index = epoch_index * number_of_minibatches + minibatch_index
-            
                 minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
                 
                 function_output = train_functions[dae_index](minibatch_x)
-                temp_average_train_loss = function_output[0];
-                # print temp_average_train_loss
+                average_train_loss = function_output[0];
                 
-                average_pretrain_loss.append(temp_average_train_loss)
+                average_train_losses.append(average_train_loss)
             
-            end_time = time.time()
+            clock_epoch = time.time() - clock_epoch;
             
-            print 'training sdae layer %i, epoch %d, average cost %f, time elapsed %f' % (dae_index + 1, epoch_index, numpy.mean(average_pretrain_loss), end_time - start_time)
+            print 'layer %i, epoch %d, average train loss %f, time elapsed %f' % (dae_index + 1, epoch_index, numpy.mean(average_train_losses), clock_epoch)
 
         model_file_path = os.path.join(output_directory, 'model-layer-%d.pkl' % (dae_index + 1))
         cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
@@ -450,5 +439,11 @@ def launch_sdae():
     model_file_path = os.path.join(output_directory, 'model.pkl')
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
+    end_time = timeit.default_timer()
+    print "Optimization complete..."
+    print >> sys.stderr, ('The code for file ' + 
+                          os.path.split(__file__)[1] + 
+                          ' ran for %.2fm' % ((end_time - start_time) / 60.))
+    
 if __name__ == '__main__':
     launch_sdae()

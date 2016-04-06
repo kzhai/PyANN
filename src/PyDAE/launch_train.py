@@ -312,6 +312,7 @@ def launch_train():
     for epoch_index in range(number_of_epochs):
         # In each epoch_index, we do a full pass over the training data:
         clock_epoch = time.time();
+        minibatch_train_losses = []
         for minibatch_index in xrange(number_of_minibatches):
 
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
@@ -321,15 +322,19 @@ def launch_train():
             
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             # minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
-            average_train_loss, average_train_prediction = train_function(minibatch_x)
+            minibatch_train_loss, average_train_prediction = train_function(minibatch_x)
+            minibatch_train_losses.append(minibatch_train_loss);
 
         clock_epoch = time.time() - clock_epoch;
         
-        print 'epoch_index %i, average_train_loss %f, running time %fs' % (epoch_index, average_train_loss, clock_epoch)
+        print 'epoch %i, average train loss %f, running time %fs' % (epoch_index, numpy.mean(minibatch_train_losses), clock_epoch)
 
         if (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+            
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
         
     end_time = timeit.default_timer()
     print "Optimization complete..."
