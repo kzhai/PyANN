@@ -171,9 +171,9 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 
 	python -um PySDAE.launch_train --help
 
-### Launch restricted Boltzmann machine (RBM)
+### Launch restricted Boltzmann machines (RBM)
 
-To launch restricted Boltzmann machine (RBM) on mnist example dataset,
+To launch restricted Boltzmann machines (RBM) on mnist example dataset,
 
 	python -um PyRBM.launch_train \
 		--input_directory=../input/mnist_784/ \
@@ -181,11 +181,41 @@ To launch restricted Boltzmann machine (RBM) on mnist example dataset,
 		--minibatch_size=1 \
 		--number_of_epochs=15 \
 		--learning_rate=0.1 \
-		--layer_dimension=512 \
+		--layer_dimension=1024 \
 		--number_of_gibbs_steps=15 \
 		--persistent
 		
 The generic argument to run RBM is
+
+	python -um PyRBM.launch_train \
+		--input_directory=$INPUT_DIRECTORY/$DATASET_NAME \
+		--output_directory=$OUTPUT_DIRECTORY/ \
+		--minibatch_size=$MINI_BATCH_SIZE \
+		--number_of_epochs=$NUMBER_OF_EPOCHS \
+	  	--learning_rate=$LEARNING_RATE \
+		--layer_dimension=$DIM \
+		--number_of_gibbs_steps=$NUMBER_OF_GIBBS_STEPS \
+		--persistent
+
+Under any cirsumstances, you may also get help information and usage hints by running the following command
+
+	python -um PyRBM.launch_train --help
+
+### Launch deep belief networks (DBN)
+
+To launch deep belief networks (DBN) on mnist example dataset,
+
+	python -um PyDBM.launch_train \
+		--input_directory=../input/mnist_784/ \
+		--output_directory=../output/ \
+		--minibatch_size=1 \
+		--number_of_epochs=15 \
+		--learning_rate=0.1 \
+		--layer_dimension=1024 \
+		--number_of_gibbs_steps=15 \
+		--persistent
+		
+The generic argument to run DBN is 
 
 	python -um PyRBM.launch_train \
 		--input_directory=$INPUT_DIRECTORY/$DATASET_NAME \
