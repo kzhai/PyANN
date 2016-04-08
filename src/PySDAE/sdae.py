@@ -70,6 +70,8 @@ class StackedDenoisingAutoEncoder(network.Network):
                 b_encoder=hidden_layer.b,
                 )
             
+            theano.printing.debugprint(denoising_auto_encoder)
+            
             L1_regularizer_lambda = L1_regularizer_lambdas[layer_index];
             L2_regularizer_lambda = L2_regularizer_lambdas[layer_index];
             denoising_auto_encoder.set_L1_regularizer_lambda(L1_regularizer_lambda)

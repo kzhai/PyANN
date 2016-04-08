@@ -263,11 +263,14 @@ def launch_train():
     train_loss = network.get_objective_to_minimize();
     # train_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=1), y), dtype=theano.config.floatX)
     
+    #theano.printing.debugprint(train_loss)
+    
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_params = network.get_network_params(trainable=True)
     updates = lasagne.updates.nesterov_momentum(train_loss, all_params, learning_rate, momentum=0.95)
+    #updates = lasagne.updates.sgd(train_loss, all_params, learning_rate)
 
     '''
     # Create a train_loss expression for validation/testing. The crucial difference

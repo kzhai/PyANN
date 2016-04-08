@@ -142,12 +142,12 @@ class DenoisingAutoEncoderLayer(Layer):
             input *= filter_mask
         '''
         
-        filter_mask = get_filter_mask(input, 1 - self.corruption_level);
-        input *= filter_mask
-        
         if input.ndim > 2:
             # if the input has more than two dimensions, flatten it into a
             # batch of feature vectors.
             input = input.flatten(2)
-
-        return self.get_decoder_output_for(self.get_encoder_output_for(input))
+        
+        filter_mask = get_filter_mask(input, 1 - self.corruption_level);
+        input_tilde = input * filter_mask
+        
+        return self.get_decoder_output_for(self.get_encoder_output_for(input_tilde))

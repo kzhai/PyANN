@@ -49,7 +49,7 @@ class DenoisingAutoEncoder(network.Network):
             b_decoder=init.Constant(0.),
             **kwargs):
         super(DenoisingAutoEncoder, self).__init__(input_network)
-
+        
         network = input_network;
         network = DenoisingAutoEncoderLayer(
             network,
@@ -62,9 +62,6 @@ class DenoisingAutoEncoder(network.Network):
             encoder_nonlinearity=encoder_nonlinearity,
             decoder_nonlinearity=decoder_nonlinearity
             );
-            
-        #self.corruption_level = corruption_level;
-        
         self.network = network;
         
         assert objective_to_minimize != None;
