@@ -14,32 +14,6 @@ from layers.dae import DenoisingAutoEncoderLayer
 
 from theano.tensor.shared_randomstreams import RandomStreams
 
-'''
-def get_corruption_mask(input, corruption_level=0, rng=RandomStreams()):
-    """This function keeps ``1-corruption_level`` entries of the inputs the
-    same and zero-out randomly selected subset of size ``coruption_level``
-    Note : first argument of theano.rng.binomial is the shape(size) of
-           random numbers that it should produce
-           second argument is the number of trials
-           third argument is the probability of success of any trial
-
-            this will produce an array of 0s and 1s where 1 has a
-            probability of 1 - ``corruption_level`` and 0 with
-            ``corruption_level``
-
-            The binomial function return int64 data type by
-            default.  int64 multiplicated by the input
-            type(floatX) always return float64.  To keep all data
-            in floatX when floatX is float32, we set the dtype of
-            the binomial to floatX. As in our case the value of
-            the binomial is always 0 or 1, this don't change the
-            result. This is needed to allow the gpu to work
-            correctly as it only support float32 for now.
-    """
-    
-    return rng.binomial(size=input.shape, n=1, p=1 - corruption_level, dtype=theano.config.floatX)
-'''
-
 class DenoisingAutoEncoder(network.Network):
     """Denoising Auto-Encoder class (dA)
 
@@ -82,17 +56,21 @@ class DenoisingAutoEncoder(network.Network):
             layer_dimension,
             corruption_level,
             W_encoder=W_encoder,
+            W_decoder=W_decoder,
             b_encoder=b_encoder,
+            b_decoder=b_decoder,
             encoder_nonlinearity=encoder_nonlinearity,
             decoder_nonlinearity=decoder_nonlinearity
             );
+            
+        #self.corruption_level = corruption_level;
         
         self.network = network;
         
         assert objective_to_minimize != None;
         self.objective_to_minimize = objective_to_minimize;
         
-    def get_objective_to_minimize(self):
+    def get_objective_to_minimize(self, **kwargs):
         train_loss = theano.tensor.mean(theano.tensor.sum(self.objective_to_minimize(self.get_output(), lasagne.layers.get_output(self.input_network)), axis=1))
         
         train_loss += self.L1_regularizer()

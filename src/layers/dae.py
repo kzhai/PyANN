@@ -61,11 +61,11 @@ class DenoisingAutoEncoderLayer(Layer):
                  num_units,
                  corruption_level,
                  W_encoder=init.GlorotUniform(),
+                 W_decoder=None,
                  b_encoder=init.Constant(0.),
                  b_decoder=init.Constant(0.),
                  encoder_nonlinearity=nonlinearities.sigmoid,
                  decoder_nonlinearity=nonlinearities.sigmoid,
-                 W_decoder=None,
                  **kwargs):
         super(DenoisingAutoEncoderLayer, self).__init__(incoming, **kwargs)
         
@@ -134,6 +134,14 @@ class DenoisingAutoEncoderLayer(Layer):
         return self.decoder_nonlinearity(activation);
     
     def get_output_for(self, input, **kwargs):
+        '''
+        if 'corruption_level' in kwargs:
+            corruption_level = kwargs['corruption_level'];
+            print "corruption_level:", corruption_level 
+            filter_mask = get_filter_mask(input, 1 - corruption_level);
+            input *= filter_mask
+        '''
+        
         filter_mask = get_filter_mask(input, 1 - self.corruption_level);
         input *= filter_mask
         

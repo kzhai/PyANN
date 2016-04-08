@@ -29,7 +29,7 @@ class MultiLayerPerceptron(network.Network):
             layer_activation_parameters=None,
             layer_activation_styles=None,
             objective_to_minimize=None,
-            pretrained_model=None
+            #pretrained_model=None,
             ):
         super(MultiLayerPerceptron, self).__init__(input_network)
 
@@ -37,9 +37,11 @@ class MultiLayerPerceptron(network.Network):
         assert len(layer_dimensions) == len(layer_activation_parameters)
         assert len(layer_dimensions) == len(layer_activation_styles) 
         
+        '''
         pretrained_network_layers = None;
         if pretrained_model != None:
             pretrained_network_layers = lasagne.layers.get_all_layers(pretrained_model.network);
+        '''
         
         network = input_network;
         for layer_index in xrange(len(layer_dimensions)):
@@ -50,7 +52,10 @@ class MultiLayerPerceptron(network.Network):
             
             layer_dimension = layer_dimensions[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index];
+                            
+            network = lasagne.layers.DenseLayer(network, layer_dimension, nonlinearity=layer_nonlinearity)
             
+            '''
             if pretrained_network_layers == None or len(pretrained_network_layers) <= layer_index:
                 network = lasagne.layers.DenseLayer(network, layer_dimension, nonlinearity=layer_nonlinearity)
             else:
@@ -64,6 +69,7 @@ class MultiLayerPerceptron(network.Network):
                                                     W=pretrained_layer.W,
                                                     b=pretrained_layer.b,
                                                     nonlinearity=layer_nonlinearity) 
+            '''
             
         self.network = network;
 
