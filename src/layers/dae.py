@@ -62,8 +62,8 @@ class DenoisingAutoEncoderLayer(Layer):
                  corruption_level,
                  W_encoder=init.GlorotUniform(),
                  W_decoder=None,
-                 b_encoder=init.Constant(0.),
-                 b_decoder=init.Constant(0.),
+                 b_encoder=None,  # init.Constant(0.)
+                 b_decoder=None,
                  encoder_nonlinearity=nonlinearities.sigmoid,
                  decoder_nonlinearity=nonlinearities.sigmoid,
                  **kwargs):

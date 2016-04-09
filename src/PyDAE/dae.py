@@ -68,7 +68,7 @@ class DenoisingAutoEncoder(network.Network):
         self.objective_to_minimize = objective_to_minimize;
         
     def get_objective_to_minimize(self, **kwargs):
-        train_loss = theano.tensor.mean(theano.tensor.sum(self.objective_to_minimize(self.get_output(), lasagne.layers.get_output(self.input_network)), axis=1))
+        train_loss = theano.tensor.mean(theano.tensor.sum(self.objective_to_minimize(self.get_output(), self.input), axis=1))
         
         train_loss += self.L1_regularizer()
         train_loss += self.L2_regularizer();

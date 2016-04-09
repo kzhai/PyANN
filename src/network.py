@@ -55,23 +55,7 @@ class Network(object):
     def __init__(self, input_network):
         #self.input_network = lasagne.layers.get_output(input_network);
         self.input_network = input_network;
-    
-    '''
-    def __init__(self,
-            #objective_to_minimize=theano.tensor.nnet.categorical_crossentropy,
-            #objective_to_minimize=mean_categorical_crossentropy,
-            #updates_to_parameters=lasagne.updates.nesterov_momentum,
-            #L1_regularizer_lambdas=None,
-            #L2_regularizer_lambdas=None
-            ):
-        self.network = None;
-        
-        #self.objective_to_minimize = objective_to_minimize;
-        #self._updates_to_parameters = updates_to_parameters;
-        
-        #self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
-        #self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
-    '''
+        self.input = lasagne.layers.get_output(input_network);
 
     def get_objective_to_minimize(self, label, **kwargs):
         train_loss = theano.tensor.mean(self.objective_to_minimize(self.get_output(), label))
