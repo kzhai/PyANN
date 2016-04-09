@@ -379,16 +379,16 @@ def launch_sdae():
         # parameters at each training step. Here, we'll use Stochastic Gradient
         # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
 
-        #print network.get_all_params(trainable=True)
-        #print denoising_auto_encoder.get_network_params(trainable=True)
-        #print denoising_auto_encoder.count_network_params(trainable=True)
-        #print denoising_auto_encoder.get_all_params(trainable=True);
-        #print denoising_auto_encoder.count_all_params(trainable=True);
+        # print network.get_all_params(trainable=True)
+        # print denoising_auto_encoder.get_network_params(trainable=True)
+        # print denoising_auto_encoder.count_network_params(trainable=True)
+        # print denoising_auto_encoder.get_all_params(trainable=True);
+        # print denoising_auto_encoder.count_all_params(trainable=True);
         
         all_dae_params = denoising_auto_encoder.get_network_params(trainable=True)
         # all_dae_params = lasagne.layers.get_all_params(denoising_auto_encoder, trainable=True)
         updates = lasagne.updates.nesterov_momentum(train_loss, all_dae_params, learning_rate, momentum=0.95)
-        #updates = lasagne.updates.sgd(train_loss, all_dae_params, learning_rate);
+        # updates = lasagne.updates.sgd(train_loss, all_dae_params, learning_rate);
         
         # Compile a function performing a training step on a mini-batch (by giving
         # the updates dictionary) and returning the corresponding training train_loss:
@@ -409,7 +409,7 @@ def launch_sdae():
     # TRAIN MODEL #
     ###############
 
-    start_time = timeit.default_timer()
+    start_train = timeit.default_timer()
     
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
@@ -418,7 +418,7 @@ def launch_sdae():
     
     for dae_index in xrange(len(denoising_auto_encoders)):
         for epoch_index in xrange(number_of_epochs):
-            clock_epoch = time.time()
+            start_epoch = timeit.default_timer()
             
             average_train_losses = []
             for minibatch_index in xrange(number_of_minibatches):
@@ -430,9 +430,8 @@ def launch_sdae():
                 
                 average_train_losses.append(average_train_loss)
             
-            clock_epoch = time.time() - clock_epoch;
-            
-            print 'layer %i, epoch %d, average train loss %f, time elapsed %f' % (dae_index + 1, epoch_index, numpy.mean(average_train_losses), clock_epoch)
+            end_epoch = timeit.default_timer()
+            print 'layer %i, epoch %d, average train loss %f, time elapsed %f' % (dae_index + 1, epoch_index, numpy.mean(average_train_losses), (end_epoch - start_epoch))
 
         model_file_path = os.path.join(output_directory, 'model-layer-%d.pkl' % (dae_index + 1))
         cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
@@ -440,11 +439,11 @@ def launch_sdae():
     model_file_path = os.path.join(output_directory, 'model.pkl')
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-    end_time = timeit.default_timer()
+    end_train = timeit.default_timer()
     print "Optimization complete..."
     print >> sys.stderr, ('The code for file ' + 
                           os.path.split(__file__)[1] + 
-                          ' ran for %.2fm' % ((end_time - start_time) / 60.))
+                          ' ran for %.2fm' % ((end_train - start_train) / 60.))
     
 if __name__ == '__main__':
     launch_sdae()

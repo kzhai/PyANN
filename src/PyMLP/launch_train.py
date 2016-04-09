@@ -1,6 +1,5 @@
 import os
 import sys
-import timeit
 
 import cPickle
 import numpy
@@ -9,7 +8,7 @@ import scipy
 import theano
 import theano.tensor
 
-import time
+import timeit
 import datetime
 import optparse
 
@@ -428,7 +427,7 @@ def launch_mlp():
         layer_activation_parameters=layer_activation_parameters,
         layer_activation_styles=layer_activation_styles,
         objective_to_minimize=objective_to_minimize,
-        pretrained_model=pretrained_model
+        # pretrained_model=pretrained_model
         )
     
     network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
@@ -482,7 +481,7 @@ def launch_mlp():
     highest_prediction_accuracy = 0
     best_iteration_index = 0
     
-    start_time = timeit.default_timer()
+    start_train = timeit.default_timer()
     
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
@@ -495,7 +494,7 @@ def launch_mlp():
     # We iterate over epochs:
     for epoch_index in range(number_of_epochs):
         # In each epoch_index, we do a full pass over the training data:
-        clock_epoch = time.time();
+        start_epoch = timeit.default_timer()
         for minibatch_index in xrange(number_of_minibatches):
             iteration_index = epoch_index * number_of_minibatches + minibatch_index
             
@@ -517,12 +516,12 @@ def launch_mlp():
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
                 
-                #print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+                # print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
         
         average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
-        print 'epoch %i, average validate loss %f, average validate accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, clock_epoch)
-                        
-        clock_epoch = time.time() - clock_epoch;
+        
+        end_epoch = timeit.default_timer()
+        print 'epoch %i, average validate loss %f, average validate accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, end_epoch - start_epoch)
 
         if (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
@@ -531,12 +530,12 @@ def launch_mlp():
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
-    end_time = timeit.default_timer()
+    end_train = timeit.default_timer()
     print "Optimization complete..."
     print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (highest_prediction_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' + 
                           os.path.split(__file__)[1] + 
-                          ' ran for %.2fm' % ((end_time - start_time) / 60.))
+                          ' ran for %.2fm' % ((end_train - start_train) / 60.))
 
 if __name__ == '__main__':
     launch_mlp()

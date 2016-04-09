@@ -15,6 +15,13 @@ import optparse
 
 import lasagne
 
+from utils import tile_raster_images
+
+try:
+    import PIL.Image as Image
+except ImportError:
+    import Image
+
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
@@ -263,7 +270,7 @@ def launch_train():
     train_loss = network.get_objective_to_minimize();
     # train_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=1), y), dtype=theano.config.floatX)
     
-    #theano.printing.debugprint(train_loss)
+    # theano.printing.debugprint(train_loss)
     
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
@@ -297,11 +304,11 @@ def launch_train():
         outputs=[validate_loss, validate_accuracy],
     )
     '''
-
+    
     ###############
     # TRAIN MODEL #
     ###############
-    start_time = timeit.default_timer()
+    start_train = timeit.default_timer()
     
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
@@ -314,7 +321,7 @@ def launch_train():
     # We iterate over epochs:
     for epoch_index in range(number_of_epochs):
         # In each epoch_index, we do a full pass over the training data:
-        clock_epoch = time.time();
+        start_epoch = timeit.default_timer()
         minibatch_train_losses = []
         for minibatch_index in xrange(number_of_minibatches):
 
@@ -328,9 +335,8 @@ def launch_train():
             minibatch_train_loss, average_train_prediction = train_function(minibatch_x)
             minibatch_train_losses.append(minibatch_train_loss);
 
-        clock_epoch = time.time() - clock_epoch;
-        
-        print 'epoch %i, average train loss %f, running time %fs' % (epoch_index, numpy.mean(minibatch_train_losses), clock_epoch)
+        end_epoch = timeit.default_timer()
+        print 'epoch %i, average train loss %f, running time %fs' % (epoch_index, numpy.mean(minibatch_train_losses), (end_epoch - start_epoch))
 
         if (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
@@ -338,12 +344,18 @@ def launch_train():
             
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-        
-    end_time = timeit.default_timer()
+    
+    end_train = timeit.default_timer()
     print "Optimization complete..."
     print >> sys.stderr, ('The code for file ' + 
                           os.path.split(__file__)[1] + 
-                          ' ran for %.2fm' % ((end_time - start_time) / 60.))
+                          ' ran for %.2fm' % ((end_train - start_train) / 60.))
+    
+    image = Image.fromarray(
+        tile_raster_images(X=network.network.W_encoder.get_value(borrow=True).T,
+                           img_shape=(28, 28), tile_shape=(10, 10),
+                           tile_spacing=(1, 1)))
+    image.save(os.path.join(output_directory, 'filters.png'))
 
 if __name__ == '__main__':
     launch_train()

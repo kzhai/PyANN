@@ -11,7 +11,6 @@ import scipy
 import theano
 import theano.tensor
 
-import time
 import datetime
 import optparse
 
@@ -473,7 +472,7 @@ def launch_cnn():
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
-    #print network.get_output_shape(train_set_x.shape)
+    # print network.get_output_shape(train_set_x.shape)
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
@@ -487,7 +486,7 @@ def launch_cnn():
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_params = network.get_network_params(trainable=True)
-    #all_params = network.get_all_params(trainable=True)
+    # all_params = network.get_all_params(trainable=True)
     updates = lasagne.updates.nesterov_momentum(train_loss, all_params, learning_rate, momentum=0.95)
     # updates = lasagne.updates.adagrad(train_loss, all_params, learning_rate);
     # updates = lasagne.updates.sgd(train_loss, all_params, learning_rate);
@@ -521,7 +520,7 @@ def launch_cnn():
     highest_prediction_accuracy = 0
     best_iteration_index = 0
     
-    start_time = timeit.default_timer()
+    start_train = timeit.default_timer()
     
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
@@ -534,13 +533,13 @@ def launch_cnn():
     # We iterate over epochs:
     for epoch_index in range(number_of_epochs):
         # In each epoch_index, we do a full pass over the training data:
-        clock_epoch = time.time();
+        start_epoch = timeit.default_timer()
         for minibatch_index in xrange(number_of_minibatches):
             iteration_index = epoch_index * number_of_minibatches + minibatch_index
             
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
-            #print minibatch_x.shape, minibatch_y.shape
+            # print minibatch_x.shape, minibatch_y.shape
             average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
             
             # And a full pass over the validation data:
@@ -559,9 +558,9 @@ def launch_cnn():
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
         
         average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
-        print 'epoch %i, average validate loss %f, average validate accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, clock_epoch)
-                
-        clock_epoch = time.time() - clock_epoch;
+        
+        end_epoch = timeit.default_timer()
+        print 'epoch %i, average validate loss %f, average validate accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, start_epoch - end_epoch)
         
         if (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
@@ -570,12 +569,12 @@ def launch_cnn():
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
-    end_time = timeit.default_timer()
+    end_train = timeit.default_timer()
     print "Optimization complete..."
     print "Best validation score of %f%% obtained at iteration %i" % (highest_prediction_accuracy * 100., best_iteration_index);
     print >> sys.stderr, ('The code for file ' + 
                           os.path.split(__file__)[1] + 
-                          ' ran for %.2fm' % ((end_time - start_time) / 60.))
+                          ' ran for %.2fm' % ((end_train - start_train) / 60.))
 
 if __name__ == '__main__':
     launch_cnn()
