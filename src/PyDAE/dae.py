@@ -40,7 +40,7 @@ class DenoisingAutoEncoder(network.Network):
             input_network,
             layer_dimension,
             encoder_nonlinearity=lasagne.nonlinearities.sigmoid,
-            decoder_nonlinearity=lasagne.nonlinearities.identity,
+            decoder_nonlinearity=lasagne.nonlinearities.sigmoid,
             objective_to_minimize=lasagne.objectives.squared_error,
             corruption_level=0,
             # In theano denoising auto-encoder example, it is initialized to init.GlorotUniform(gain=4.0).
