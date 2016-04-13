@@ -17,8 +17,23 @@ import datetime
 import optparse
 
 import lasagne
+import lasagne.nonlinearities
 import lasagne.layers
 import lasagne.utils
+
+GlorotUniformGain = {};
+GlorotUniformGain[lasagne.nonlinearities.sigmoid] = 4.0;
+GlorotUniformGain[lasagne.nonlinearities.softmax] = 1.0;
+GlorotUniformGain[lasagne.nonlinearities.tanh] = 1.0;
+GlorotUniformGain[lasagne.nonlinearities.rectify] = 1.0;
+GlorotUniformGain[lasagne.nonlinearities.LeakyRectify] = 1.0;
+GlorotUniformGain[lasagne.nonlinearities.leaky_rectify] = 1.0;
+GlorotUniformGain[lasagne.nonlinearities.very_leaky_rectify] = 1.0;
+#GlorotUniformGain[lasagne.nonlinearities.ScaledTanH] = 1.0;
+#GlorotUniformGain[lasagne.nonlinearities.elu] = 1.0;
+#GlorotUniformGain[lasagne.nonlinearities.softplus] = 1.0;
+GlorotUniformGain[lasagne.nonlinearities.linear] = 1.0;
+GlorotUniformGain[lasagne.nonlinearities.identity] = 1.0;
 
 def mean_categorical_crossentropy(network, label):
     # Create a train_loss expression for training, i.e., a scalar objective we want
@@ -53,7 +68,7 @@ def updates(loss_function, learning_rate):
 class Network(object):
     # __metaclass__ = abc.ABCMeta
     def __init__(self, input_network):
-        #self.input_network = lasagne.layers.get_output(input_network);
+        # self.input_network = lasagne.layers.get_output(input_network);
         self.input_network = input_network;
         self.input = lasagne.layers.get_output(input_network);
 
@@ -122,14 +137,14 @@ class Network(object):
         return lasagne.utils.unique(params)
     
     def count_network_params(self, **tags):
-        #return lasagne.layers.count_params(self.get_all_layers()[1:], **tags);
+        # return lasagne.layers.count_params(self.get_all_layers()[1:], **tags);
         params = self.get_network_params(**tags)
         shapes = [p.get_value().shape for p in params]
         counts = [numpy.prod(shape) for shape in shapes]
         return sum(counts)
     
     def get_network_param_values(self, **tags):
-        #return lasagne.layers.get_all_param_values(self.get_all_layers()[1:], **tags);
+        # return lasagne.layers.get_all_param_values(self.get_all_layers()[1:], **tags);
         params = self.get_network_params(**tags)
         return [p.get_value() for p in params]
     

@@ -387,8 +387,8 @@ def launch_sdae():
         
         all_dae_params = denoising_auto_encoder.get_network_params(trainable=True)
         # all_dae_params = lasagne.layers.get_all_params(denoising_auto_encoder, trainable=True)
-        updates = lasagne.updates.nesterov_momentum(train_loss, all_dae_params, learning_rate, momentum=0.95)
-        # updates = lasagne.updates.sgd(train_loss, all_dae_params, learning_rate);
+        #updates = lasagne.updates.nesterov_momentum(train_loss, all_dae_params, learning_rate, momentum=0.95)
+        updates = lasagne.updates.sgd(train_loss, all_dae_params, learning_rate);
         
         # Compile a function performing a training step on a mini-batch (by giving
         # the updates dictionary) and returning the corresponding training train_loss:

@@ -277,7 +277,7 @@ def launch_train():
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_params = network.get_network_params(trainable=True)
     updates = lasagne.updates.nesterov_momentum(train_loss, all_params, learning_rate, momentum=0.95)
-    #updates = lasagne.updates.sgd(train_loss, all_params, learning_rate)
+    # updates = lasagne.updates.sgd(train_loss, all_params, learning_rate)
 
     '''
     # Create a train_loss expression for validation/testing. The crucial difference

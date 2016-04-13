@@ -114,7 +114,7 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y, batch_size=10
         temp_test_set_x = test_set_x[x:x + batch_size];
         temp_test_set_y = test_set_y[x:x + batch_size];
         
-        test_prediction_distribution = lasagne.layers.get_output(network.network, temp_test_set_x, deterministic=True).eval()
+        test_prediction_distribution = lasagne.layers.get_output(network.neural_network, temp_test_set_x, deterministic=True).eval()
     
         # prediction_loss_on_test_set = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction_distribution, y))
 
@@ -129,7 +129,7 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y, batch_size=10
 def evaluate_snapshot_batch(input_snapshot_path, test_set_x, test_set_y):
     network = cPickle.load(open(input_snapshot_path, 'rb'));
 
-    test_prediction_distribution = lasagne.layers.get_output(network.network, test_set_x, deterministic=True).eval()
+    test_prediction_distribution = lasagne.layers.get_output(network.neural_network, test_set_x, deterministic=True).eval()
     
     # prediction_loss_on_test_set = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction_distribution, y))
     prediction_loss_on_test_set = 0;

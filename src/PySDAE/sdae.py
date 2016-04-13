@@ -17,7 +17,7 @@ import lasagne
 
 import network
 
-#from layers.dae import DenoisingAutoEncoderLayer
+# from layers.dae import DenoisingAutoEncoderLayer
 from PyDAE.dae import DenoisingAutoEncoder
 
 from theano.tensor.shared_randomstreams import RandomStreams
@@ -41,14 +41,14 @@ class StackedDenoisingAutoEncoder(network.Network):
         assert len(layer_shapes) == len(L1_regularizer_lambdas)
         assert len(layer_shapes) == len(L2_regularizer_lambdas)
         
-        network = input_network;
+        neural_network = input_network;
         denoising_auto_encoders = [];
         for layer_index in xrange(len(layer_shapes)):
             layer_shape = layer_shapes[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index];
             
-            input_layer = network;
-            network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
+            input_layer = neural_network;
+            neural_network = lasagne.layers.DenseLayer(neural_network, layer_shape, W=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[layer_nonlinearity]), nonlinearity=layer_nonlinearity)
             
             layer_corruption_level = layer_corruption_levels[layer_index];
             denoising_auto_encoder = DenoisingAutoEncoder(
@@ -61,8 +61,8 @@ class StackedDenoisingAutoEncoder(network.Network):
                 objective_to_minimize=objective_to_minimize,
                 corruption_level=layer_corruption_level,
                 
-                W_encode=network.W,
-                b_encoder=network.b,
+                W_encode=neural_network.W,
+                b_encoder=neural_network.b,
                 )
             
             L1_regularizer_lambda = L1_regularizer_lambdas[layer_index];
@@ -72,6 +72,6 @@ class StackedDenoisingAutoEncoder(network.Network):
             
             denoising_auto_encoders.append(denoising_auto_encoder);
         
-        self.network = network;
+        self.network = neural_network;
             
         self.denoising_auto_encoders = denoising_auto_encoders;

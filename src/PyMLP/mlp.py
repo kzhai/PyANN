@@ -29,7 +29,7 @@ class MultiLayerPerceptron(network.Network):
             layer_activation_parameters=None,
             layer_activation_styles=None,
             objective_to_minimize=None,
-            #pretrained_model=None,
+            # pretrained_model=None,
             ):
         super(MultiLayerPerceptron, self).__init__(input_network)
 
@@ -40,38 +40,38 @@ class MultiLayerPerceptron(network.Network):
         '''
         pretrained_network_layers = None;
         if pretrained_model != None:
-            pretrained_network_layers = lasagne.layers.get_all_layers(pretrained_model.network);
+            pretrained_network_layers = lasagne.layers.get_all_layers(pretrained_model.neural_network);
         '''
         
-        network = input_network;
+        neural_network = input_network;
         for layer_index in xrange(len(layer_dimensions)):
-            previous_layer_dimension = lasagne.layers.get_output_shape(network)[1:];
+            previous_layer_dimension = lasagne.layers.get_output_shape(neural_network)[1:];
             activation_probability = sample_activation_probability(previous_layer_dimension, layer_activation_styles[layer_index], layer_activation_parameters[layer_index]);
             
-            network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
+            neural_network = GeneralizedDropoutLayer(neural_network, activation_probability=activation_probability);
             
             layer_dimension = layer_dimensions[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index];
-                            
-            network = lasagne.layers.DenseLayer(network, layer_dimension, nonlinearity=layer_nonlinearity)
+            
+            neural_network = lasagne.layers.DenseLayer(neural_network, layer_dimension, W=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[layer_nonlinearity]), nonlinearity=layer_nonlinearity)
             
             '''
             if pretrained_network_layers == None or len(pretrained_network_layers) <= layer_index:
-                network = lasagne.layers.DenseLayer(network, layer_dimension, nonlinearity=layer_nonlinearity)
+                neural_network = lasagne.layers.DenseLayer(neural_network, layer_dimension, nonlinearity=layer_nonlinearity)
             else:
                 pretrained_layer = pretrained_network_layers[layer_index];
                 assert isinstance(pretrained_layer, lasagne.layers.DenseLayer)
                 assert pretrained_layer.nonlinearity == layer_nonlinearity, (pretrained_layer.nonlinearity, layer_nonlinearity)
                 assert pretrained_layer.num_units == layer_dimension
                 
-                network = lasagne.layers.DenseLayer(network,
+                neural_network = lasagne.layers.DenseLayer(neural_network,
                                                     layer_dimension,
                                                     W=pretrained_layer.W,
                                                     b=pretrained_layer.b,
                                                     nonlinearity=layer_nonlinearity) 
             '''
             
-        self.network = network;
+        self.network = neural_network;
 
         assert objective_to_minimize != None;
         self.objective_to_minimize = objective_to_minimize;

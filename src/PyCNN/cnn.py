@@ -54,18 +54,18 @@ class ConvolutionalNeuralNetwork(network.Network):
         # This time we do not apply input dropout, as it tends to work less well for convolutional layers.
         assert len(convolution_filters) == len(convolution_nonlinearities);
         
-        network = input_network;
+        neural_network = input_network;
         for conv_layer_index in xrange(len(convolution_filters)):
-            input_layer_shape = lasagne.layers.get_output_shape(network)[1:]
+            input_layer_shape = lasagne.layers.get_output_shape(neural_network)[1:]
             previous_layer_shape = numpy.prod(input_layer_shape)
             
             activation_probability = sample_activation_probability(previous_layer_shape, dense_activation_styles[dropout_layer_index], dense_activation_parameters[dropout_layer_index]);
             dropout_layer_index += 1;
             
             activation_probability = numpy.reshape(activation_probability, input_layer_shape)
-            # print "before dropout", lasagne.layers.get_output_shape(network)
+            # print "before dropout", lasagne.layers.get_output_shape(neural_network)
             
-            network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
+            neural_network = GeneralizedDropoutLayer(neural_network, activation_probability=activation_probability);
             
             conv_filter_number = convolution_filters[conv_layer_index];
             conv_nonlinearity = convolution_nonlinearities[conv_layer_index];
@@ -73,9 +73,9 @@ class ConvolutionalNeuralNetwork(network.Network):
             # conv_filter_size = convolution_filter_sizes[conv_layer_index]
             conv_filter_size = convolution_filter_size;
             
-            # print "before convolution", lasagne.layers.get_output_shape(network)
+            # print "before convolution", lasagne.layers.get_output_shape(neural_network)
             # Convolutional layer with 32 kernels of size 5x5. Strided and padded convolutions are supported as well; see the docstring.
-            network = lasagne.layers.Conv2DLayer(network,
+            neural_network = lasagne.layers.Conv2DLayer(neural_network,
                                                  # W=W,
                                                  num_filters=conv_filter_number,
                                                  filter_size=conv_filter_size,
@@ -85,36 +85,36 @@ class ConvolutionalNeuralNetwork(network.Network):
             # pooling_size = maxpooling_sizes[conv_layer_index];
             pooling_size = maxpooling_size
             
-            # print "before maxpooling", lasagne.layers.get_output_shape(network)
+            # print "before maxpooling", lasagne.layers.get_output_shape(neural_network)
             # Max-pooling layer of factor 2 in both dimensions:
-            filter_size_for_pooling = lasagne.layers.get_output_shape(network)[2:]
+            filter_size_for_pooling = lasagne.layers.get_output_shape(neural_network)[2:]
             if numpy.any(filter_size_for_pooling < pooling_size):
-                print "warning: filter size %s is smaller than pooling size %s, skip pooling layer" % (lasagne.layers.get_output_shape(network), pooling_size)
+                print "warning: filter size %s is smaller than pooling size %s, skip pooling layer" % (lasagne.layers.get_output_shape(neural_network), pooling_size)
                 continue;
-            network = lasagne.layers.MaxPool2DLayer(network,
+            neural_network = lasagne.layers.MaxPool2DLayer(neural_network,
                                                     pool_size=pooling_size,
                                                     stride=pooling_stride,
                                                     )
             
         assert len(dense_dimensions) == len(dense_nonlinearities)
         for layer_index in xrange(len(dense_dimensions)):
-            input_layer_shape = lasagne.layers.get_output_shape(network)[1:]
+            input_layer_shape = lasagne.layers.get_output_shape(neural_network)[1:]
             previous_layer_shape = numpy.prod(input_layer_shape)
             activation_probability = sample_activation_probability(previous_layer_shape, dense_activation_styles[dropout_layer_index], dense_activation_parameters[dropout_layer_index]);
             dropout_layer_index += 1;
             
             activation_probability = numpy.reshape(activation_probability, input_layer_shape)
 
-            # print "before dropout", lasagne.layers.get_output_shape(network)
-            network = GeneralizedDropoutLayer(network, activation_probability=activation_probability);
+            # print "before dropout", lasagne.layers.get_output_shape(neural_network)
+            neural_network = GeneralizedDropoutLayer(neural_network, activation_probability=activation_probability);
             
             layer_shape = dense_dimensions[layer_index]
             layer_nonlinearity = dense_nonlinearities[layer_index];
             
-            # print "before dense", lasagne.layers.get_output_shape(network)
-            network = lasagne.layers.DenseLayer(network, layer_shape, nonlinearity=layer_nonlinearity)
+            # print "before dense", lasagne.layers.get_output_shape(neural_network)
+            neural_network = lasagne.layers.DenseLayer(neural_network, layer_shape, W=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[layer_nonlinearity]), nonlinearity=layer_nonlinearity)
             
-        self.network = network;
+        self.network = neural_network;
 
         assert objective_to_minimize != None;
         self.objective_to_minimize = objective_to_minimize;
