@@ -34,22 +34,22 @@ class RestrictedBoltzmannMachine(network.Network):
 
         self.input_shape = int(numpy.prod(lasagne.layers.get_output_shape(input_network)[1:]))
         
-        network = input_network;
-        network = RestrictedBoltzmannMachineLayer(
-            network,
+        neural_network = input_network;
+        neural_network = RestrictedBoltzmannMachineLayer(
+            neural_network,
             layer_dimension,
             W=W,
             b_hidden=b_hidden,
             b_visible=b_visible,
             );
         
-        self.network = network;
+        self.network = neural_network;
         
         # self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
         # self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
             
         # assert objective_to_minimize != None;
-        # self.objective_to_minimize = network.free_energy();
+        # self.objective_to_minimize = neural_network.free_energy();
     
     def free_energy(self, input=None):
         if input == None:

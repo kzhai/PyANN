@@ -7,6 +7,7 @@ from lasagne import init
 from lasagne import nonlinearities
 
 from theano.tensor.shared_randomstreams import RandomStreams
+import lasagne
 
 def get_filter_mask(input, retain_probability=1, rng=RandomStreams()):
     """This function keeps ``1-retain_probability`` entries of the inputs the
@@ -62,8 +63,8 @@ class DenoisingAutoEncoderLayer(Layer):
                  corruption_level,
                  W_encoder=init.GlorotUniform(gain=4.0),
                  W_decoder=None,
-                 b_encoder=None,
-                 b_decoder=None,
+                 b_encoder=init.Constant(0.),
+                 b_decoder=init.Constant(0.),
                  encoder_nonlinearity=nonlinearities.sigmoid,
                  decoder_nonlinearity=nonlinearities.sigmoid,
                  **kwargs):
@@ -79,24 +80,17 @@ class DenoisingAutoEncoderLayer(Layer):
         self.num_units = num_units
         
         num_inputs = int(np.prod(self.input_shape[1:]))
-
+        
         self.W_encoder = self.add_param(W_encoder, (num_inputs, num_units), name="W_encoder")
+        
         if W_decoder is None:
             self.W_decoder = self.W_encoder.T
         else:
             self.W_decoder = self.add_param(W_decoder, (num_units, num_inputs), name="W_decoder")
         
-        if b_encoder is None:
-            self.b_encoder = None
-        else:
-            self.b_encoder = self.add_param(b_encoder, (num_units,), name="b_encoder",
-                                    regularizable=False)
+        self.b_encoder = self.add_param(b_encoder, (num_units,), name="b_encoder", regularizable=False)
         
-        if b_decoder is None:
-            self.b_decoder = None
-        else:
-            self.b_decoder = self.add_param(b_decoder, (num_inputs,), name="b_decoder",
-                                    regularizable=False)
+        self.b_decoder = self.add_param(b_decoder, (num_inputs,), name="b_decoder", regularizable=False)
 
     def get_decoder_shape_for(self, input_shape):
         return input_shape

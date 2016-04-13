@@ -39,21 +39,29 @@ class DenoisingAutoEncoder(network.Network):
     def __init__(self,
             input_network,
             layer_dimension,
-            encoder_nonlinearity=lasagne.nonlinearities.sigmoid,
-            decoder_nonlinearity=lasagne.nonlinearities.sigmoid,
-            objective_to_minimize=lasagne.objectives.squared_error,
-            corruption_level=0,
+
             # In theano denoising auto-encoder example, it is initialized to init.GlorotUniform(gain=4.0).
             W_encoder=init.GlorotUniform(gain=4.0),
             W_decoder=None,
             b_encoder=init.Constant(0.),
             b_decoder=init.Constant(0.),
+            
+            encoder_nonlinearity=lasagne.nonlinearities.sigmoid,
+            decoder_nonlinearity=lasagne.nonlinearities.sigmoid,
+            objective_to_minimize=lasagne.objectives.squared_error,
+            corruption_level=0,
             **kwargs):
         super(DenoisingAutoEncoder, self).__init__(input_network)
         
-        network = input_network;
-        network = DenoisingAutoEncoderLayer(
-            network,
+        print "----------"
+        print type(W_encoder)
+        print type(W_decoder)
+        print type(b_encoder)
+        print type(b_decoder)
+        
+        neural_network = input_network;
+        neural_network = DenoisingAutoEncoderLayer(
+            neural_network,
             layer_dimension,
             corruption_level,
             W_encoder=W_encoder,
@@ -63,7 +71,14 @@ class DenoisingAutoEncoder(network.Network):
             encoder_nonlinearity=encoder_nonlinearity,
             decoder_nonlinearity=decoder_nonlinearity
             );
-        self.network = network;
+        
+        print neural_network.W_encoder.get_value();
+        #print neural_network.W_decoder.get_value();
+        print neural_network.b_encoder.get_value();
+        print neural_network.b_decoder.get_value();
+        print "----------"
+        
+        self.network = neural_network;
         
         assert objective_to_minimize != None;
         self.objective_to_minimize = objective_to_minimize;
