@@ -15,7 +15,7 @@ class RestrictedBoltzmannMachineLayer(Layer):
     def __init__(self,
                  incoming,
                  num_units,
-                 W=init.GlorotUniform(),
+                 W=init.GlorotUniform(gain=4.0),
                  b_hidden=init.Constant(0.),
                  b_visible=init.Constant(0.),
                  **kwargs):

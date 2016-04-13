@@ -60,7 +60,7 @@ class DenoisingAutoEncoderLayer(Layer):
                  incoming,
                  num_units,
                  corruption_level,
-                 W_encoder=init.GlorotUniform(),
+                 W_encoder=init.GlorotUniform(gain=4.0),
                  W_decoder=None,
                  b_encoder=None,
                  b_decoder=None,

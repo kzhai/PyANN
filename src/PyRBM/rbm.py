@@ -22,11 +22,11 @@ class RestrictedBoltzmannMachine(network.Network):
             # decoder_nonlinearity=lasagne.nonlinearities.identity,
             # objective_to_minimize="free_energy",
             # corruption_level=0,
-            W=init.GlorotUniform(),
+            W=init.GlorotUniform(gain=4.0),
             b_hidden=init.Constant(0.),
             b_visible=init.Constant(0.),
-            #L1_regularizer_lambdas=None,
-            #L2_regularizer_lambdas=None,
+            # L1_regularizer_lambdas=None,
+            # L2_regularizer_lambdas=None,
             **kwargs):
         super(RestrictedBoltzmannMachine, self).__init__(input_network)
         
@@ -45,8 +45,8 @@ class RestrictedBoltzmannMachine(network.Network):
         
         self.network = network;
         
-        #self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
-        #self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
+        # self.set_L1_regularizer_lambda(L1_regularizer_lambdas);
+        # self.set_L2_regularizer_lambda(L2_regularizer_lambdas);
             
         # assert objective_to_minimize != None;
         # self.objective_to_minimize = network.free_energy();
