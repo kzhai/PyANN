@@ -126,8 +126,8 @@ def launch_sdae():
     
     # parameter set 4
     assert options.layer_dimensions != None
-    layer_shapes = [int(dimensionality) for dimensionality in options.layer_dimensions.split(",")]
-    number_of_layers = len(layer_shapes);
+    layer_dimensions = [int(dimensionality) for dimensionality in options.layer_dimensions.split(",")]
+    number_of_layers = len(layer_dimensions);
 
     assert options.layer_nonlinearities != None
     layer_nonlinearities = options.layer_nonlinearities.split(",")
@@ -300,7 +300,7 @@ def launch_sdae():
     options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
     
     # parameter set 4
-    options_output_file.write("layer_shapes=%s\n" % (layer_shapes));
+    options_output_file.write("layer_dimensions=%s\n" % (layer_dimensions));
     options_output_file.write("layer_nonlinearities=%s\n" % (layer_nonlinearities));
     
     # options_output_file.write("layer_activation_parameters=%s\n" % (layer_activation_parameters));
@@ -331,7 +331,7 @@ def launch_sdae():
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
     # parameter set 4
-    print "layer_shapes=%s" % (layer_shapes)
+    print "layer_dimensions=%s" % (layer_dimensions)
     print "layer_nonlinearities=%s" % (layer_nonlinearities)
     
     # print "layer_activation_parameters=%s" % (layer_activation_parameters)
@@ -358,7 +358,7 @@ def launch_sdae():
     import sdae
     network = sdae.StackedDenoisingAutoEncoder(
         input_network=input_layer,
-        layer_shapes=layer_shapes,
+        layer_dimensions=layer_dimensions,
         layer_nonlinearities=layer_nonlinearities,
         
         layer_corruption_levels=layer_corruption_levels,

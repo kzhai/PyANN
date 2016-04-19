@@ -50,11 +50,11 @@ class StackedDenoisingAutoEncoder(network.Network):
             input_layer = neural_network;
             neural_network = lasagne.layers.DenseLayer(neural_network, layer_shape, W=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[layer_nonlinearity]), nonlinearity=layer_nonlinearity)
             
-            print neural_network.W.get_value()
-            print neural_network.b.get_value()
+            #print neural_network.W.get_value()
+            #print neural_network.b.get_value()
             
-            print type(neural_network.W)
-            print type(neural_network.b)
+            #print type(neural_network.W)
+            #print type(neural_network.b)
             
             layer_corruption_level = layer_corruption_levels[layer_index];
             denoising_auto_encoder = DenoisingAutoEncoder(
