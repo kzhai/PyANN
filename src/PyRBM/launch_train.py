@@ -67,22 +67,22 @@ def parse_args():
                       help="number_of_gibbs_steps [1]")
     parser.add_option("--persistent", action="store_true", dest="persistent", default=False,
                       help="persistent contrastive divergence [False]")
-    #parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
-                      #help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");    
+    # parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
+                      # help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");    
     
     # parameter set 4
     parser.add_option("--layer_dimension", type="int", dest="layer_dimension",
                       help="dimension of auto-encoder layer [-1]");
-    #parser.add_option("--layer_nonlinearity", type="string", dest="layer_nonlinearity",
-                      #help="activation functions of auto-encoder layer [None]");                      
-    #parser.add_option("--layer_corruption_level", type="float", dest="layer_corruption_level",
-                      #help="corruption level of auto-encoder layer [0]");  
+    # parser.add_option("--layer_nonlinearity", type="string", dest="layer_nonlinearity",
+                      # help="activation functions of auto-encoder layer [None]");                      
+    # parser.add_option("--layer_corruption_level", type="float", dest="layer_corruption_level",
+                      # help="corruption level of auto-encoder layer [0]");  
 
     # parameter set 5
-    #parser.add_option("--L1_regularizer_lambda", type="float", dest="L1_regularizer_lambda",
-                      #help="L1 regularization lambda [0]")
-    #parser.add_option("--L2_regularizer_lambda", type="float", dest="L2_regularizer_lambda",
-                      #help="L2 regularization lambda [0]")
+    # parser.add_option("--L1_regularizer_lambda", type="float", dest="L1_regularizer_lambda",
+                      # help="L1 regularization lambda [0]")
+    # parser.add_option("--L2_regularizer_lambda", type="float", dest="L2_regularizer_lambda",
+                      # help="L2 regularization lambda [0]")
 
     (options, args) = parser.parse_args();
     return options;
@@ -274,7 +274,7 @@ def launch_train():
     #
     #
     
-    if  persistent:
+    if persistent:
         persistent_chain = theano.shared(numpy.zeros((minibatch_size, layer_dimension), dtype=theano.config.floatX), borrow=True)
     else:
         persistent_chain = None;

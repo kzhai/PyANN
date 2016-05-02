@@ -109,7 +109,7 @@ def parse_args():
     (options, args) = parser.parse_args();
     return options;
 
-def launch_mlp():
+def launch_train():
     """
     Demonstrate stochastic gradient descent optimization for a multilayer perceptron
     This is demonstrated on MNIST.
@@ -538,4 +538,4 @@ def launch_mlp():
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
 
 if __name__ == '__main__':
-    launch_mlp()
+    launch_train()
