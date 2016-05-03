@@ -30,8 +30,6 @@ class RestrictedBoltzmannMachine(network.Network):
             **kwargs):
         super(RestrictedBoltzmannMachine, self).__init__(input_network)
         
-        self.input = lasagne.layers.get_output(self.input_network);
-
         self.input_shape = int(numpy.prod(lasagne.layers.get_output_shape(input_network)[1:]))
         
         neural_network = input_network;
@@ -101,12 +99,16 @@ class RestrictedBoltzmannMachine(network.Network):
         
         cost = T.mean(self.free_energy(self.input)) - T.mean(self.free_energy(chain_end))
         
-        trainable_params = self.get_all_params(trainable=True)
+        trainable_params = self.get_network_params(trainable=True)
 
         # We must not compute the gradient through the gibbs sampling
         # gparams = T.grad(cost, self.params, consider_constant=[chain_end])
         gparams = T.grad(cost, trainable_params, consider_constant=[chain_end])
         
+        #print "=========="
+        #print gparams
+        #print updates
+
         # end-snippet-3 start-snippet-4
         # constructs the update dictionary
         # for gparam, param in zip(gparams, self.params):
@@ -116,6 +118,8 @@ class RestrictedBoltzmannMachine(network.Network):
                 learning_rate,
                 dtype=theano.config.floatX
             )
+        #print updates
+        
         if persistent:
             # Note that this works only if persistent is a shared variable
             updates[persistent] = nh_samples[-1]
@@ -189,6 +193,3 @@ class RestrictedBoltzmannMachine(network.Network):
                                      + (1 - self.input) * T.log(1 - T.nnet.sigmoid(pre_sigmoid_nv)), axis=1))
         
         return cross_entropy
-    
-    # def get_objective_to_minimize(self, k=1):
-        # return self.network.free_energy();

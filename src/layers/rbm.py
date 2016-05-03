@@ -129,6 +129,7 @@ class RestrictedBoltzmannMachineLayer(Layer):
         hidden_term = T.sum(T.log(1 + T.exp(wx_b)), axis=1)
         return -hidden_term - vbias_term
 
+    '''
     def get_cost_updates(self, learning_rate=0.1, persistent=None, k=1):
         """This functions implements one step of CD-k or PCD-k
 
@@ -178,7 +179,6 @@ class RestrictedBoltzmannMachineLayer(Layer):
         # We must not compute the gradient through the gibbs sampling
         # gparams = T.grad(cost, self.params, consider_constant=[chain_end])
         gparams = T.grad(cost, trainable_params, consider_constant=[chain_end])
-        
         # end-snippet-3 start-snippet-4
         # constructs the update dictionary
         # for gparam, param in zip(gparams, self.params):
@@ -227,7 +227,7 @@ class RestrictedBoltzmannMachineLayer(Layer):
         updates[bit_i_idx] = (bit_i_idx + 1) % self.n_visible
 
         return cost
-
+    
     def get_reconstruction_cost(self, updates, pre_sigmoid_nv):
         """Approximation to the reconstruction error
 
@@ -261,3 +261,4 @@ class RestrictedBoltzmannMachineLayer(Layer):
                                      + (1 - self.input_layer) * T.log(1 - T.nnet.sigmoid(pre_sigmoid_nv)), axis=1))
         
         return cross_entropy
+    '''

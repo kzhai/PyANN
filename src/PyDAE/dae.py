@@ -53,11 +53,11 @@ class DenoisingAutoEncoder(network.Network):
             **kwargs):
         super(DenoisingAutoEncoder, self).__init__(input_network)
         
-        print "----------"
-        print type(W_encoder)
-        print type(W_decoder)
-        print type(b_encoder)
-        print type(b_decoder)
+        # print "----------"
+        # print type(W_encoder)
+        # print type(W_decoder)
+        # print type(b_encoder)
+        # print type(b_decoder)
         
         neural_network = input_network;
         neural_network = DenoisingAutoEncoderLayer(
@@ -72,11 +72,11 @@ class DenoisingAutoEncoder(network.Network):
             decoder_nonlinearity=decoder_nonlinearity
             );
         
-        print neural_network.W_encoder.get_value();
-        #print neural_network.W_decoder.get_value();
-        print neural_network.b_encoder.get_value();
-        print neural_network.b_decoder.get_value();
-        print "----------"
+        # print neural_network.W_encoder.get_value();
+        # print neural_network.W_decoder.get_value();
+        # print neural_network.b_encoder.get_value();
+        # print neural_network.b_decoder.get_value();
+        # print "----------"
         
         self.network = neural_network;
         
