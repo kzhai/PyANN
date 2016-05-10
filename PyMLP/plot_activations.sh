@@ -6,7 +6,7 @@ if [ $# == 2 ]; then
     INPUT_DIRECTORY=$1
     OUTPUT_DIRECTORY=$2
     GPU_DEVICE=gpu
-elif [ $# == 4 ]; then
+elif [ $# == 3 ]; then
     INPUT_DIRECTORY=$1
     OUTPUT_DIRECTORY=$2
     GPU_DEVICE=$3
