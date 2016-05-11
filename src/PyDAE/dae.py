@@ -78,13 +78,13 @@ class DenoisingAutoEncoder(network.Network):
         # print neural_network.b_decoder.get_value();
         # print "----------"
         
-        self.network = neural_network;
+        self._neural_network = neural_network;
         
         assert objective_to_minimize != None;
-        self.objective_to_minimize = objective_to_minimize;
+        self._objective_to_minimize = objective_to_minimize;
         
     def get_objective_to_minimize(self, **kwargs):
-        train_loss = theano.tensor.mean(theano.tensor.sum(self.objective_to_minimize(self.get_output(), self.input), axis=1))
+        train_loss = theano.tensor.mean(theano.tensor.sum(self._objective_to_minimize(self.get_output(), self.get_input()), axis=1))
         
         train_loss += self.L1_regularizer()
         train_loss += self.L2_regularizer();
@@ -92,56 +92,5 @@ class DenoisingAutoEncoder(network.Network):
         return train_loss
     
     def get_all_params(self, **tags):
-        # return lasagne.layers.get_all_params(self.network, **tags);
-        return self.network.get_params(**tags);
-
-    '''
-    def get_decoder_shape_for(self, input_shape):
-        return input_shape
-    
-    def get_encoder_shape_for(self, input_shape):
-        return (input_shape[0], self.num_units)
-    
-    def get_output_shape_for(self, input_shape):
-        return self.get_decoder_shape_for(input_shape);
-
-    def get_encoder_output_for(self, input):
-        """
-        Computes the encoder output given the input
-        """
-        if input.ndim > 2:
-            # if the input has more than two dimensions, flatten it into a
-            # batch of feature vectors.
-            input = input.flatten(2)
-
-        activation = T.dot(input, self.W_encode)
-        if self.b_encoder is not None:
-            activation = activation + self.b_encoder.dimshuffle('x', 0)
-        
-        return self.encoder_nonlinearity(activation);
-
-    def get_decoder_output_for(self, input):
-        """
-        Computes the decoder output given the encoder output
-        """
-        
-        activation = T.dot(input, self.W_decode)
-        if self.b_decoder is not None:
-            activation = activation + self.b_decoder.dimshuffle('x', 0)
-            
-        return self.decoder_nonlinearity(activation);
-    
-    def get_output_for(self, input, **kwargs):
-        input = self.get_corrupted_input(input);
-        
-        if input.ndim > 2:
-            # if the input has more than two dimensions, flatten it into a
-            # batch of feature vectors.
-            input = input.flatten(2)
-
-        return self.get_decoder_output_for(self.get_encoder_output_for(input))
-    
-    def get_corrupted_input(self, input):
-        corruption_mask = get_corruption_mask(input, self.corruption_level);
-        return corruption_mask * input
-    '''
+        # return lasagne.layers.get_all_params(self._neural_network, **tags);
+        return self._neural_network.get_params(**tags);

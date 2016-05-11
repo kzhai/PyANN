@@ -25,7 +25,7 @@ from theano.tensor.shared_randomstreams import RandomStreams
 class StackedDenoisingAutoEncoder(network.Network):
     def __init__(self,
             input_network=None,
-            layer_shapes=None,
+            layer_dimensions=None,
             layer_nonlinearities=None,
             layer_corruption_levels=None,
             objective_to_minimize=lasagne.objectives.binary_crossentropy,
@@ -34,17 +34,17 @@ class StackedDenoisingAutoEncoder(network.Network):
             ):
         super(StackedDenoisingAutoEncoder, self).__init__(input_network)
 
-        assert len(layer_shapes) == len(layer_nonlinearities)
-        assert len(layer_shapes) == len(layer_corruption_levels)
+        assert len(layer_dimensions) == len(layer_nonlinearities)
+        assert len(layer_dimensions) == len(layer_corruption_levels)
         # assert len(layer_activation_parameters) == len(layer_nonlinearities)
         # assert len(layer_activation_styles) == len(layer_nonlinearities)
-        assert len(layer_shapes) == len(L1_regularizer_lambdas)
-        assert len(layer_shapes) == len(L2_regularizer_lambdas)
+        assert len(layer_dimensions) == len(L1_regularizer_lambdas)
+        assert len(layer_dimensions) == len(L2_regularizer_lambdas)
         
         neural_network = input_network;
         denoising_auto_encoders = [];
-        for layer_index in xrange(len(layer_shapes)):
-            layer_shape = layer_shapes[layer_index]
+        for layer_index in xrange(len(layer_dimensions)):
+            layer_shape = layer_dimensions[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index];
             
             input_layer = neural_network;
@@ -79,6 +79,9 @@ class StackedDenoisingAutoEncoder(network.Network):
             
             denoising_auto_encoders.append(denoising_auto_encoder);
         
-        self.network = neural_network;
+        self._neural_network = neural_network;
             
-        self.denoising_auto_encoders = denoising_auto_encoders;
+        self._denoising_auto_encoders = denoising_auto_encoders;
+    
+    def get_denoising_auto_encoders(self):
+        return self._denoising_auto_encoders

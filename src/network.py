@@ -59,7 +59,7 @@ def mean_accuracy(network, label):
 
 '''
 def updates(loss_function, learning_rate):
-    all_network_params = network.get_all_params(trainable=True)
+    all_network_params = _neural_network.get_all_params(trainable=True)
     updates = lasagne.updates.nesterov_momentum(loss_function, all_network_params, learning_rate, momentum=0.9)
     
     return updates
@@ -68,69 +68,72 @@ def updates(loss_function, learning_rate):
 class Network(object):
     # __metaclass__ = abc.ABCMeta
     def __init__(self, input_network):
-        # self.input_network = lasagne.layers.get_output(input_network);
-        self.input_network = input_network;
-        self.input = lasagne.layers.get_output(input_network);
+        # self._input_network = lasagne.layers.get_output(_input_network);
+        self._input_network = input_network;
+        self._input = lasagne.layers.get_output(input_network);
+
+    def get_input(self):
+        return self._input
 
     def get_objective_to_minimize(self, label, **kwargs):
-        train_loss = theano.tensor.mean(self.objective_to_minimize(self.get_output(), label))
+        train_loss = theano.tensor.mean(self._objective_to_minimize(self.get_output(), label))
         train_loss += self.L1_regularizer()
         train_loss += self.L2_regularizer();
         
         return train_loss
     
     def L1_regularizer(self):
-        if self.layer_L1_regularizer_lambdas == None:
+        if self._layer_L1_regularizer_lambdas == None:
             return 0;
         else:
             # We could add some weight decay as well here, see lasagne.regularization.
-            return lasagne.regularization.regularize_layer_params_weighted(self.layer_L1_regularizer_lambdas, lasagne.regularization.l1)
+            return lasagne.regularization.regularize_layer_params_weighted(self._layer_L1_regularizer_lambdas, lasagne.regularization.l1)
 
     def set_L1_regularizer_lambda(self, L1_regularizer_lambdas=None):
         if L1_regularizer_lambdas == None or L1_regularizer_lambdas == 0 or all(L1_regularizer_lambda == 0 for L1_regularizer_lambda in L1_regularizer_lambdas): 
-            self.layer_L1_regularizer_lambdas = None;
+            self._layer_L1_regularizer_lambdas = None;
         else:
             assert len(L1_regularizer_lambdas) == len(self.get_all_layers()) - 1;
-            self.layer_L1_regularizer_lambdas = {temp_layer:L1_regularizer_lambda for temp_layer, L1_regularizer_lambda in zip(self.get_all_layers(), L1_regularizer_lambdas)};
+            self._layer_L1_regularizer_lambdas = {temp_layer:L1_regularizer_lambda for temp_layer, L1_regularizer_lambda in zip(self.get_all_layers(), L1_regularizer_lambdas)};
         
     def L2_regularizer(self):
-        if self.layer_L2_regularizer_lambdas == None:
+        if self._layer_L2_regularizer_lambdas == None:
             return 0;
         else:
             # We could add some weight decay as well here, see lasagne.regularization.
-            return lasagne.regularization.regularize_layer_params_weighted(self.layer_L2_regularizer_lambdas, lasagne.regularization.l2)
+            return lasagne.regularization.regularize_layer_params_weighted(self._layer_L2_regularizer_lambdas, lasagne.regularization.l2)
 
     def set_L2_regularizer_lambda(self, L2_regularizer_lambdas):
         if L2_regularizer_lambdas == None or L2_regularizer_lambdas == 0 or all(L2_regularizer_lambda == 0 for L2_regularizer_lambda in L2_regularizer_lambdas):
-            self.layer_L2_regularizer_lambdas = None;
+            self._layer_L2_regularizer_lambdas = None;
         else:
             assert len(L2_regularizer_lambdas) == len(self.get_all_layers()) - 1;
             
-            self.layer_L2_regularizer_lambdas = {temp_layer:L2_regularizer_lambda for temp_layer, L2_regularizer_lambda in zip(self.get_all_layers(), L2_regularizer_lambdas)};
+            self._layer_L2_regularizer_lambdas = {temp_layer:L2_regularizer_lambda for temp_layer, L2_regularizer_lambda in zip(self.get_all_layers(), L2_regularizer_lambdas)};
     
     def get_output(self, inputs=None, **kwargs):
-        return lasagne.layers.get_output(self.network, inputs, **kwargs)
+        return lasagne.layers.get_output(self._neural_network, inputs, **kwargs)
     
     def get_output_shape(self, input_shapes=None):
-        return lasagne.layers.get_output_shape(self.network, input_shapes);
+        return lasagne.layers.get_output_shape(self._neural_network, input_shapes);
 
     def get_all_layers(self, treat_as_input=None):
-        return lasagne.layers.get_all_layers(self.network, treat_as_input);
+        return lasagne.layers.get_all_layers(self._neural_network, treat_as_input);
     
     def get_all_params(self, **tags):
-        return lasagne.layers.get_all_params(self.network, **tags);
+        return lasagne.layers.get_all_params(self._neural_network, **tags);
     
     def count_all_params(self, **tags):
-        return lasagne.layers.count_params(self.network, **tags);
+        return lasagne.layers.count_params(self._neural_network, **tags);
     
     def get_network_output(self, inputs=None, **kwargs):
-        return lasagne.layers.get_output(self.network, inputs, **kwargs)
+        return lasagne.layers.get_output(self._neural_network, inputs, **kwargs)
     
     def get_network_output_shape(self, input_shapes=None):
-        return lasagne.layers.get_output_shape(self.network, input_shapes);
+        return lasagne.layers.get_output_shape(self._neural_network, input_shapes);
         
     def get_network_layers(self):
-        return lasagne.layers.get_all_layers(self.network, [self.input_network]);
+        return lasagne.layers.get_all_layers(self._neural_network, [self._input_network]);
         
     def get_network_params(self, **tags):
         params = chain.from_iterable(l.get_params(**tags) for l in self.get_network_layers()[1:])
@@ -150,7 +153,7 @@ class Network(object):
     
     '''
     def set_all_param_values(self, values, **tags):
-        lasagne.layers.set_all_param_values(self.network, values, **tags)
+        lasagne.layers.set_all_param_values(self._neural_network, values, **tags)
     '''
     
     def set_input_variable(self, input):

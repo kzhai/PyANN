@@ -368,7 +368,7 @@ def launch_train():
         objective_to_minimize=objective_to_minimize,
         )
     
-    denoising_auto_encoders = network.denoising_auto_encoders;
+    denoising_auto_encoders = network.get_denoising_auto_encoders();
     train_functions = [];
     for denoising_auto_encoder in denoising_auto_encoders:
         train_loss = denoising_auto_encoder.get_objective_to_minimize();
@@ -395,7 +395,7 @@ def launch_train():
         train_function = theano.function(
             inputs=[x],
             outputs=[train_loss,
-                     lasagne.layers.get_output(denoising_auto_encoder.input_network),
+                     denoising_auto_encoder.get_input(),
                      # denoising_auto_encoder.network.get_encoder_output_for(self.input),
                      # denoising_auto_encoder.network.get_decoder_output_for(self.input),
                      # denoising_auto_encoder.network.get_output_for(self.input)

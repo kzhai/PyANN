@@ -114,10 +114,10 @@ class ConvolutionalNeuralNetwork(network.Network):
             # print "before dense", lasagne.layers.get_output_shape(neural_network)
             neural_network = lasagne.layers.DenseLayer(neural_network, layer_shape, W=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[layer_nonlinearity]), nonlinearity=layer_nonlinearity)
             
-        self.network = neural_network;
+        self._neural_network = neural_network;
 
         assert objective_to_minimize != None;
-        self.objective_to_minimize = objective_to_minimize;
+        self._objective_to_minimize = objective_to_minimize;
     
     """
     def dae_regularizer(self):
@@ -174,9 +174,9 @@ class ConvolutionalNeuralNetwork(network.Network):
                 layer_shape=hidden_layer_shape,
                 encoder_nonlinearity=hidden_layer_nonlinearity,
                 decoder_nonlinearity=lasagne.nonlinearities.sigmoid,
-                # objective_to_minimize=lasagne.objectives.binary_crossentropy,
-                objective_to_minimize=theano.tensor.nnet.binary_crossentropy,
-                # objective_to_minimize=lasagne.objectives.binary_crossentropy,
+                # _objective_to_minimize=lasagne.objectives.binary_crossentropy,
+                _objective_to_minimize=theano.tensor.nnet.binary_crossentropy,
+                # _objective_to_minimize=lasagne.objectives.binary_crossentropy,
                 corruption_level=layer_corruption_level,
                 # L1_regularizer_lambdas=L1_regularizer_lambdas,
                 # L2_regularizer_lambdas=L2_regularizer_lambdas,
@@ -235,10 +235,10 @@ class ConvolutionalNeuralNetwork(network.Network):
                 inputs=[self.input],
                 outputs=[pretrain_loss,
                          self.input,
-                         # denoising_auto_encoder.network.get_encoder_output_for(self.input),
-                         # denoising_auto_encoder.network.get_decoder_output_for(self.input),
-                         # denoising_auto_encoder.network.get_output_for(self.input)
-                         lasagne.layers.get_output(denoising_auto_encoder.network, self.input),
+                         # denoising_auto_encoder._neural_network.get_encoder_output_for(self.input),
+                         # denoising_auto_encoder._neural_network.get_decoder_output_for(self.input),
+                         # denoising_auto_encoder._neural_network.get_output_for(self.input)
+                         lasagne.layers.get_output(denoising_auto_encoder._neural_network, self.input),
                          ],
                 updates=updates
             )

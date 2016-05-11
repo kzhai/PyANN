@@ -357,7 +357,7 @@ def launch_train():
         # objective_to_minimize=objective_to_minimize,
         )
     
-    restricted_boltzmann_machines = network.restricted_boltzmann_machines;
+    restricted_boltzmann_machines = network.get_restricted_boltzmann_machines();
     train_functions = [];
     for rbm_index, restricted_boltzmann_machine in enumerate(restricted_boltzmann_machines):
         if persistent:

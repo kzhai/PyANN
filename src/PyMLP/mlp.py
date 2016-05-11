@@ -40,7 +40,7 @@ class MultiLayerPerceptron(network.Network):
         '''
         pretrained_network_layers = None;
         if pretrained_model != None:
-            pretrained_network_layers = lasagne.layers.get_all_layers(pretrained_model.neural_network);
+            pretrained_network_layers = lasagne.layers.get_all_layers(pretrained_model._neural_network);
         '''
         
         neural_network = input_network;
@@ -57,27 +57,27 @@ class MultiLayerPerceptron(network.Network):
             
             '''
             if pretrained_network_layers == None or len(pretrained_network_layers) <= layer_index:
-                neural_network = lasagne.layers.DenseLayer(neural_network, layer_dimension, nonlinearity=layer_nonlinearity)
+                _neural_network = lasagne.layers.DenseLayer(_neural_network, layer_dimension, nonlinearity=layer_nonlinearity)
             else:
                 pretrained_layer = pretrained_network_layers[layer_index];
                 assert isinstance(pretrained_layer, lasagne.layers.DenseLayer)
                 assert pretrained_layer.nonlinearity == layer_nonlinearity, (pretrained_layer.nonlinearity, layer_nonlinearity)
                 assert pretrained_layer.num_units == layer_dimension
                 
-                neural_network = lasagne.layers.DenseLayer(neural_network,
+                _neural_network = lasagne.layers.DenseLayer(_neural_network,
                                                     layer_dimension,
                                                     W=pretrained_layer.W,
                                                     b=pretrained_layer.b,
                                                     nonlinearity=layer_nonlinearity) 
             '''
             
-        self.network = neural_network;
+        self._neural_network = neural_network;
 
         assert objective_to_minimize != None;
-        self.objective_to_minimize = objective_to_minimize;
+        self._objective_to_minimize = objective_to_minimize;
 
     def get_objective_to_minimize(self, label):
-        train_loss = theano.tensor.mean(self.objective_to_minimize(self.get_output(), label))
+        train_loss = theano.tensor.mean(self._objective_to_minimize(self.get_output(), label))
         
         train_loss += self.L1_regularizer();
         train_loss += self.L2_regularizer();
@@ -201,10 +201,10 @@ class MultiLayerPerceptron(network.Network):
                 inputs=[self.input],
                 outputs=[pretrain_loss,
                          self.input,
-                         # denoising_auto_encoder.network.get_encoder_output_for(self.input),
-                         # denoising_auto_encoder.network.get_decoder_output_for(self.input),
-                         # denoising_auto_encoder.network.get_output_for(self.input)
-                         lasagne.layers.get_output(denoising_auto_encoder.network, self.input),
+                         # denoising_auto_encoder._neural_network.get_encoder_output_for(self.input),
+                         # denoising_auto_encoder._neural_network.get_decoder_output_for(self.input),
+                         # denoising_auto_encoder._neural_network.get_output_for(self.input)
+                         lasagne.layers.get_output(denoising_auto_encoder._neural_network, self.input),
                          ],
                 updates=updates
             )

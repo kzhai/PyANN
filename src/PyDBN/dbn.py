@@ -65,6 +65,9 @@ class DeepBeliefNetwork(network.Network):
             
             restricted_boltzmann_machines.append(restricted_boltzmann_machine);
         
-        self.network = neural_network;
+        self._neural_network = neural_network;
         
-        self.restricted_boltzmann_machines = restricted_boltzmann_machines;
+        self._restricted_boltzmann_machines = restricted_boltzmann_machines;
+    
+    def get_restricted_boltzmann_machines(self):
+        return self._restricted_boltzmann_machines
