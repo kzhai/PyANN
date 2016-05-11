@@ -25,7 +25,7 @@ def parse_args():
                         # best_model_only=False,
                         )
     # parameter set 1
-    parser.add_option("--input_file", type="string", dest="input_file",
+    parser.add_option("--input_directory", type="string", dest="input_directory",
                       help="input directory [None]");
     parser.add_option("--model_directory", type="string", dest="model_directory",
                       help="output directory [None]");
@@ -50,14 +50,14 @@ def launch_test():
     assert(options.input_directory != None);
     assert(options.model_directory != None);
     
-    input_file = options.input_directory;
-    input_file = input_file.rstrip("/");
-    dataset_name = os.path.basename(input_file);
+    input_directory = options.input_directory;
+    input_directory = input_directory.rstrip("/");
+    dataset_name = os.path.basename(input_directory);
     model_directory = options.model_directory;
 
-    test_set_x = numpy.load(os.path.join(input_file, "test.feature.npy"))
+    test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
     # test_set_x = test_set_x / numpy.float32(256)
-    test_set_y = numpy.load(os.path.join(input_file, "test.label.npy"))
+    test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
 
     batch_size = options.batch_size;
     if batch_size <= 0:
@@ -67,7 +67,7 @@ def launch_test():
     print "========== ========== ========== ========== =========="
     # parameter set 1
     print "model_directory=" + model_directory
-    print "input_file=" + input_file
+    print "input_directory=" + input_directory
     print "dataset_name=" + dataset_name
     print "batch_size=" + str(batch_size)
     print "========== ========== ========== ========== =========="
