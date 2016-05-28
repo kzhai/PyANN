@@ -46,6 +46,12 @@ def sample_activation_probability(input_size, activation_style, activation_param
         for index in xrange(input_size):
             rank = index + 1;
             activation_probability[index] = numpy.random.beta(rank * scale / shape_beta, rank / shape_beta);
+    elif activation_style == "geometric":
+        activation_probability = numpy.zeros(input_size);
+        for index in xrange(input_size):
+            rank = index + 1;
+            activation_probability[index] = (activation_parameter - 1) / numpy.log(activation_parameter) * (activation_parameter ** rank)
+        activation_probability = numpy.clip(activation_probability, 0., 1.);
     elif activation_style == "reciprocal":
         activation_probability = activation_parameter / numpy.arange(1, input_size + 1);
         activation_probability = numpy.clip(activation_probability, 0., 1.);
