@@ -231,6 +231,10 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 
 	python -um PyDBN.launch_train --help
 
+### Launch recurrent neural network (RNN)
+
+### Launch long short-term memory (LSTM)
+
 Model Output and Snapshot
 ----------
 

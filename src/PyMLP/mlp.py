@@ -68,7 +68,7 @@ class MultiLayerPerceptron(network.Network):
                                                     layer_dimension,
                                                     W=pretrained_layer.W,
                                                     b=pretrained_layer.b,
-                                                    nonlinearity=layer_nonlinearity) 
+                                                    nonlinearity=layer_nonlinearity)
             '''
             
         self._neural_network = neural_network;
