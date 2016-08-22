@@ -12,7 +12,7 @@ Install and Build
 
 This package depends on many external python libraries, such as numpy, scipy, theano, and nltk.
 
-Launch and Execute
+Launch and Execute
 ----------
 
 Assume the PyANN package is downloaded under directory ```$PROJECT_SPACE/```, i.e., 
