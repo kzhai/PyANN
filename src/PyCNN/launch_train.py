@@ -1,6 +1,5 @@
 import os
 import sys
-sys.path.insert(1, "/homes/kzhai/.local/lib/python2.7/site-packages")
 
 import timeit
 
@@ -128,8 +127,6 @@ def parse_args():
 
 def launch_train():
     """
-    Demonstrate stochastic gradient descent optimization for a multilayer perceptron
-    This is demonstrated on MNIST.
     """
     
     options = parse_args();
