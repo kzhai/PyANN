@@ -349,11 +349,13 @@ def launch_train():
                           os.path.split(__file__)[1] + 
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
     
+    '''
     image = Image.fromarray(
         tile_raster_images(X=network.network.W_encoder.get_value(borrow=True).T,
                            img_shape=(28, 28), tile_shape=(10, 10),
                            tile_spacing=(1, 1)))
     image.save(os.path.join(output_directory, 'filters.png'))
-
+    '''
+    
 if __name__ == '__main__':
     launch_train()
