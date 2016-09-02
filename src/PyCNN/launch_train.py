@@ -557,7 +557,7 @@ def launch_train():
         average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
         
         end_epoch = timeit.default_timer()
-        print 'epoch %i, average validate loss %f, average validate accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, start_epoch - end_epoch)
+        print 'epoch %i, average validate loss %f, average validate accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, end_epoch - start_epoch)
         
         if (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
