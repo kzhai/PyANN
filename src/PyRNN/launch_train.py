@@ -532,13 +532,41 @@ def launch_train():
     network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
     #network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
 
+    #
+    #
+    #
+    #
+    #
+
+    '''
+    for epoch_index in range(number_of_epochs):
+        # In each epoch_index, we do a full pass over the training data:
+        start_epoch = timeit.default_timer()
+
+        for train_sequence_x, train_sequence_y in zip(train_set_x, train_set_y):
+            context_windows = get_context_windows(train_sequence_x, window_size)
+            mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
+            # print context_windows.shape
+            # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
+            assert len(mini_batches) == len(mini_batch_masks);
+            assert len(mini_batches) == len(train_sequence_y);
+            average_train_loss, average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
+            print average_train_loss, average_train_accuracy
+    '''
+
+    #
+    #
+    #
+    #
+    #
+
     ########################
     # BUILD LOSS FUNCTIONS #
     ########################
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
-    train_prediction = network.get_output()
+    train_prediction = network.get_output();
     train_loss = network.get_objective_to_minimize(y);
     # train_loss = theano.tensor.mean(lasagne.objectives.categorical_crossentropy(train_prediction, y))
     train_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=1), y), dtype=theano.config.floatX)
