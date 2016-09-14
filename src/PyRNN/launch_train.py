@@ -14,9 +14,9 @@ import optparse
 
 import lasagne
 
-import re;
-from _abcoll import Sequence
-template_pattern = re.compile(r'(?P<pre_rnn>.*)\[(?P<rnn>.+)\](?P<post_rnn>.*)');
+import re
+
+template_pattern = re.compile(r'(?P<pre_rnn>.*)\[(?P<rnn>.+)\](?P<post_rnn>.*)')
 
 def parse_args():
     parser = optparse.OptionParser()
@@ -58,21 +58,21 @@ def parse_args():
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
-                      help="input directory [None]");
+                      help="input directory [None]")
     parser.add_option("--output_directory", type="string", dest="output_directory",
-                      help="output directory [None]");
+                      help="output directory [None]")
     # parser.add_option("--pretrained_model_file", type="string", dest="pretrained_model_file",
-                      # help="pretrained model file [None]");
+                      # help="pretrained model file [None]")
 
     # parameter set 2
     # parser.add_option("--minibatch_size", type="int", dest="minibatch_size",
-                      # help="mini-batch size [100]");
+                      # help="mini-batch size [100]")
     parser.add_option("--number_of_epochs", type="int", dest="number_of_epochs",
-                      help="number of epochs [-1]");
+                      help="number of epochs [-1]")
     parser.add_option("--snapshot_interval", type="int", dest="snapshot_interval",
-                      help="snapshot interval in number of epochs [10]");
+                      help="snapshot interval in number of epochs [10]")
     parser.add_option("--validation_interval", type="int", dest="validation_interval",
-                      help="validation interval in number of mini-batches [1000]");
+                      help="validation interval in number of mini-batches [1000]")
     # parser.add_option("--improvement_threshold", type="float", dest="improvement_threshold",
                       # help="improvement threshold [0.01]")
     
