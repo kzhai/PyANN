@@ -97,8 +97,7 @@ class RecurrentNeuralNetwork(network.Network):
 
             neural_network = lasagne.layers.DenseLayer(neural_network,
                                                        pre_rnn_layer_dimension,
-                                                       W=lasagne.init.GlorotUniform(
-                                                           gain=network.GlorotUniformGain[pre_rnn_layer_nonlinearity]),
+                                                       W=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[pre_rnn_layer_nonlinearity]),
                                                        nonlinearity=pre_rnn_layer_nonlinearity)
 
             # print "checkpoint b", pre_rnn_layer_index, lasagne.layers.get_output_shape(neural_network, (None, backprop_step, window_size))
@@ -118,11 +117,8 @@ class RecurrentNeuralNetwork(network.Network):
 
             neural_network = lasagne.layers.RecurrentLayer(neural_network,
                                                            rnn_layer_dimension,
-                                                           W_in_to_hid=lasagne.init.GlorotUniform(
-                                                               gain=network.GlorotUniformGain[rnn_layer_nonlinearity]),
-                                                           W_hid_to_hid=lasagne.init.GlorotUniform(
-                                                               gain=network.GlorotUniformGain[rnn_layer_nonlinearity]),
->>>>>>> 59bed99d0175ea4642fecb5167e178be3fde6561
+                                                           W_in_to_hid=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[rnn_layer_nonlinearity]),
+                                                           W_hid_to_hid=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[rnn_layer_nonlinearity]),
                                                            b=lasagne.init.Constant(0.),
                                                            nonlinearity=rnn_layer_nonlinearity,
                                                            hid_init=lasagne.init.Constant(0.),
