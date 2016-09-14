@@ -37,6 +37,7 @@ def parse_args():
                         backprop_step=-1,
                         
                         # parameter set 4
+                        # vocabulary_dimension=-1,
                         embedding_dimension=-1,
                         layer_dimensions=None,
                         layer_nonlinearities=None,
@@ -49,7 +50,6 @@ def parse_args():
                         # parameter set 5
                         L1_regularizer_lambdas="0",
                         L2_regularizer_lambdas="0",
-                        
                         dae_regularizer_lambdas="0",
                         layer_corruption_levels="0",
                         
@@ -61,9 +61,9 @@ def parse_args():
                       help="input directory [None]");
     parser.add_option("--output_directory", type="string", dest="output_directory",
                       help="output directory [None]");
-    parser.add_option("--pretrained_model_file", type="string", dest="pretrained_model_file",
-                      help="pretrained model file [None]");
-                      
+    # parser.add_option("--pretrained_model_file", type="string", dest="pretrained_model_file",
+                      # help="pretrained model file [None]");
+
     # parameter set 2
     # parser.add_option("--minibatch_size", type="int", dest="minibatch_size",
                       # help="mini-batch size [100]");
@@ -85,6 +85,8 @@ def parse_args():
                       help="number of back propagation steps [-1]");
                     
     # parameter set 4
+    # parser.add_option("--vocabulary_dimension", type="int", dest="vocabulary_dimension",
+                      # help="vocabulary size [-1]");
     parser.add_option("--embedding_dimension", type="int", dest="embedding_dimension",
                       help="dimension of word embedding layer [-1]");
     
@@ -108,9 +110,9 @@ def parse_args():
                       help="L1 regularization lambda [0]")
     parser.add_option("--L2_regularizer_lambdas", type="string", dest="L2_regularizer_lambdas",
                       help="L2 regularization lambda [0]")
-    
     parser.add_option("--dae_regularizer_lambdas", type="string", dest="dae_regularizer_lambdas",
                       help="dae regularization lambda [0]")
+
     parser.add_option("--layer_corruption_levels", type="string", dest="layer_corruption_levels",
                       help="layer corruption level for pre-training [0], either one number of a list of numbers, example, '0.2' represents 0.2 corruption level for all denoising auto encoders, or '0.2,0.5' represents 0.2 corruption level for first denoising auto encoder layer and 0.5 for second one respectively");
     
@@ -125,8 +127,6 @@ def parse_args():
 
 def launch_train():
     """
-    Demonstrate stochastic gradient descent optimization for a multilayer perceptron
-    This is demonstrated on MNIST.
     """
     
     options = parse_args();
@@ -151,6 +151,8 @@ def launch_train():
     backprop_step = options.backprop_step;
     
     # parameter set 4
+    # assert options.vocabulary_dimension > 0;
+    # vocabulary_dimension = options.vocabulary_dimension
     assert options.embedding_dimension > 0;
     embedding_dimension = options.embedding_dimension
                       
@@ -272,7 +274,7 @@ def launch_train():
         dae_regularizer_lambdas = [float(dae_regularizer_lambda_token) for dae_regularizer_lambda_token in dae_regularizer_lambda_tokens]
     assert len(dae_regularizer_lambdas) == number_of_layers - 1;
     
-    # parameter set 6 
+    # parameter set 6
     layer_corruption_levels = options.layer_corruption_levels;
     layer_corruption_level_tokens = layer_corruption_levels.split(",")
     if len(layer_corruption_level_tokens) == 1:
@@ -292,12 +294,14 @@ def launch_train():
     input_directory = input_directory.rstrip("/");
     dataset_name = os.path.basename(input_directory);
     
+    '''
     pretrained_model_file = options.pretrained_model_file;
     pretrained_model = None;
     if pretrained_model_file != None:
         assert os.path.exists(pretrained_model_file)
         pretrained_model = cPickle.load(open(pretrained_model_file, 'rb'));
-    
+    '''
+
     output_directory = options.output_directory;
     if not os.path.exists(output_directory):
         os.mkdir(output_directory);
@@ -313,19 +317,27 @@ def launch_train():
     
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
     data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
-    # data_x = numpy.asarray(data_x, numpy.float32) / 256
-    # data_x = data_x / numpy.float32(256)
-    # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
+
     assert len(data_x) == len(data_y);
     for datum_x, datum_y in zip(data_x, data_y):
         assert datum_x.shape == datum_y.shape;
     
+    vocabulary_dimension = 0;
+    for line in open(os.path.join(input_directory, "mapping.feature"), 'r'):
+        vocabulary_dimension += 1;
+    # this is to include a dummy entry for out of vocabulary type
+    vocabulary_dimension += 1;
+
+    label_dimension = 0;
+    for line in open(os.path.join(input_directory, "mapping.label"), 'r'):
+        label_dimension += 1;
     
-    
-    
-    
-    
-    
+    #
+    #
+    #
+    #
+    #
+
     '''
     # padding data into lasagne format
     maximum_sequence_length = 0;
@@ -344,11 +356,6 @@ def launch_train():
     data_y = new_data_y
     data_m = new_data_m
     '''
-    
-    # TODO:
-    input_shape = [window_size];
-    # list(data_x.shape[1:]);
-    input_shape.insert(0, None)
     
     # parameter set 6
     # assert(options.number_of_training_data <= 0);
@@ -404,7 +411,7 @@ def launch_train():
     # parameter set 1
     options_output_file.write("input_directory=" + input_directory + "\n");
     options_output_file.write("dataset_name=" + dataset_name + "\n");
-    options_output_file.write("pretrained_model_file=" + str(pretrained_model_file) + "\n");
+    # options_output_file.write("pretrained_model_file=" + str(pretrained_model_file) + "\n");
     # options_output_file.write("vocabulary_path=" + str(dict_file) + "\n");
     
     # parameter set 2
@@ -417,9 +424,9 @@ def launch_train():
     options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
     
     # parameter set 4
-    options_output_file.write("rnn_layer_dimensions=%s\n" % (rnn_layer_dimensions));
-    options_output_file.write("rnn_layer_nonlinearities=%s\n" % (rnn_layer_nonlinearities));
-    
+    options_output_file.write("layer_dimensions=%s,%s,%s\n" % (pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions))
+    options_output_file.write("layer_nonlinearities=%s,%s,%s\n" % (pre_rnn_layer_nonlinearities, rnn_layer_nonlinearities, post_rnn_layer_nonlinearities));
+
     options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
     
     options_output_file.write("layer_activation_parameters=%s\n" % (layer_activation_parameters));
@@ -428,7 +435,6 @@ def launch_train():
     # parameter set 5
     options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
     options_output_file.write("L2_regularizer_lambdas=%s\n" % (L2_regularizer_lambdas));
-    
     options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
     options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
     # options_output_file.write("number_of_pretrain_epochs=%s\n" % (number_of_pretrain_epochs));
@@ -449,7 +455,7 @@ def launch_train():
     print "output_directory=" + output_directory
     print "input_directory=" + input_directory
     print "dataset_name=" + dataset_name
-    print "pretrained_model_file=%s" % pretrained_model_file
+    # print "pretrained_model_file=%s" % pretrained_model_file
     # print "dictionary file=" + str(dict_file)
     # parameter set 2
     print "number_of_epochs=%d" % (number_of_epochs);
@@ -462,16 +468,15 @@ def launch_train():
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
     # parameter set 4
-    print "rnn_layer_dimensions=%s" % (rnn_layer_dimensions)
-    print "rnn_layer_nonlinearities=%s" % (rnn_layer_nonlinearities)
-    
+    print "layer_dimensions=%s,%s,%s" % (pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions)
+    print "layer_nonlinearities=%s,%s,%s" % (pre_rnn_layer_nonlinearities, rnn_layer_nonlinearities, post_rnn_layer_nonlinearities)
+
     print "layer_activation_parameters=%s" % (layer_activation_parameters)
     print "layer_activation_styles=%s" % (layer_activation_styles)
     
     # parameter set 5
     print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
     print "L2_regularizer_lambdas=%s" % (L2_regularizer_lambdas);
-    
     print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
     print "layer_corruption_levels=%s" % (layer_corruption_levels);
     
@@ -500,16 +505,13 @@ def launch_train():
     # y = theano.tensor.imatrix('y')  # label
     y = theano.tensor.ivector('y')  # label
     
-    # TODO: add this to code
-    input_dimension = 572
-    
     # input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
     input_layer = lasagne.layers.InputLayer(shape=(None, backprop_step, window_size,), input_var=x)
     mask_layer = lasagne.layers.InputLayer(shape=(None, backprop_step), input_var=m)
     
     '''
     embedding_layer = lasagne.layers.EmbeddingLayer(input_layer,
-                                                    input_size=input_dimension,
+                                                    input_size=vocabulary_dimension,
                                                     output_size=embedding_dimension,
                                                     W=lasagne.init.GlorotUniform());
     print "----------", lasagne.layers.get_output_shape(embedding_layer, (10, 46))
@@ -517,30 +519,19 @@ def launch_train():
     
     import rnn
     network = rnn.RecurrentNeuralNetwork(
-        # input_network=embedding_layer,
         input_network=input_layer,
         input_mask=mask_layer,
+        vocabulary_dimension=vocabulary_dimension,
         embedding_dimension=embedding_dimension,
-        pre_rnn_layer_dimensions=pre_rnn_layer_dimensions,
-        pre_rnn_layer_nonlinearities=pre_rnn_layer_nonlinearities,
-        rnn_layer_dimensions=rnn_layer_dimensions,
-        rnn_layer_nonlinearities=rnn_layer_nonlinearities,
-        post_rnn_layer_dimensions=post_rnn_layer_dimensions,
-        post_rnn_layer_nonlinearities=post_rnn_layer_nonlinearities,
-        # post_rnn_layer_nonlinearities=layer_nonlinearities,
+        layer_dimensions=(pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions),
+        layer_nonlinearities=(pre_rnn_layer_nonlinearities, rnn_layer_nonlinearities, post_rnn_layer_nonlinearities),
         objective_to_minimize=objective_to_minimize,
         )
     
     network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
     network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
-    # network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
-    
-    
-    
-    # TODO: add train_sequence_y segmentation
-    
-    
-    
+    #network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
+
     ########################
     # BUILD LOSS FUNCTIONS #
     ########################
@@ -580,15 +571,13 @@ def launch_train():
         outputs=[validate_loss, validate_accuracy],
     )
     
-    # theano.printing.debugprint(train_function)
-    
     ########################
     # START MODEL TRAINING #
     ########################
     
     highest_prediction_accuracy = 0
-    best_iteration_index = 0
-    
+    best_epoch_index = 0
+
     start_train = timeit.default_timer()
     
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
@@ -604,58 +593,47 @@ def launch_train():
         # In each epoch_index, we do a full pass over the training data:
         start_epoch = timeit.default_timer()
 
-        '''        
-        for minibatch_index in xrange(number_of_minibatches):
-            iteration_index = epoch_index * number_of_minibatches + minibatch_index
-            
-            minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
-            minibatch_m = train_set_m[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
-            minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
-            
-            train_prediction, average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y, minibatch_m)
-            print train_prediction
-        '''
-        
         for train_sequence_x, train_sequence_y in zip(train_set_x, train_set_y):
             context_windows = get_context_windows(train_sequence_x, window_size)
             mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
             # print context_windows.shape
-            # print mini_batches.shape
-            # print mini_batch_masks.shape
-            # print train_sequence_y.shape
-            # assert len(mini_batches) == len(train_sequence_y);
+            # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
+            assert len(mini_batches) == len(mini_batch_masks);
+            assert len(mini_batches) == len(train_sequence_y);
             average_train_loss, average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
             print average_train_loss, average_train_accuracy
             
-            # for mini_batch, label in zip(mini_batches, train_sequence_y):
-                # average_train_loss, average_train_accuracy = train_function(mini_batch, label)
-                # rnn.train(word_batch, label_last_word, s['clr'])
-                # rnn.normalize()
-                
-        '''
-            minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
-            minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
-            average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
-
-            # And a full pass over the validation data:
-            if (iteration_index + 1) % validation_interval == 0 and len(valid_set_y) > 0:
-                average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
-                # if we got the best validation score until now
-                if average_validate_accuracy > highest_prediction_accuracy:
-                    highest_prediction_accuracy = average_validate_accuracy
-                    best_iteration_index = iteration_index
-                    
-                    # save the best model
-                    print 'best model found at epoch %i, get_mini_batches %i, average validate accuracy %f%%' % (epoch_index, minibatch_index + 1, average_validate_accuracy * 100)
-                    
-                    best_model_file_path = os.path.join(output_directory, 'model.pkl')
-                    cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-                
-                # print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+        # And a full pass over the validation data:
+        total_validate_loss = 0;
+        total_validate_accuracy = 0;
+        total_validate_mini_batches = 0;
+        for valid_sequence_x, valid_sequence_y in zip(valid_set_x, valid_set_y):
+            context_windows = get_context_windows(valid_sequence_x, window_size)
+            mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
+            assert len(mini_batches) == len(mini_batch_masks);
+            assert len(mini_batches) == len(valid_sequence_x);
             
-        average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
-        '''
+            mini_batch_valid_loss, mini_batch_valid_accuracy = validate_function(mini_batches, valid_sequence_y, mini_batch_masks)
+            
+            total_validate_loss += mini_batch_valid_loss * len(valid_sequence_y)
+            total_validate_accuracy += mini_batch_valid_accuracy * len(valid_sequence_y);
+            total_validate_mini_batches += len(valid_sequence_y);
         
+        # if we got the best validation score until now
+        average_validate_accuracy = total_validate_accuracy / total_validate_mini_batches;
+        average_validate_loss = total_validate_loss / total_validate_mini_batches;
+        if average_validate_accuracy > highest_prediction_accuracy:
+            highest_prediction_accuracy = average_validate_accuracy
+            best_epoch_index = epoch_index
+            
+            # save the best model
+            print 'best model found at epoch %i, average validate accuracy %f%%' % (epoch_index, average_validate_accuracy * 100)
+            
+            best_model_file_path = os.path.join(output_directory, 'model.pkl')
+            cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+        
+        # average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
+
         end_epoch = timeit.default_timer()
         print 'epoch %i, average validate loss %f, average validate accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, end_epoch - start_epoch)
 
@@ -668,8 +646,8 @@ def launch_train():
     
     end_train = timeit.default_timer()
     print "Optimization complete..."
-    print "Best validation score of %f%% obtained at epoch %i on get_mini_batches %i" % (highest_prediction_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
-    print >> sys.stderr, ('The code for file ' + 
+    print "Best validation score of %f%% obtained at epoch %i on get_mini_batches %i" % (highest_prediction_accuracy * 100., best_epoch_index / number_of_minibatches, best_epoch_index % number_of_minibatches);
+    print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] + 
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
 
