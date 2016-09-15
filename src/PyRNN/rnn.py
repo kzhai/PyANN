@@ -18,6 +18,10 @@ import network
 
 from layers.dropout import GeneralizedDropoutLayer, sample_activation_probability
 
+backprop_step_example=9
+window_size_example=5
+batch_size_example=13
+
 class RecurrentNeuralNetwork(network.Network):
     def __init__(self,
                  input_network=None,
@@ -51,11 +55,9 @@ class RecurrentNeuralNetwork(network.Network):
         neural_network = input_network;
 
         batch_size, backprop_step, window_size = lasagne.layers.get_output_shape(neural_network)
-        print batch_size, backprop_step, window_size
+        #print batch_size, backprop_step, window_size
 
         # '''
-        # vocabulary_dimension = numpy.prod(lasagne.layers.get_output_shape(neural_network)[2:]);
-        # vocabulary_dimension = lasagne.layers.get_output_shape(neural_network);
         neural_network = lasagne.layers.EmbeddingLayer(neural_network,
                                                        input_size=vocabulary_dimension,
                                                        output_size=embedding_dimension,
@@ -71,6 +73,7 @@ class RecurrentNeuralNetwork(network.Network):
             updates={self._embedding: self._embedding / theano.tensor.sqrt((self._embedding ** 2).sum(axis=1))}
         )
         '''
+
         '''
         normalize_function = theano.function(
             inputs = [],
@@ -78,11 +81,10 @@ class RecurrentNeuralNetwork(network.Network):
                          self.emb/T.sqrt((self.emb**2).sum(axis=1)).dimshuffle(0,'x')})
         '''
 
-        print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (13, backprop_step, window_size))
-        # '''
+        #print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
 
-        neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, embedding_dimension));
-        print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (13, backprop_step, window_size))
+        neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, window_size * embedding_dimension));
+        #print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
 
         for pre_rnn_layer_index in xrange(len(pre_rnn_layer_dimensions)):
             # previous_layer_dimension = lasagne.layers.get_output_shape(neural_network)[1:];
@@ -98,11 +100,10 @@ class RecurrentNeuralNetwork(network.Network):
                                                        W=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[pre_rnn_layer_nonlinearity]),
                                                        nonlinearity=pre_rnn_layer_nonlinearity)
 
-            print "checkpoint b", pre_rnn_layer_index, lasagne.layers.get_output_shape(neural_network, (13, backprop_step, window_size))
+            #print "checkpoint b", pre_rnn_layer_index, lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
 
-        neural_network = lasagne.layers.ReshapeLayer(neural_network, (
-            batch_size, backprop_step, window_size, lasagne.layers.get_output_shape(neural_network)[-1]));
-        print "checkpoint b", lasagne.layers.get_output_shape(neural_network, (13, backprop_step, window_size))
+        neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, window_size, lasagne.layers.get_output_shape(neural_network)[-1] / window_size));
+        #print "checkpoint b", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
 
         for rnn_layer_index in xrange(len(rnn_layer_dimensions)):
             # previous_layer_dimension = lasagne.layers.get_output_shape(neural_network)[1:];
@@ -129,9 +130,12 @@ class RecurrentNeuralNetwork(network.Network):
                                                            mask_input=input_mask,
                                                            # only_return_final=True
                                                            );
+
+            '''
             x = lasagne.layers.get_all_layers(neural_network)[0];
             m = lasagne.layers.get_all_layers(neural_network)[2];
-            print "checkpoint c", rnn_layer_index, lasagne.layers.get_output_shape(neural_network, {x:(13, backprop_step, window_size), m:(13, backprop_step)})
+            print "checkpoint c", rnn_layer_index, lasagne.layers.get_output_shape(neural_network, {x:(batch_size_example, backprop_step_example, window_size_example), m:(batch_size_example, backprop_step_example)})
+            '''
 
         for post_rnn_layer_index in xrange(len(post_rnn_layer_dimensions)):
             # previous_layer_dimension = lasagne.layers.get_output_shape(neural_network)[1:];
@@ -148,9 +152,11 @@ class RecurrentNeuralNetwork(network.Network):
                                                            gain=network.GlorotUniformGain[post_rnn_layer_nonlinearity]),
                                                        nonlinearity=post_rnn_layer_nonlinearity)
 
+            '''
             x = lasagne.layers.get_all_layers(neural_network)[0];
             m = lasagne.layers.get_all_layers(neural_network)[2];
-            print "checkpoint d", post_rnn_layer_index, lasagne.layers.get_output_shape(neural_network, {x:(13, backprop_step, window_size), m:(13, backprop_step)})
+            print "checkpoint d", post_rnn_layer_index, lasagne.layers.get_output_shape(neural_network, {x:(batch_size_example, backprop_step_example, window_size_example), m:(batch_size_example, backprop_step_example)})
+            '''
 
         self._neural_network = neural_network;
 
