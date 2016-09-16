@@ -598,7 +598,13 @@ def launch_train():
         inputs=[x, y, m],
         outputs=[validate_loss, validate_accuracy],
     )
-    
+
+    # Compile a function normalizing all the embeddings
+    normalize_embedding_function = theano.function(
+        inputs=[],
+        updates={network._embedding: network._embedding / theano.tensor.sqrt((network._embedding ** 2).sum(axis=1)).dimshuffle(0, 'x')}
+    )
+
     ########################
     # START MODEL TRAINING #
     ########################
@@ -630,7 +636,11 @@ def launch_train():
             assert len(mini_batches) == len(train_sequence_y);
             average_train_loss, average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
             print average_train_loss, average_train_accuracy
-            
+
+            #print network._embedding.eval()
+            normalize_embedding_function();
+            #print network._embedding.eval();
+
         # And a full pass over the validation data:
         total_validate_loss = 0;
         total_validate_accuracy = 0;

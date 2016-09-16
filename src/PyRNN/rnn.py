@@ -63,22 +63,16 @@ class RecurrentNeuralNetwork(network.Network):
                                                        output_size=embedding_dimension,
                                                        W=lasagne.init.GlorotUniform());
 
-        '''
-        print neural_network.get_params()
         self._embedding = neural_network.get_params(trainable=True)[-1];
-        print type(self._embedding)
+        print type(self._embedding);
+
+        '''
         print self._embedding.eval()
         self._normalize_embedding_function = theano.function(
             inputs=[],
             updates={self._embedding: self._embedding / theano.tensor.sqrt((self._embedding ** 2).sum(axis=1))}
         )
-        '''
-
-        '''
-        normalize_function = theano.function(
-            inputs = [],
-            updates = {self.emb:\
-                         self.emb/T.sqrt((self.emb**2).sum(axis=1)).dimshuffle(0,'x')})
+        print self._embedding.eval()
         '''
 
         #print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
@@ -181,11 +175,11 @@ class RecurrentNeuralNetwork(network.Network):
     )
 
     average_train_loss, average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
+    '''
 
-
+    '''
     def normalize_embeddings(self):
-        neural_network = lasagne.layers.EmbeddingLayer(neural_network,
-                                                       input_size=vocabulary_dimension,
-                                                       output_size=embedding_dimension,
-                                                       W=lasagne.init.GlorotUniform());
+        print self._embedding.eval()
+        self._normalize_embedding_function();
+        print self._embedding.eval()
     '''
