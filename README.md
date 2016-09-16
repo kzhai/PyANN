@@ -233,6 +233,38 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 
 ### Launch recurrent neural network (RNN)
 
+To launch recurrent neural network (RNN) on atis example dataset,
+
+	python -um PyRNN.launch_train \
+		--input_directory=../input/atis.label/ \
+		--output_directory=../output/ \
+		--number_of_epochs=100 \
+		--learning_rate=0.01 \
+		--embedding_dimension=100 \
+		--backprop_step=9 \
+		--window_size=5 \
+		--layer_dimensions=256,[1024],127 \
+		--layer_nonlinearities=sigmoid,[sigmoid],softmax \
+		--objective_to_minimize=categorical_crossentropy
+		
+The generic argument to run RNN is 
+
+	python -um PyRNN.launch_train \
+		--input_directory=$INPUT_DIRECTORY/$DATASET_NAME \
+		--output_directory=$OUTPUT_DIRECTORY/ \
+		--number_of_epochs=$NUMBER_OF_EPOCHS \
+	  	--learning_rate=$LEARNING_RATE \
+	  	--embedding_dimension=$EMBEDDING_DIMENSION \
+		--backprop_step=$BACKPROP_STEP \
+		--window_size=$WINDOW_SIZE \
+		--layer_dimensions=$PRE_RNN_DIM_1,...,$PRE_RNN_DIM_N,[$RNN_DIM_1,...,$RNN_DIM_N],$POST_RNN_DIM_1,...,$POST_RNN_DIM_N \
+		--layer_nonlinearities=$PRE_RNN_F_1,...,$PRE_RNN_F_N,[$RNN_F_1,...,$RNN_F_N],$POST_RNN_F_1,...,$POST_RNN_F_N \
+		--objective_to_minimize=categorical_crossentropy
+		
+Under any cirsumstances, you may also get help information and usage hints by running the following command
+
+	python -um PyRNN.launch_train --help
+
 ### Launch long short-term memory (LSTM)
 
 Model Output and Snapshot
