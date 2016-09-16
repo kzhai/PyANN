@@ -64,7 +64,6 @@ class RecurrentNeuralNetwork(network.Network):
                                                        W=lasagne.init.GlorotUniform());
 
         self._embedding = neural_network.get_params(trainable=True)[-1];
-        print type(self._embedding);
 
         '''
         print self._embedding.eval()
@@ -77,7 +76,7 @@ class RecurrentNeuralNetwork(network.Network):
 
         #print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
 
-        neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, window_size * embedding_dimension));
+        neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, window_size, embedding_dimension));
         #print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
 
         for pre_rnn_layer_index in xrange(len(pre_rnn_layer_dimensions)):
@@ -96,7 +95,7 @@ class RecurrentNeuralNetwork(network.Network):
 
             #print "checkpoint b", pre_rnn_layer_index, lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
 
-        neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, window_size, lasagne.layers.get_output_shape(neural_network)[-1] / window_size));
+        neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, lasagne.layers.get_output_shape(neural_network)[-1]));
         #print "checkpoint b", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
 
         for rnn_layer_index in xrange(len(rnn_layer_dimensions)):
@@ -157,7 +156,7 @@ class RecurrentNeuralNetwork(network.Network):
         assert objective_to_minimize != None;
         self._objective_to_minimize = objective_to_minimize;
 
-    '''        
+    '''
     def get_objective_to_minimize(self, label):
         train_loss = theano.tensor.mean(self._objective_to_minimize(self.get_output(), label))
         
