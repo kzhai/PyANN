@@ -57,14 +57,12 @@ class RecurrentNeuralNetwork(network.Network):
         batch_size, backprop_step, window_size = lasagne.layers.get_output_shape(neural_network)
         #print batch_size, backprop_step, window_size
 
-        # '''
         neural_network = lasagne.layers.EmbeddingLayer(neural_network,
                                                        input_size=vocabulary_dimension,
                                                        output_size=embedding_dimension,
                                                        W=lasagne.init.GlorotUniform());
 
         self._embedding = neural_network.get_params(trainable=True)[-1];
-
         '''
         print self._embedding.eval()
         self._normalize_embedding_function = theano.function(
