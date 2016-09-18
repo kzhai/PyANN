@@ -566,7 +566,7 @@ def launch_train():
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
-    train_prediction = network.get_output();
+    train_prediction = network.get_output()
     train_loss = network.get_objective_to_minimize(y);
     # train_loss = theano.tensor.mean(lasagne.objectives.categorical_crossentropy(train_prediction, y))
     train_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=1), y), dtype=theano.config.floatX)
@@ -636,7 +636,6 @@ def launch_train():
             assert len(mini_batches) == len(train_sequence_y);
             average_train_loss, average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
             print average_train_loss, average_train_accuracy
-
             #print network._embedding.eval()
             normalize_embedding_function();
             #print network._embedding.eval();
