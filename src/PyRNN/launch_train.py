@@ -686,7 +686,7 @@ def launch_train():
     print "Optimization complete..."
     print "Best validation score of %f%% obtained at epoch %i on get_mini_batches %i" % (highest_prediction_accuracy * 100., best_epoch_index / number_of_minibatches, best_epoch_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' +
-                          os.path.split(__file__)[1] + 
+                          os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
 
 def get_context_windows(sequence, window_size, vocab_size=None):

@@ -71,6 +71,7 @@ class RecurrentNeuralNetwork(network.Network):
             inputs=[],
             updates={self._embedding: self._embedding / theano.tensor.sqrt((self._embedding ** 2).sum(axis=1))}
         )
+
         print self._embedding.eval()
         '''
 
