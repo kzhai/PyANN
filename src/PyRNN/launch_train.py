@@ -301,7 +301,7 @@ def launch_train():
         assert os.path.exists(pretrained_model_file)
         pretrained_model = cPickle.load(open(pretrained_model_file, 'rb'));
     '''
-
+    
     output_directory = options.output_directory;
     if not os.path.exists(output_directory):
         os.mkdir(output_directory);
@@ -317,7 +317,7 @@ def launch_train():
     
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
     data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
-
+    
     assert len(data_x) == len(data_y);
     for datum_x, datum_y in zip(data_x, data_y):
         assert datum_x.shape == datum_y.shape;
@@ -611,7 +611,7 @@ def launch_train():
     
     highest_prediction_accuracy = 0
     best_epoch_index = 0
-
+    
     start_train = timeit.default_timer()
     
     model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
