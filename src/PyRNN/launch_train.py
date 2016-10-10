@@ -28,7 +28,7 @@ def parse_args():
                         # parameter set 2
                         number_of_epochs=-1,
                         # minibatch_size=100,
-                        snapshot_interval=100,
+                        snapshot_interval=-1,
                         validation_interval=1000,
                         
                         # parameter set 3
@@ -70,7 +70,7 @@ def parse_args():
     parser.add_option("--number_of_epochs", type="int", dest="number_of_epochs",
                       help="number of epochs [-1]")
     parser.add_option("--snapshot_interval", type="int", dest="snapshot_interval",
-                      help="snapshot interval in number of epochs [10]")
+                      help="snapshot interval in number of epochs [-1]")
     parser.add_option("--validation_interval", type="int", dest="validation_interval",
                       help="validation interval in number of mini-batches [1000]")
     # parser.add_option("--improvement_threshold", type="float", dest="improvement_threshold",
@@ -138,7 +138,7 @@ def launch_train():
     number_of_epochs = options.number_of_epochs;
     assert(options.validation_interval > 0);
     validation_interval = options.validation_interval;
-    assert(options.snapshot_interval > 0);
+    #assert(options.snapshot_interval > 0);
     snapshot_interval = options.snapshot_interval;
 
     # parameter set 3
@@ -389,7 +389,7 @@ def launch_train():
     suffix += "-%s" % ("rnn");
     suffix += "-T%d" % (number_of_training_data);
     suffix += "-E%d" % (number_of_epochs);
-    suffix += "-S%d" % (snapshot_interval);
+    #suffix += "-S%d" % (snapshot_interval);
     # suffix += "-B%d" % (minibatch_size);
     suffix += "-aa%f" % (learning_rate);
     # suffix += "-l1r%f" % (L1_regularizer_lambdas);
@@ -609,13 +609,13 @@ def launch_train():
     # START MODEL TRAINING #
     ########################
     
-    highest_prediction_accuracy = 0
-    best_epoch_index = 0
+    highest_average_validate_accuracy = 0
+    best_iteration_index = 0
     
     start_train = timeit.default_timer()
     
-    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
-    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     # compute number of minibatches for training, validation and testing
     # number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
@@ -627,18 +627,38 @@ def launch_train():
         # In each epoch_index, we do a full pass over the training data:
         start_epoch = timeit.default_timer()
 
+        #
+        #
+        #
+        #
+        #
+
+        epoch_running_time = 0;
+
         for train_sequence_x, train_sequence_y in zip(train_set_x, train_set_y):
+            minibatch_running_time = timeit.default_timer();
+
             context_windows = get_context_windows(train_sequence_x, window_size)
             mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
             # print context_windows.shape
             # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
             assert len(mini_batches) == len(mini_batch_masks);
             assert len(mini_batches) == len(train_sequence_y);
-            average_train_loss, average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
-            print average_train_loss, average_train_accuracy
+            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
             #print network._embedding.eval()
             normalize_embedding_function();
-            #print network._embedding.eval();
+            #print network._embedding.eval()
+            #print 'train result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_train_loss, average_train_accuracy * 100)
+
+            epoch_running_time += timeit.default_timer() - minibatch_running_time;
+
+        #
+        #
+        #
+        #
+        #
+
+
 
         # And a full pass over the validation data:
         total_validate_loss = 0;
@@ -659,9 +679,9 @@ def launch_train():
         # if we got the best validation score until now
         average_validate_accuracy = total_validate_accuracy / total_validate_mini_batches;
         average_validate_loss = total_validate_loss / total_validate_mini_batches;
-        if average_validate_accuracy > highest_prediction_accuracy:
-            highest_prediction_accuracy = average_validate_accuracy
-            best_epoch_index = epoch_index
+        if average_validate_accuracy > highest_average_validate_accuracy:
+            highest_average_validate_accuracy = average_validate_accuracy
+            best_iteration_index = epoch_index
             
             # save the best model
             print 'best model found at epoch %i, average validate accuracy %f%%' % (epoch_index, average_validate_accuracy * 100)
@@ -674,7 +694,7 @@ def launch_train():
         end_epoch = timeit.default_timer()
         print 'epoch %i, average validate loss %f, average validate accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, end_epoch - start_epoch)
 
-        if (epoch_index + 1) % snapshot_interval == 0:
+        if snapshot_interval>1 and (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
@@ -683,7 +703,7 @@ def launch_train():
     
     end_train = timeit.default_timer()
     print "Optimization complete..."
-    print "Best validation score of %f%% obtained at epoch %i on get_mini_batches %i" % (highest_prediction_accuracy * 100., best_epoch_index / number_of_minibatches, best_epoch_index % number_of_minibatches);
+    print "Best validation score of %f%% obtained at epoch %i on get_mini_batches %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
