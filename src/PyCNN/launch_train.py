@@ -526,8 +526,8 @@ def launch_train():
     
     start_train = timeit.default_timer()
     
-    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
-    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     # compute number of minibatches for training, validation and testing
     # number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
