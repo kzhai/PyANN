@@ -501,17 +501,14 @@ def launch_train():
         epoch_running_time = 0;
 
         for minibatch_index in xrange(number_of_minibatches):
-            start_minibatch = timeit.default_timer();
+            minibatch_running_time = timeit.default_timer();
             iteration_index = epoch_index * number_of_minibatches + minibatch_index
-            
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
             average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
+            epoch_running_time += timeit.default_timer() - minibatch_running_time;
 
             print 'train result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_train_loss, average_train_accuracy * 100)
-
-            end_minibatch = timeit.default_timer();
-            epoch_running_time += end_minibatch - start_minibatch;
 
             # And a full pass over the validation data:
             if iteration_index % number_of_minibatches==0 or (iteration_index % validation_interval == 0 and len(valid_set_y) > 0):
