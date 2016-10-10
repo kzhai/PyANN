@@ -26,7 +26,7 @@ def parse_args():
                         # parameter set 2
                         number_of_epochs=-1,
                         minibatch_size=100,
-                        snapshot_interval=100,
+                        snapshot_interval=-1,
                         validation_interval=1000,
 
                         # parameter set 3                        
@@ -72,7 +72,7 @@ def parse_args():
     parser.add_option("--number_of_epochs", type="int", dest="number_of_epochs",
                       help="number of epochs [-1]");
     parser.add_option("--snapshot_interval", type="int", dest="snapshot_interval",
-                      help="snapshot interval in number of epochs [10]");
+                      help="snapshot interval in number of epochs [-1]");
     parser.add_option("--validation_interval", type="int", dest="validation_interval",
                       help="validation interval in number of mini-batches [1000]");
     
@@ -138,13 +138,13 @@ def launch_train():
     number_of_epochs = options.number_of_epochs;
     assert(options.validation_interval > 0);
     validation_interval = options.validation_interval;
-    assert(options.snapshot_interval > 0);
+    #assert(options.snapshot_interval > 0);
     snapshot_interval = options.snapshot_interval;
-    assert options.objective_to_minimize != None
     
     # parameter set 3
     assert options.learning_rate > 0;
     learning_rate = options.learning_rate;
+    assert options.objective_to_minimize != None
     objective_to_minimize = options.objective_to_minimize;
     objective_to_minimize = getattr(lasagne.objectives, objective_to_minimize)
     
@@ -325,6 +325,13 @@ def launch_train():
     valid_set_y = data_y[indices[number_of_training_data:]]
     
     print "successfully load data with %d for training and %d for validation..." % (train_set_x.shape[0], valid_set_x.shape[0])
+
+    test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
+    test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
+    assert test_set_x.shape[0] == len(test_set_y);
+    assert numpy.all(input_shape[1:] == list(test_set_x.shape[1:])), (input_shape[1:], test_set_x.shape[1:]);
+
+    print "successfully load data with %d for testing..." % (test_set_x.shape[0])
     
     #
     #
@@ -338,7 +345,7 @@ def launch_train():
     suffix += "-%s" % ("cnn");
     suffix += "-T%d" % (number_of_training_data);
     suffix += "-E%d" % (number_of_epochs);
-    suffix += "-S%d" % (snapshot_interval);
+    #suffix += "-S%d" % (snapshot_interval);
     suffix += "-B%d" % (minibatch_size);
     suffix += "-aa%f" % (learning_rate);
     # suffix += "-l1r%f" % (L1_regularizer_lambdas);
@@ -514,7 +521,7 @@ def launch_train():
     # TRAIN MODEL #
     ###############
     
-    highest_prediction_accuracy = 0
+    highest_average_validate_accuracy = 0
     best_iteration_index = 0
     
     start_train = timeit.default_timer()
@@ -530,36 +537,43 @@ def launch_train():
     # We iterate over epochs:
     for epoch_index in range(number_of_epochs):
         # In each epoch_index, we do a full pass over the training data:
-        start_epoch = timeit.default_timer()
+        epoch_running_time = 0;
+
         for minibatch_index in xrange(number_of_minibatches):
+            start_minibatch = timeit.default_timer();
             iteration_index = epoch_index * number_of_minibatches + minibatch_index
-            
+
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
-            # print minibatch_x.shape, minibatch_y.shape
             average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
-            
+
+            print 'train result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_train_loss, average_train_accuracy * 100)
+
+            end_minibatch = timeit.default_timer();
+            epoch_running_time += end_minibatch - start_minibatch;
+
             # And a full pass over the validation data:
-            if (iteration_index + 1) % validation_interval == 0 or iteration_index % number_of_minibatches == 0:
+            if iteration_index % number_of_minibatches == 0 or (iteration_index % validation_interval == 0 and len(valid_set_y) > 0):
                 average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
-                # print average_validate_prediction
                 # if we got the best validation score until now
-                if average_validate_accuracy >= highest_prediction_accuracy:
-                    highest_prediction_accuracy = average_validate_accuracy
+                if average_validate_accuracy > highest_average_validate_accuracy:
+                    highest_average_validate_accuracy = average_validate_accuracy
                     best_iteration_index = iteration_index
-                    
+
                     # save the best model
-                    print 'best model found at epoch %i, minibatch %i, average validate accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
-                
+                    print 'best model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
+
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-        
-        average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
-        
-        end_epoch = timeit.default_timer()
-        print 'epoch %i, average validate loss %f, average validate accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, end_epoch - start_epoch)
-        
-        if (epoch_index + 1) % snapshot_interval == 0:
+
+                print 'validate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+
+                average_test_loss, average_test_accuracy = validate_function(test_set_x, test_set_y);
+                print 'test result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
+
+        print 'epoch %i, running time %fs' % (epoch_index, epoch_running_time)
+
+        if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
@@ -568,7 +582,7 @@ def launch_train():
     
     end_train = timeit.default_timer()
     print "Optimization complete..."
-    print "Best validation score of %f%% obtained at iteration %i" % (highest_prediction_accuracy * 100., best_iteration_index);
+    print "Best validation score of %f%% obtained at iteration %i" % (highest_average_validate_accuracy * 100., best_iteration_index);
     print >> sys.stderr, ('The code for file ' + 
                           os.path.split(__file__)[1] + 
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))

@@ -508,11 +508,13 @@ def launch_train():
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
             average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
 
+            print 'train result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_train_loss, average_train_accuracy * 100)
+
             end_minibatch = timeit.default_timer();
             epoch_running_time += end_minibatch - start_minibatch;
 
             # And a full pass over the validation data:
-            if iteration_index % number_of_minibatches==0 or ((iteration_index + 1) % validation_interval == 0 and len(valid_set_y) > 0):
+            if iteration_index % number_of_minibatches==0 or (iteration_index % validation_interval == 0 and len(valid_set_y) > 0):
                 average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
                 # if we got the best validation score until now
                 if average_validate_accuracy > highest_average_validate_accuracy:
@@ -520,37 +522,15 @@ def launch_train():
                     best_iteration_index = iteration_index
                     
                     # save the best model
-                    print 'best model found at epoch %i, minibatch %i, average validate accuracy %f%%' % (epoch_index, minibatch_index + 1, average_validate_accuracy * 100)
+                    print 'best model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
                     
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-                print 'epoch_index %i, minibatch_index %i, average_validate_loss %f, average_validate_accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
-
-                '''
-                #average_test_loss = 0.;
-                average_test_accuracy = 0.;
-
-                assert test_set_x.shape[0] % test_batch_size == 0, (test_set_x.shape[0], test_batch_size)
-                for x in xrange(0, test_set_x.shape[0], test_batch_size):
-                    temp_test_set_x = test_set_x[x:x + test_batch_size];
-                    temp_test_set_y = test_set_y[x:x + test_batch_size];
-
-                    test_prediction_distribution = lasagne.layers.get_output(network._neural_network,
-                                                                             temp_test_set_x,
-                                                                             deterministic=True).eval()
-
-                    #prediction_loss_on_test_set = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction_distribution, y))
-
-                    test_prediction = numpy.argmax(test_prediction_distribution, axis=1);
-                    test_accuracy = numpy.equal(test_prediction, temp_test_set_y);
-                    average_test_accuracy += numpy.sum(test_accuracy);
-
-                average_test_accuracy /= test_set_x.shape[0];
-                '''
+                print 'validate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
 
                 average_test_loss, average_test_accuracy = validate_function(test_set_x, test_set_y);
-                print 'epoch_index %i, minibatch_index %i, average_test_loss %f, average_test_accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
+                print 'test result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
 
         print 'epoch %i, running time %fs' % (epoch_index, epoch_running_time)
 
