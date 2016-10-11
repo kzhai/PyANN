@@ -376,6 +376,12 @@ def launch_train():
     valid_set_y = data_y[indices[number_of_training_data:]]
     
     print "successfully load data with %d for training and %d for validation..." % (train_set_x.shape[0], valid_set_x.shape[0])
+
+    test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
+    test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
+    assert len(test_set_x) == len(test_set_y);
+
+    print "successfully load data with %d for testing..." % (len(test_set_x))
     
     #
     #
@@ -610,7 +616,7 @@ def launch_train():
     ########################
     
     highest_average_validate_accuracy = 0
-    best_iteration_index = 0
+    #best_iteration_index = 0
     
     start_train = timeit.default_timer()
     
@@ -627,73 +633,98 @@ def launch_train():
         # In each epoch_index, we do a full pass over the training data:
         epoch_running_time = 0;
 
+        minibatch_index = 0;
+
         total_train_loss = 0;
         total_train_accuracy = 0;
-        total_train_instance = 0;
+        total_train_instances = 0;
         for train_sequence_x, train_sequence_y in zip(train_set_x, train_set_y):
             minibatch_running_time = timeit.default_timer();
 
+            iteration_index = epoch_index * len(train_set_y) + minibatch_index
+            minibatch_index += 1;
+
             context_windows = get_context_windows(train_sequence_x, window_size)
             mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
-            # print context_windows.shape
-            # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
             assert len(mini_batches) == len(mini_batch_masks);
             assert len(mini_batches) == len(train_sequence_y);
+            # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
 
             minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
             #print network._embedding.eval()
             normalize_embedding_function();
             #print network._embedding.eval()
 
+            #print minibatch_average_train_loss * len(train_sequence_y), minibatch_average_train_accuracy * len(train_sequence_y);
             total_train_loss += minibatch_average_train_loss * len(train_sequence_y);
             total_train_accuracy += minibatch_average_train_accuracy * len(train_sequence_y);
-            total_train_instance += len(train_sequence_y);
+            total_train_instances += len(train_sequence_y);
 
             epoch_running_time += timeit.default_timer() - minibatch_running_time;
 
-        #
-        #
-        #
-        #
-        #
+            # And a full pass over the validation data:
+            if iteration_index % validation_interval == 0 and len(valid_set_y) > 0:
+                total_validate_loss = 0;
+                total_validate_accuracy = 0;
+                total_validate_instances = 0;
+                for valid_sequence_x, valid_sequence_y in zip(valid_set_x, valid_set_y):
+                    context_windows = get_context_windows(valid_sequence_x, window_size)
+                    mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
+                    assert len(mini_batches) == len(mini_batch_masks);
+                    assert len(mini_batches) == len(valid_sequence_x);
 
+                    minibatch_validate_loss, minibatch_validate_accuracy = validate_function(mini_batches, valid_sequence_y, mini_batch_masks)
 
+                    total_validate_loss += minibatch_validate_loss * len(valid_sequence_y)
+                    total_validate_accuracy += minibatch_validate_accuracy * len(valid_sequence_y);
+                    total_validate_instances += len(valid_sequence_y);
 
-        # And a full pass over the validation data:
-        total_validate_loss = 0;
-        total_validate_accuracy = 0;
-        total_validate_mini_batches = 0;
-        for valid_sequence_x, valid_sequence_y in zip(valid_set_x, valid_set_y):
-            context_windows = get_context_windows(valid_sequence_x, window_size)
-            mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
-            assert len(mini_batches) == len(mini_batch_masks);
-            assert len(mini_batches) == len(valid_sequence_x);
-            
-            mini_batch_valid_loss, mini_batch_valid_accuracy = validate_function(mini_batches, valid_sequence_y, mini_batch_masks)
-            
-            total_validate_loss += mini_batch_valid_loss * len(valid_sequence_y)
-            total_validate_accuracy += mini_batch_valid_accuracy * len(valid_sequence_y);
-            total_validate_mini_batches += len(valid_sequence_y);
-        
-        # if we got the best validation score until now
-        average_validate_accuracy = total_validate_accuracy / total_validate_mini_batches;
-        average_validate_loss = total_validate_loss / total_validate_mini_batches;
-        if average_validate_accuracy > highest_average_validate_accuracy:
-            highest_average_validate_accuracy = average_validate_accuracy
-            best_iteration_index = epoch_index
-            
-            # save the best model
-            print 'best model found at epoch %i, average validate accuracy %f%%' % (epoch_index, average_validate_accuracy * 100)
-            
-            best_model_file_path = os.path.join(output_directory, 'model.pkl')
-            cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-        
-        # average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
+                # if we got the best validation score until now
+                average_validate_accuracy = total_validate_accuracy / total_validate_instances;
+                average_validate_loss = total_validate_loss / total_validate_instances;
+                if average_validate_accuracy > highest_average_validate_accuracy:
+                    highest_average_validate_accuracy = average_validate_accuracy
+                    #best_iteration_index = epoch_index
 
-        end_epoch = timeit.default_timer()
-        print 'epoch %i, average validate loss %f, average validate accuracy %f%%, running time %fs' % (epoch_index, average_validate_loss, average_validate_accuracy * 100, end_epoch - start_epoch)
+                    # save the best model
+                    print 'best model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
 
-        if snapshot_interval>1 and (epoch_index + 1) % snapshot_interval == 0:
+                    best_model_file_path = os.path.join(output_directory, 'model.pkl')
+                    cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+
+                print 'validate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+
+                #
+                #
+                #
+                #
+                #
+
+                total_test_loss = 0;
+                total_test_accuracy = 0;
+                total_test_instances = 0;
+                for test_sequence_x, test_sequence_y in zip(test_set_x, test_set_y):
+                    context_windows = get_context_windows(test_sequence_x, window_size)
+                    mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
+                    assert len(mini_batches) == len(mini_batch_masks);
+                    assert len(mini_batches) == len(test_sequence_x);
+
+                    minibatch_test_loss, minibatch_test_accuracy = validate_function(mini_batches, test_sequence_y, mini_batch_masks)
+
+                    total_test_loss += minibatch_test_loss * len(test_sequence_y)
+                    total_test_accuracy += minibatch_test_accuracy * len(test_sequence_y);
+                    total_test_instances += len(test_sequence_y);
+
+                # if we got the best validation score until now
+                average_test_accuracy = total_test_accuracy / total_test_instances;
+                average_test_loss = total_test_loss / total_test_instances;
+                print 'test result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
+
+        average_train_accuracy = total_train_accuracy / total_train_instances;
+        average_train_loss = total_train_loss / total_train_instances;
+        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
+
+        if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
