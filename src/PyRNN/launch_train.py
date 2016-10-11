@@ -625,16 +625,11 @@ def launch_train():
     # We iterate over epochs:
     for epoch_index in range(number_of_epochs):
         # In each epoch_index, we do a full pass over the training data:
-        start_epoch = timeit.default_timer()
-
-        #
-        #
-        #
-        #
-        #
-
         epoch_running_time = 0;
 
+        total_train_loss = 0;
+        total_train_accuracy = 0;
+        total_train_instance = 0;
         for train_sequence_x, train_sequence_y in zip(train_set_x, train_set_y):
             minibatch_running_time = timeit.default_timer();
 
@@ -644,11 +639,15 @@ def launch_train():
             # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
             assert len(mini_batches) == len(mini_batch_masks);
             assert len(mini_batches) == len(train_sequence_y);
+
             minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
             #print network._embedding.eval()
             normalize_embedding_function();
             #print network._embedding.eval()
-            #print 'train result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_train_loss, average_train_accuracy * 100)
+
+            total_train_loss += minibatch_average_train_loss * len(train_sequence_y);
+            total_train_accuracy += minibatch_average_train_accuracy * len(train_sequence_y);
+            total_train_instance += len(train_sequence_y);
 
             epoch_running_time += timeit.default_timer() - minibatch_running_time;
 
