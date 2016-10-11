@@ -546,8 +546,8 @@ def launch_train():
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
-    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     end_train = timeit.default_timer()
     print "Optimization complete..."
