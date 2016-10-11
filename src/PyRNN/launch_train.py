@@ -645,22 +645,28 @@ def launch_train():
             minibatch_index += 1;
 
             context_windows = get_context_windows(train_sequence_x, window_size)
-            mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
-            assert len(mini_batches) == len(mini_batch_masks);
-            assert len(mini_batches) == len(train_sequence_y);
+            train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+            assert len(train_minibatch) == len(train_minibatch_masks);
+            assert len(train_minibatch) == len(train_sequence_y);
             # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
 
-            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
+            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(train_minibatch, train_sequence_y, train_minibatch_masks)
             #print network._embedding.eval()
             normalize_embedding_function();
             #print network._embedding.eval()
-
             #print minibatch_average_train_loss * len(train_sequence_y), minibatch_average_train_accuracy * len(train_sequence_y);
+
             total_train_loss += minibatch_average_train_loss * len(train_sequence_y);
             total_train_accuracy += minibatch_average_train_accuracy * len(train_sequence_y);
             total_train_instances += len(train_sequence_y);
 
             epoch_running_time += timeit.default_timer() - minibatch_running_time;
+
+            #
+            #
+            #
+            #
+            #
 
             # And a full pass over the validation data:
             if iteration_index % validation_interval == 0 and len(valid_set_y) > 0:
@@ -669,15 +675,19 @@ def launch_train():
                 total_validate_instances = 0;
                 for valid_sequence_x, valid_sequence_y in zip(valid_set_x, valid_set_y):
                     context_windows = get_context_windows(valid_sequence_x, window_size)
-                    mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
-                    assert len(mini_batches) == len(mini_batch_masks);
-                    assert len(mini_batches) == len(valid_sequence_x);
+                    valid_minibatch, valid_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+                    assert len(valid_minibatch) == len(valid_minibatch_masks);
+                    assert len(valid_minibatch) == len(valid_sequence_x);
 
-                    minibatch_validate_loss, minibatch_validate_accuracy = validate_function(mini_batches, valid_sequence_y, mini_batch_masks)
+                    minibatch_validate_loss, minibatch_validate_accuracy = validate_function(valid_minibatch, valid_sequence_y, valid_minibatch_masks)
+                    #print minibatch_validate_loss, minibatch_validate_accuracy;
 
                     total_validate_loss += minibatch_validate_loss * len(valid_sequence_y)
                     total_validate_accuracy += minibatch_validate_accuracy * len(valid_sequence_y);
                     total_validate_instances += len(valid_sequence_y);
+
+                    if total_validate_instances % 1000 == 0:
+                        print "validate progress: %d instances" % (total_validate_instances)
 
                 # if we got the best validation score until now
                 average_validate_accuracy = total_validate_accuracy / total_validate_instances;
@@ -705,20 +715,25 @@ def launch_train():
                 total_test_instances = 0;
                 for test_sequence_x, test_sequence_y in zip(test_set_x, test_set_y):
                     context_windows = get_context_windows(test_sequence_x, window_size)
-                    mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
-                    assert len(mini_batches) == len(mini_batch_masks);
-                    assert len(mini_batches) == len(test_sequence_x);
+                    test_minibatch, test_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+                    assert len(test_minibatch) == len(test_minibatch_masks);
+                    assert len(test_minibatch) == len(test_sequence_x);
 
-                    minibatch_test_loss, minibatch_test_accuracy = validate_function(mini_batches, test_sequence_y, mini_batch_masks)
+                    minibatch_test_loss, minibatch_test_accuracy = validate_function(test_minibatch, test_sequence_y, test_minibatch_masks)
 
                     total_test_loss += minibatch_test_loss * len(test_sequence_y)
                     total_test_accuracy += minibatch_test_accuracy * len(test_sequence_y);
                     total_test_instances += len(test_sequence_y);
 
-                # if we got the best validation score until now
+                    if total_test_instances % 1000 == 0:
+                        print "test progress: %d instances" % (total_test_instances)
+
                 average_test_accuracy = total_test_accuracy / total_test_instances;
                 average_test_loss = total_test_loss / total_test_instances;
                 print 'test result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
+
+            if total_train_instances % 1000 == 0:
+                print "train progress: %d instances" % (total_train_instances)
 
         average_train_accuracy = total_train_accuracy / total_train_instances;
         average_train_loss = total_train_loss / total_train_instances;
