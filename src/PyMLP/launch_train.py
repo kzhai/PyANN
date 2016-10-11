@@ -483,7 +483,7 @@ def launch_train():
     ########################
     
     highest_average_validate_accuracy = 0
-    best_iteration_index = 0
+    #best_iteration_index = 0
     
     start_train = timeit.default_timer()
     
@@ -502,7 +502,7 @@ def launch_train():
 
         total_train_loss = 0;
         total_train_accuracy = 0;
-        total_train_instance = 0;
+        total_train_instances = 0;
         for minibatch_index in xrange(number_of_minibatches):
             minibatch_running_time = timeit.default_timer();
 
@@ -515,7 +515,7 @@ def launch_train():
 
             total_train_loss += minibatch_average_train_loss * minibatch_size;
             total_train_accuracy += minibatch_average_train_accuracy * minibatch_size;
-            total_train_instance += minibatch_size;
+            total_train_instances += minibatch_size;
 
             epoch_running_time += timeit.default_timer() - minibatch_running_time;
 
@@ -525,7 +525,7 @@ def launch_train():
                 # if we got the best validation score until now
                 if average_validate_accuracy > highest_average_validate_accuracy:
                     highest_average_validate_accuracy = average_validate_accuracy
-                    best_iteration_index = iteration_index
+                    #best_iteration_index = iteration_index
                     
                     # save the best model
                     print 'best model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
@@ -538,8 +538,8 @@ def launch_train():
                 average_test_loss, average_test_accuracy = validate_function(test_set_x, test_set_y);
                 print 'test result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
 
-        average_train_accuracy = total_train_accuracy / total_train_instance;
-        average_train_loss = total_train_loss / total_train_instance;
+        average_train_accuracy = total_train_accuracy / total_train_instances;
+        average_train_loss = total_train_loss / total_train_instances;
         print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
 
         if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
@@ -551,7 +551,7 @@ def launch_train():
     
     end_train = timeit.default_timer()
     print "Optimization complete..."
-    print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
+    #print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' + 
                           os.path.split(__file__)[1] + 
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
