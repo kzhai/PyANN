@@ -511,10 +511,10 @@ def launch_train():
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
 
-            average_train_loss, average_train_accuracy = train_function(minibatch_x, minibatch_y)
+            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(minibatch_x, minibatch_y)
 
-            total_train_loss += average_train_loss * minibatch_size;
-            total_train_accuracy += average_train_accuracy * minibatch_size;
+            total_train_loss += minibatch_average_train_loss * minibatch_size;
+            total_train_accuracy += minibatch_average_train_accuracy * minibatch_size;
             total_train_instance += minibatch_size;
 
             epoch_running_time += timeit.default_timer() - minibatch_running_time;
