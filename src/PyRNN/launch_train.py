@@ -728,12 +728,12 @@ def launch_train():
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
-    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
-    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     end_train = timeit.default_timer()
     print "Optimization complete..."
-    print "Best validation score of %f%% obtained at epoch %i on get_mini_batches %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
+    #print "Best validation score of %f%% obtained at epoch %i on get_mini_batches %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
