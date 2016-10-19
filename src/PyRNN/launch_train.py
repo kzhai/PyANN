@@ -104,7 +104,7 @@ def parse_args():
                       help="dropout style different layer [bernoulli], example, 'bernoulli,beta-bernoulli' represents 2 layers with bernoulli and beta-bernoulli dropout respectively");
     # parser.add_option("--layer_latent_feature_alphas", type="string", dest="layer_latent_feature_alphas",
                       # help="alpha for latent feature ");
-                                            
+
     # parameter set 5
     parser.add_option("--L1_regularizer_lambdas", type="string", dest="L1_regularizer_lambdas",
                       help="L1 regularization lambda [0]")
@@ -325,7 +325,7 @@ def launch_train():
     vocabulary_dimension = 0;
     for line in open(os.path.join(input_directory, "mapping.feature"), 'r'):
         vocabulary_dimension += 1;
-    # this is to include a dummy entry for out of vocabulary type
+    # this is to include a dummy entry for out-of-vocabulary type
     vocabulary_dimension += 1;
 
     label_dimension = 0;
