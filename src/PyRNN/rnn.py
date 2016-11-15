@@ -67,12 +67,12 @@ class RecurrentNeuralNetwork(network.Network):
                                                        W=lasagne.init.GlorotUniform());
 
         self._embedding = neural_network.get_params(trainable=True)[-1];
-        print self._embedding.eval()
+        #print self._embedding.eval()
         self._normalize_embedding_function = theano.function(
             inputs=[],
             updates={self._embedding: self._embedding / theano.tensor.sqrt((self._embedding ** 2).sum(axis=1))}
         )
-        print self._embedding.eval()
+        #print self._embedding.eval()
 
         #print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
         #(13, 9, 5, 100)
