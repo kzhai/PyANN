@@ -121,6 +121,9 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     # y = theano.tensor.imatrix('y')  # label
     y = theano.tensor.ivector('y')  # label
 
+    lasagne.layers.get_all_layers(network)[0].input_var = x;
+    lasagne.layers.get_all_layers(network)[1].input_var = m;
+
     # disabling dropout layers.
     test_prediction = network.get_output(deterministic=True)
     test_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction, y))
