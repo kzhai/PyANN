@@ -602,11 +602,13 @@ def launch_train():
         outputs=[validate_loss, validate_accuracy],
     )
 
+    '''
     # Compile a function normalizing all the embeddings
     normalize_embedding_function = theano.function(
         inputs=[],
         updates={network._embedding: network._embedding / theano.tensor.sqrt((network._embedding ** 2).sum(axis=1)).dimshuffle(0, 'x')}
     )
+    '''
 
     ########################
     # START MODEL TRAINING #
@@ -648,12 +650,17 @@ def launch_train():
             # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
 
             minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(train_minibatch, train_sequence_y, train_minibatch_masks)
-            #print network._embedding.eval()
-            #normalize_embedding_function();
-            #print network._embedding.eval()
-            #print minibatch_average_train_loss * len(train_sequence_y), minibatch_average_train_accuracy * len(train_sequence_y);
-            network.normalize_embeddings();
+            
+            #embedding_layer = [layer for layer in network.get_all_layers() if isinstance(layer, lasagne.layers.EmbeddingLayer)][0];
+            #print numpy.sum(embedding_layer.W.eval()**2)
 
+            #print numpy.sum(network._embeddings.eval()**2)
+            #old_values = network._embeddings.eval()
+            #normalize_embedding_function();
+            network._normalize_embeddings_function();
+            #print numpy.sum(network._embeddings.eval()**2)
+            #new_values = network._embeddings.eval();
+            
             total_train_loss += minibatch_average_train_loss * len(train_sequence_y);
             total_train_accuracy += minibatch_average_train_accuracy * len(train_sequence_y);
             total_train_instances += len(train_sequence_y);
