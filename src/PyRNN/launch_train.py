@@ -532,8 +532,6 @@ def launch_train():
         layer_dimensions=(pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions),
         layer_nonlinearities=(pre_rnn_layer_nonlinearities, rnn_layer_nonlinearities, post_rnn_layer_nonlinearities),
         objective_to_minimize=objective_to_minimize,
-        #window_size=window_size,
-        #backprop_step=backprop_step,
         )
     
     network.set_L1_regularizer_lambda(L1_regularizer_lambdas)

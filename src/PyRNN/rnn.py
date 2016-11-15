@@ -58,12 +58,12 @@ class RecurrentNeuralNetwork(network.Network):
         neural_network = input_network;
 
         batch_size, backprop_step, window_size = lasagne.layers.get_output_shape(neural_network)
+        self._window_size = window_size;
+        self._backprop_step = backprop_step;
+
         print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
         # (13, 9, 5)
-        #self._window_size = window_size;
-        #self._backprop_step = backprop_step;
 
-        # print batch_size, backprop_step, window_size
         neural_network = lasagne.layers.EmbeddingLayer(neural_network,
                                                        input_size=vocabulary_dimension,
                                                        output_size=embedding_dimension,
@@ -83,7 +83,7 @@ class RecurrentNeuralNetwork(network.Network):
         print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
         #(13, 9, 5, 100)
 
-        neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, window_size * embedding_dimension));
+        neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, self._window_size * embedding_dimension));
         print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
         #(117, 5, 100)
 
