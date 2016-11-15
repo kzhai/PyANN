@@ -532,6 +532,8 @@ def launch_train():
         layer_dimensions=(pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions),
         layer_nonlinearities=(pre_rnn_layer_nonlinearities, rnn_layer_nonlinearities, post_rnn_layer_nonlinearities),
         objective_to_minimize=objective_to_minimize,
+        #window_size=window_size,
+        #backprop_step=backprop_step,
         )
     
     network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
@@ -763,7 +765,7 @@ def get_context_windows(sequence, window_size, vocab_size=None):
     assert (window_size % 2) == 1
     assert window_size >= 1
     sequence = list(sequence)
-    
+
     if vocab_size == None:
         context_windows = -numpy.ones((len(sequence), window_size), dtype=numpy.int32);
         padded_sequence = window_size / 2 * [-1] + sequence + window_size / 2 * [-1]
@@ -796,7 +798,7 @@ def get_mini_batches(context_windows, backprop_step):
     assert len(context_windows) == len(mini_batches)
     return mini_batches
     '''
-    
+
     sequence_length, window_size = context_windows.shape;
     mini_batches = -numpy.ones((sequence_length, backprop_step, window_size), dtype=numpy.int32);
     mini_batch_masks = numpy.zeros((sequence_length, backprop_step), dtype=numpy.int32);
@@ -807,7 +809,7 @@ def get_mini_batches(context_windows, backprop_step):
         mini_batches[i, :, :] = context_windows[i - backprop_step + 1:i + 1, :];
         mini_batch_masks[i, :] = 1;
     return mini_batches, mini_batch_masks
-    
+
 if __name__ == '__main__':
     '''
     a = get_context_windows([554, 23, 241, 534, 358, 136, 193, 11, 208, 251, 104, 502, 413, 256, 104], 5);
