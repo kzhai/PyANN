@@ -75,7 +75,7 @@ def launch_test():
     
     if os.path.isfile(model_directory):
         model_file_path = model_directory
-        prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, 5, 7)
+        prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
         # prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
         # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
         print '%f%%\t%f%%' % (prediction_accuracy_on_test_set * 100., 100 - prediction_accuracy_on_test_set * 100.)
