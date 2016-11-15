@@ -501,9 +501,6 @@ def launch_train():
     #
     
     # allocate symbolic variables for the data
-    # x = theano.tensor.ivector('x')  # the data is presented as rasterized images
-    # y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
-    
     x = theano.tensor.itensor3('x')  # as many columns as context window size/lines as words in the sentence
     # m = theano.tensor.itensor3('m')  # as many columns as context window size/lines as words in the sentence
     # x = theano.tensor.imatrix('x')  # as many columns as context window size/lines as words in the sentence
@@ -652,9 +649,10 @@ def launch_train():
 
             minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(train_minibatch, train_sequence_y, train_minibatch_masks)
             #print network._embedding.eval()
-            normalize_embedding_function();
+            #normalize_embedding_function();
             #print network._embedding.eval()
             #print minibatch_average_train_loss * len(train_sequence_y), minibatch_average_train_accuracy * len(train_sequence_y);
+            network.normalize_embeddings();
 
             total_train_loss += minibatch_average_train_loss * len(train_sequence_y);
             total_train_accuracy += minibatch_average_train_accuracy * len(train_sequence_y);

@@ -49,11 +49,8 @@ class RecurrentNeuralNetwork(network.Network):
                  ):
         super(RecurrentNeuralNetwork, self).__init__(input_network)
 
-        pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions = layer_dimensions
-        pre_rnn_layer_nonlinearities, rnn_layer_nonlinearities, post_rnn_layer_nonlinearities = layer_nonlinearities;
-        # assert len(rnn_layer_dimensions) == len(rnn_layer_nonlinearities)
-        # assert len(rnn_layer_dimensions) == len(layer_activation_parameters)
-        # assert len(rnn_layer_dimensions) == len(layer_activation_styles)
+        self._input_data_layer = input_network;
+        self._input_mask_layer = input_mask;
 
         neural_network = input_network;
 
@@ -70,15 +67,12 @@ class RecurrentNeuralNetwork(network.Network):
                                                        W=lasagne.init.GlorotUniform());
 
         self._embedding = neural_network.get_params(trainable=True)[-1];
-        '''
         print self._embedding.eval()
         self._normalize_embedding_function = theano.function(
             inputs=[],
             updates={self._embedding: self._embedding / theano.tensor.sqrt((self._embedding ** 2).sum(axis=1))}
         )
-
         print self._embedding.eval()
-        '''
 
         #print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
         #(13, 9, 5, 100)
@@ -86,6 +80,12 @@ class RecurrentNeuralNetwork(network.Network):
         neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, self._window_size * embedding_dimension));
         #print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
         #(117, 5, 100)
+
+        pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions = layer_dimensions
+        pre_rnn_layer_nonlinearities, rnn_layer_nonlinearities, post_rnn_layer_nonlinearities = layer_nonlinearities;
+        # assert len(rnn_layer_dimensions) == len(rnn_layer_nonlinearities)
+        # assert len(rnn_layer_dimensions) == len(layer_activation_parameters)
+        # assert len(rnn_layer_dimensions) == len(layer_activation_styles)
 
         for pre_rnn_layer_index in xrange(len(pre_rnn_layer_dimensions)):
             # previous_layer_dimension = lasagne.layers.get_output_shape(neural_network)[1:];
@@ -169,6 +169,12 @@ class RecurrentNeuralNetwork(network.Network):
         assert objective_to_minimize != None;
         self._objective_to_minimize = objective_to_minimize;
 
+    def get_output_from_sequence(self, input_sequence):
+        context_windows = get_context_windows(input_sequence, self._window_size)
+        train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, self._backprop_step);
+        # lasagne.layers.get_output(self._neural_network, inputs, **kwargs)
+        return self.get_output({self._input_data_layer:train_minibatch, self._input_mask_layer:train_minibatch_masks});
+
     '''
     def get_objective_to_minimize(self, label):
         train_loss = theano.tensor.mean(self._objective_to_minimize(self.get_output(), label))
@@ -189,12 +195,10 @@ class RecurrentNeuralNetwork(network.Network):
     average_train_loss, average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
     '''
 
-    '''
     def normalize_embeddings(self):
         print self._embedding.eval()
         self._normalize_embedding_function();
         print self._embedding.eval()
-    '''
 
 def get_context_windows(sequence, window_size, vocab_size=None):
     '''
