@@ -121,8 +121,9 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     # y = theano.tensor.imatrix('y')  # label
     y = theano.tensor.ivector('y')  # label
 
-    lasagne.layers.get_all_layers(network)[0].input_var = x;
-    lasagne.layers.get_all_layers(network)[1].input_var = m;
+    input_layers = [layer for layer in network.get_all_layers() if isinstance(layer, lasagne.layers.input.InputLayer)]
+    input_layers[0].input_var = x;
+    input_layers[1].input_var = m;
 
     # disabling dropout layers.
     test_prediction = network.get_output(deterministic=True)
