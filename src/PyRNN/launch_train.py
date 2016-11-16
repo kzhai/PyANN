@@ -535,34 +535,6 @@ def launch_train():
     network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
     #network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
 
-    #
-    #
-    #
-    #
-    #
-
-    '''
-    for epoch_index in range(number_of_epochs):
-        # In each epoch_index, we do a full pass over the training data:
-        start_epoch = timeit.default_timer()
-
-        for train_sequence_x, train_sequence_y in zip(train_set_x, train_set_y):
-            context_windows = get_context_windows(train_sequence_x, window_size)
-            mini_batches, mini_batch_masks = get_mini_batches(context_windows, backprop_step);
-            # print context_windows.shape
-            # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
-            assert len(mini_batches) == len(mini_batch_masks);
-            assert len(mini_batches) == len(train_sequence_y);
-            average_train_loss, average_train_accuracy = train_function(mini_batches, train_sequence_y, mini_batch_masks)
-            print average_train_loss, average_train_accuracy
-    '''
-
-    #
-    #
-    #
-    #
-    #
-
     ########################
     # BUILD LOSS FUNCTIONS #
     ########################
@@ -602,14 +574,6 @@ def launch_train():
         outputs=[validate_loss, validate_accuracy],
     )
 
-    '''
-    # Compile a function normalizing all the embeddings
-    normalize_embedding_function = theano.function(
-        inputs=[],
-        updates={network._embedding: network._embedding / theano.tensor.sqrt((network._embedding ** 2).sum(axis=1)).dimshuffle(0, 'x')}
-    )
-    '''
-
     ########################
     # START MODEL TRAINING #
     ########################
@@ -643,8 +607,9 @@ def launch_train():
             iteration_index = epoch_index * len(train_set_y) + minibatch_index
             minibatch_index += 1;
 
-            context_windows = get_context_windows(train_sequence_x, window_size)
-            train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+            #context_windows = get_context_windows(train_sequence_x, window_size)
+            #train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+            train_minibatch, train_minibatch_masks = network.get_mini_batches(train_sequence_x);
             assert len(train_minibatch) == len(train_minibatch_masks);
             assert len(train_minibatch) == len(train_sequence_y);
             # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
@@ -679,8 +644,9 @@ def launch_train():
                 total_validate_accuracy = 0;
                 total_validate_instances = 0;
                 for valid_sequence_x, valid_sequence_y in zip(valid_set_x, valid_set_y):
-                    context_windows = get_context_windows(valid_sequence_x, window_size)
-                    valid_minibatch, valid_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+                    #context_windows = get_context_windows(valid_sequence_x, window_size)
+                    #valid_minibatch, valid_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+                    valid_minibatch, valid_minibatch_masks = network.get_mini_batches(valid_sequence_x);
                     assert len(valid_minibatch) == len(valid_minibatch_masks);
                     assert len(valid_minibatch) == len(valid_sequence_x);
 
@@ -719,8 +685,9 @@ def launch_train():
                 total_test_accuracy = 0;
                 total_test_instances = 0;
                 for test_sequence_x, test_sequence_y in zip(test_set_x, test_set_y):
-                    context_windows = get_context_windows(test_sequence_x, window_size)
-                    test_minibatch, test_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+                    #context_windows = get_context_windows(test_sequence_x, window_size)
+                    #test_minibatch, test_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+                    test_minibatch, test_minibatch_masks = network.get_mini_batches(test_sequence_x);
                     assert len(test_minibatch) == len(test_minibatch_masks);
                     assert len(test_minibatch) == len(test_sequence_x);
 
@@ -814,11 +781,4 @@ def get_mini_batches(context_windows, backprop_step):
     return mini_batches, mini_batch_masks
 
 if __name__ == '__main__':
-    '''
-    a = get_context_windows([554, 23, 241, 534, 358, 136, 193, 11, 208, 251, 104, 502, 413, 256, 104], 5);
-    b = get_mini_batches(a, 9)
-    print a;
-    print b;
-    '''
-    
     launch_train()

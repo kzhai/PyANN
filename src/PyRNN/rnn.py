@@ -167,11 +167,13 @@ class RecurrentNeuralNetwork(network.Network):
         assert objective_to_minimize != None;
         self._objective_to_minimize = objective_to_minimize;
 
+    '''
     def get_output_from_sequence(self, input_sequence):
         context_windows = get_context_windows(input_sequence, self._window_size)
         train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, self._backprop_step);
         # lasagne.layers.get_output(self._neural_network, inputs, **kwargs)
         return self.get_output({self._input_data_layer:train_minibatch, self._input_mask_layer:train_minibatch_masks});
+    '''
 
     '''
     def get_objective_to_minimize(self, label):
@@ -183,76 +185,74 @@ class RecurrentNeuralNetwork(network.Network):
 
         return train_loss
     '''
-    
-    '''
-    def normalize_embeddings(self):
-        print self._embeddings.eval()
-        self._normalize_embeddings_function();
-        print self._embeddings.eval()
-    '''
 
-def get_context_windows(sequence, window_size, vocab_size=None):
-    '''
-    window_size :: int corresponding to the size of the window
-    given a list of indexes composing a sentence
-    it will return a list of list of indexes corresponding
-    to context windows surrounding each word in the sentence
-    '''
-    assert (window_size % 2) == 1
-    assert window_size >= 1
-    sequence = list(sequence)
+    def get_context_windows(self, sequence, vocab_size=None):
+        '''
+        window_size :: int corresponding to the size of the window
+        given a list of indexes composing a sentence
+        it will return a list of list of indexes corresponding
+        to context windows surrounding each word in the sentence
+        '''
+        assert (self._window_size % 2) == 1
+        assert self._window_size >= 1
+        sequence = list(sequence)
 
-    if vocab_size == None:
-        context_windows = -numpy.ones((len(sequence), window_size), dtype=numpy.int32);
-        padded_sequence = window_size / 2 * [-1] + sequence + window_size / 2 * [-1]
-        for i in xrange(len(sequence)):
-            context_windows[i, :] = padded_sequence[i:i + window_size];
-    else:
-        context_windows = numpy.zeros((len(sequence), vocab_size), dtype=numpy.int32);
-        padded_sequence = window_size / 2 * [-1] + sequence + window_size / 2 * [-1]
-        for i in xrange(len(sequence)):
-            for j in padded_sequence[i:i + window_size]:
-                context_windows[i, j] += 1;
+        if vocab_size == None:
+            context_windows = -numpy.ones((len(sequence), self._window_size), dtype=numpy.int32);
+            padded_sequence = self._window_size / 2 * [-1] + sequence + self._window_size / 2 * [-1]
+            for i in xrange(len(sequence)):
+                context_windows[i, :] = padded_sequence[i:i + self._window_size];
+        else:
+            context_windows = numpy.zeros((len(sequence), vocab_size), dtype=numpy.int32);
+            padded_sequence = self._window_size / 2 * [-1] + sequence + self._window_size / 2 * [-1]
+            for i in xrange(len(sequence)):
+                for j in padded_sequence[i:i + self._window_size]:
+                    context_windows[i, j] += 1;
 
-    # assert len(context_windows) == len(sequence)
-    return context_windows
+        # assert len(context_windows) == len(sequence)
+        return context_windows
 
-def get_mini_batches(context_windows, backprop_step):
-    '''
-    context_windows :: list of word idxs
-    return a list of minibatches of indexes
-    which size is equal to backprop_step
-    border cases are treated as follow:
-    eg: [0,1,2,3] and backprop_step = 3
-    will output:
-    [[0],[0,1],[0,1,2],[1,2,3]]
-    '''
+    def get_mini_batches(self, sequence):
+        '''
+        context_windows :: list of word idxs
+        return a list of minibatches of indexes
+        which size is equal to backprop_step
+        border cases are treated as follow:
+        eg: [0,1,2,3] and backprop_step = 3
+        will output:
+        [[0],[0,1],[0,1,2],[1,2,3]]
+        '''
 
-    '''
-    mini_batches = [context_windows[:i] for i in xrange(1, min(backprop_step, len(context_windows) + 1))]
-    mini_batches += [context_windows[i - backprop_step:i] for i in xrange(backprop_step, len(context_windows) + 1) ]
-    assert len(context_windows) == len(mini_batches)
-    return mini_batches
-    '''
+        context_windows = self.get_context_windows(sequence);
 
-    sequence_length, window_size = context_windows.shape;
-    mini_batches = -numpy.ones((sequence_length, backprop_step, window_size), dtype=numpy.int32);
-    mini_batch_masks = numpy.zeros((sequence_length, backprop_step), dtype=numpy.int32);
-    for i in xrange(min(sequence_length, backprop_step)):
-        mini_batches[i, 0:i + 1, :] = context_windows[0:i + 1, :];
-        mini_batch_masks[i, 0:i + 1] = 1;
-    for i in xrange(min(sequence_length, backprop_step), sequence_length):
-        mini_batches[i, :, :] = context_windows[i - backprop_step + 1:i + 1, :];
-        mini_batch_masks[i, :] = 1;
-    return mini_batches, mini_batch_masks
+        sequence_length, window_size = context_windows.shape;
+        mini_batches = -numpy.ones((sequence_length, self._backprop_step, window_size), dtype=numpy.int32);
+        mini_batch_masks = numpy.zeros((sequence_length, self._backprop_step), dtype=numpy.int32);
+        for i in xrange(min(sequence_length, self._backprop_step)):
+            mini_batches[i, 0:i + 1, :] = context_windows[0:i + 1, :];
+            mini_batch_masks[i, 0:i + 1] = 1;
+        for i in xrange(min(sequence_length, self._backprop_step), sequence_length):
+            mini_batches[i, :, :] = context_windows[i - self._backprop_step + 1:i + 1, :];
+            mini_batch_masks[i, :] = 1;
+        return mini_batches, mini_batch_masks
 
 if __name__ == '__main__':
-    data = [554, 23, 241, 534, 358, 136, 193, 11, 208, 251, 104, 502, 413, 256, 104];
-    #data = data[:4];
     window_size = 5;
     backprop_step = 9;
-    a = get_context_windows(data, window_size);
-    mini_batches, mini_batch_masks = get_mini_batches(a, backprop_step);
-    print a;
+
+    network = RecurrentNeuralNetwork(
+        input_network=lasagne.layers.InputLayer(shape=(None, backprop_step, window_size,)),
+        input_mask=lasagne.layers.InputLayer(shape=(None, backprop_step)),
+        vocabulary_dimension=100,
+        embedding_dimension=50,
+        layer_dimensions=([], [128], [10]),
+        layer_nonlinearities=([], [lasagne.nonlinearities.rectify], [lasagne.nonlinearities.softmax]),
+        objective_to_minimize=lasagne.objectives.categorical_crossentropy,
+    )
+
+    data = [554, 23, 241, 534, 358, 136, 193, 11, 208, 251, 104, 502, 413, 256, 104];
+    context_windows = network.get_context_windows(data);
+    print context_windows;
+    mini_batches, mini_batch_masks = network.get_mini_batches(data);
     print mini_batches;
     print mini_batch_masks;

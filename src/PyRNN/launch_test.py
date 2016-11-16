@@ -79,11 +79,9 @@ def launch_test():
         # prediction_error_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
         # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
         print '%f%%\t%f%%' % (prediction_accuracy_on_test_set * 100., 100 - prediction_accuracy_on_test_set * 100.)
-
-    '''
-    else:    
+    else:
         model_file_path = os.path.join(model_directory, "model.pkl");
-        prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, batch_size)
+        prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
         # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
         print '%f%%\t%f%%\t%d' % (prediction_accuracy_on_test_set * 100., 100 - prediction_accuracy_on_test_set * 100., -1)
         
@@ -93,20 +91,14 @@ def launch_test():
             # snapshot_index = int(model_file_name.split("-")[-1]);
             
             model_file_path = os.path.join(model_directory, model_file_name);
-            prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y, batch_size)
+            prediction_loss_on_test_set, prediction_accuracy_on_test_set = evaluate_snapshot(model_file_path, test_set_x, test_set_y)
             # print 'prediction accuracy is %f%% for %s' % (prediction_accuracy_on_test_set * 100., model_file_path)
             
             snapshot_index = int(model_file_name.split(".")[0].split("-")[1])
             print '%f%%\t%f%%\t%d' % (prediction_accuracy_on_test_set * 100., 100 - prediction_accuracy_on_test_set * 100., snapshot_index)
 
-    '''
-
 def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
-    from launch_train import get_context_windows, get_mini_batches;
-
     network = cPickle.load(open(input_snapshot_path, 'rb'));
-    window_size = network._window_size;
-    backprop_step = network._backprop_step
 
     #
     #
@@ -140,8 +132,9 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     total_test_accuracy = 0;
     total_test_instances = 0;
     for test_sequence_x, test_sequence_y in zip(test_set_x, test_set_y):
-        context_windows = get_context_windows(test_sequence_x, window_size)
-        test_minibatch, test_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+        #context_windows = get_context_windows(test_sequence_x, window_size)
+        #test_minibatch, test_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+        test_minibatch, test_minibatch_masks = network.get_mini_batches(test_sequence_x);
         assert len(test_minibatch) == len(test_minibatch_masks);
         assert len(test_minibatch) == len(test_sequence_x);
 
@@ -165,6 +158,7 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
 
     return average_test_loss, average_test_accuracy;
 
+'''
 def evaluate_snapshot_batch(input_snapshot_path, test_set_x, test_set_y):
     network = cPickle.load(open(input_snapshot_path, 'rb'));
 
@@ -209,6 +203,7 @@ def evaluate_snapshot_through_graph(input_snapshot_path, test_set_x, test_set_y)
     prediction_loss_on_test_set, prediction_accuracy_on_test_set = test_function(test_set_x, test_set_y);
     
     return prediction_loss_on_test_set, prediction_accuracy_on_test_set;
-    
+'''
+
 if __name__ == '__main__':
     launch_test()
