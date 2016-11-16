@@ -100,12 +100,6 @@ def launch_test():
 def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     network = cPickle.load(open(input_snapshot_path, 'rb'));
 
-    #
-    #
-    #
-    #
-    #
-
     x = theano.tensor.itensor3('x')  # as many columns as context window size/lines as words in the sentence
     # m = theano.tensor.itensor3('m')  # as many columns as context window size/lines as words in the sentence
     # x = theano.tensor.imatrix('x')  # as many columns as context window size/lines as words in the sentence
