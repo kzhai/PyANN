@@ -6,6 +6,8 @@ from lasagne.layers import Layer
 from lasagne import init
 from lasagne import nonlinearities
 
+import network
+
 from theano.tensor.shared_randomstreams import RandomStreams
 
 class RestrictedBoltzmannMachineLayer(Layer):
@@ -15,7 +17,7 @@ class RestrictedBoltzmannMachineLayer(Layer):
     def __init__(self,
                  incoming,
                  num_units,
-                 W=init.GlorotUniform(gain=4.0),
+                 W=init.GlorotUniform(gain=network.GlorotUniformGain[nonlinearities.sigmoid]),
                  b_hidden=init.Constant(0.),
                  b_visible=init.Constant(0.),
                  **kwargs):

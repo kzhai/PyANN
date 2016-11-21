@@ -238,13 +238,6 @@ def get_mini_batches(context_windows, backprop_step):
     [[0],[0,1],[0,1,2],[1,2,3]]
     '''
 
-    '''
-    mini_batches = [context_windows[:i] for i in xrange(1, min(backprop_step, len(context_windows) + 1))]
-    mini_batches += [context_windows[i - backprop_step:i] for i in xrange(backprop_step, len(context_windows) + 1) ]
-    assert len(context_windows) == len(mini_batches)
-    return mini_batches
-    '''
-
     sequence_length, window_size = context_windows.shape;
     mini_batches = -numpy.ones((sequence_length, backprop_step, window_size), dtype=numpy.int32);
     mini_batch_masks = numpy.zeros((sequence_length, backprop_step), dtype=numpy.int32);
