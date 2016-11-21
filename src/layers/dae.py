@@ -9,6 +9,8 @@ from lasagne import nonlinearities
 from theano.tensor.shared_randomstreams import RandomStreams
 import lasagne
 
+import network
+
 def get_filter_mask(input, retain_probability=1, rng=RandomStreams()):
     """This function keeps ``1-retain_probability`` entries of the inputs the
     same and zero-out randomly selected subset of size ``coruption_level``
@@ -61,7 +63,7 @@ class DenoisingAutoEncoderLayer(Layer):
                  incoming,
                  num_units,
                  corruption_level,
-                 W_encoder=init.GlorotUniform(gain=4.0),
+                 W_encoder=init.GlorotUniform(gain=network.GlorotUniformGain[nonlinearities.sigmoid]),
                  W_decoder=None,
                  b_encoder=init.Constant(0.),
                  b_decoder=init.Constant(0.),

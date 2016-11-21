@@ -321,7 +321,7 @@ def launch_train():
     assert len(data_x) == len(data_y);
     for datum_x, datum_y in zip(data_x, data_y):
         assert datum_x.shape == datum_y.shape;
-    
+
     vocabulary_dimension = 0;
     for line in open(os.path.join(input_directory, "mapping.feature"), 'r'):
         vocabulary_dimension += 1;
