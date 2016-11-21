@@ -72,7 +72,7 @@ class RecurrentNeuralNetwork(network.Network):
             updates={self._embeddings: self._embeddings / theano.tensor.sqrt((self._embeddings ** 2).sum(axis=1)).dimshuffle(0, 'x')}
         )
 
-        print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
+        #print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
         # (13, 9, 5, 100)
 
         pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions = layer_dimensions
@@ -82,7 +82,7 @@ class RecurrentNeuralNetwork(network.Network):
         # assert len(rnn_layer_dimensions) == len(layer_activation_styles)
 
         neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, self._window_size * embedding_dimension));
-        print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
+        #print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
         # (117, 5, 100)
 
         for pre_rnn_layer_index in xrange(len(pre_rnn_layer_dimensions)):
@@ -105,7 +105,7 @@ class RecurrentNeuralNetwork(network.Network):
             # (117, 256)
 
         neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, lasagne.layers.get_output_shape(neural_network)[-1]));
-        print "checkpoint b", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
+        #print "checkpoint b", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
         # (13, 9, 256)
 
         for rnn_layer_index in xrange(len(rnn_layer_dimensions)):
@@ -136,8 +136,8 @@ class RecurrentNeuralNetwork(network.Network):
                                                            # only_return_final=True
                                                            );
 
-            input_layers = [input_layer for input_layer in lasagne.layers.get_all_layers(neural_network) if isinstance(input_layer, lasagne.layers.InputLayer)];
-            print "checkpoint c", rnn_layer_index, lasagne.layers.get_output_shape(neural_network, {input_layers[0]:(batch_size_example, backprop_step_example, window_size_example), input_layers[1]:(batch_size_example, backprop_step_example)})
+            #input_layers = [input_layer for input_layer in lasagne.layers.get_all_layers(neural_network) if isinstance(input_layer, lasagne.layers.InputLayer)];
+            #print "checkpoint c", rnn_layer_index, lasagne.layers.get_output_shape(neural_network, {input_layers[0]:(batch_size_example, backprop_step_example, window_size_example), input_layers[1]:(batch_size_example, backprop_step_example)})
             # (13, 9, 128)
 
         for post_rnn_layer_index in xrange(len(post_rnn_layer_dimensions)):
@@ -155,11 +155,8 @@ class RecurrentNeuralNetwork(network.Network):
                                                            gain=network.GlorotUniformGain[post_rnn_layer_nonlinearity]),
                                                        nonlinearity=post_rnn_layer_nonlinearity)
 
-            input_layers = [input_layer for input_layer in lasagne.layers.get_all_layers(neural_network) if
-                            isinstance(input_layer, lasagne.layers.InputLayer)];
-            print "checkpoint d", rnn_layer_index, lasagne.layers.get_output_shape(neural_network, {
-                input_layers[0]: (batch_size_example, backprop_step_example, window_size_example),
-                input_layers[1]: (batch_size_example, backprop_step_example)})
+            #input_layers = [input_layer for input_layer in lasagne.layers.get_all_layers(neural_network) if isinstance(input_layer, lasagne.layers.InputLayer)];
+            #print "checkpoint d", rnn_layer_index, lasagne.layers.get_output_shape(neural_network, {input_layers[0]: (batch_size_example, backprop_step_example, window_size_example), input_layers[1]: (batch_size_example, backprop_step_example)})
             # (13, 127)
 
         self._neural_network = neural_network;
