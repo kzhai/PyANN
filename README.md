@@ -238,12 +238,12 @@ To launch recurrent neural network (RNN) on atis example dataset,
 	python -um PyRNN.launch_train \
 		--input_directory=../input/atis.label/ \
 		--output_directory=../output/ \
-		--number_of_epochs=100 \
+		--number_of_epochs=50 \
 		--learning_rate=0.01 \
 		--embedding_dimension=100 \
 		--backprop_step=9 \
 		--window_size=5 \
-		--layer_dimensions=256,[1024],127 \
+		--layer_dimensions=256,[128],127 \
 		--layer_nonlinearities=sigmoid,[sigmoid],softmax \
 		--objective_to_minimize=categorical_crossentropy
 		
