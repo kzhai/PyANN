@@ -320,8 +320,8 @@ if __name__ == '__main__':
         input_mask=lasagne.layers.InputLayer(shape=(None, backprop_step)),
         vocabulary_dimension=100,
         embedding_dimension=50,
-        layer_dimensions=([], [128], [10]),
-        layer_nonlinearities=([], [lasagne.nonlinearities.rectify], [lasagne.nonlinearities.softmax]),
+        layer_dimensions=[64, [128], 10],
+        layer_nonlinearities=[lasagne.nonlinearities.rectify, [lasagne.nonlinearities.rectify], lasagne.nonlinearities.softmax],
         objective_to_minimize=lasagne.objectives.categorical_crossentropy,
     )
 

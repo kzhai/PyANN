@@ -115,7 +115,7 @@ class BidirectionalRecurrentNeuralNetwork(network.Network):
                 print_output_dimension("checkpoint a2");
             elif isinstance(layer_dimension, list):
                 assert isinstance(layer_nonlinearity, list)
-                if not isinstance(lasagne.layers.get_all_layers(neural_network)[-1], lasagne.layers.RecurrentLayer):
+                if not isinstance(lasagne.layers.get_all_layers(neural_network)[-1], lasagne.layers.ConcatLayer):
                     neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, lasagne.layers.get_output_shape(neural_network)[-1]));
                     print_output_dimension("checkpoint b1");
 
@@ -185,7 +185,7 @@ class BidirectionalRecurrentNeuralNetwork(network.Network):
                                                                    # only_return_final=True
                                                                    );
 
-                neural_network = lasagne.layers.ConcatLayer([forward_rnn_layer, backward_rnn_layer]);
+                neural_network = lasagne.layers.ConcatLayer([forward_rnn_layer, backward_rnn_layer], axis=-1);
                 print_output_dimension("checkpoint b2");
             else:
                 sys.stderr.write("layer specification conflicts...\n")
@@ -360,7 +360,7 @@ if __name__ == '__main__':
     window_size = 5;
     backprop_step = 9;
 
-    network = RecurrentNeuralNetwork(
+    network = BidirectionalRecurrentNeuralNetwork(
         input_network=lasagne.layers.InputLayer(shape=(None, backprop_step, window_size,)),
         input_mask=lasagne.layers.InputLayer(shape=(None, backprop_step)),
         vocabulary_dimension=100,
