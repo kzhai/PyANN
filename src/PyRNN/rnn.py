@@ -114,6 +114,7 @@ class RecurrentNeuralNetwork(network.Network):
                                                            nonlinearity=layer_nonlinearity)
                 #print_output_dimension("checkpoint a2");
             elif isinstance(layer_dimension, list):
+                assert isinstance(layer_nonlinearity, list)
                 if not isinstance(lasagne.layers.get_all_layers(neural_network)[-1], lasagne.layers.RecurrentLayer):
                     neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, lasagne.layers.get_output_shape(neural_network)[-1]));
                     #print_output_dimension("checkpoint b1");
@@ -142,6 +143,7 @@ class RecurrentNeuralNetwork(network.Network):
                                                                );
                 #print_output_dimension("checkpoint b2");
             else:
+                sys.stderr.write("layer specification conflicts...\n")
                 sys.exit();
 
         #print lasagne.layers.get_all_layers(neural_network);
