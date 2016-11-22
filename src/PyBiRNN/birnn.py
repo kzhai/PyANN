@@ -104,7 +104,7 @@ class BidirectionalRecurrentNeuralNetwork(network.Network):
             if isinstance(layer_dimension, int):
                 if layer_index <= last_rnn_layer_index:
                     neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, lasagne.layers.get_output_shape(neural_network)[-1]));
-                    print_output_dimension("checkpoint a1");
+                    #print_output_dimension("checkpoint a1");
 
                 neural_network = lasagne.layers.DenseLayer(neural_network,
                                                            layer_dimension,
@@ -112,12 +112,12 @@ class BidirectionalRecurrentNeuralNetwork(network.Network):
                                                                gain=network.GlorotUniformGain[
                                                                    layer_nonlinearity]),
                                                            nonlinearity=layer_nonlinearity)
-                print_output_dimension("checkpoint a2");
+                #print_output_dimension("checkpoint a2");
             elif isinstance(layer_dimension, list):
                 assert isinstance(layer_nonlinearity, list)
                 if not isinstance(lasagne.layers.get_all_layers(neural_network)[-1], lasagne.layers.ConcatLayer):
                     neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, lasagne.layers.get_output_shape(neural_network)[-1]));
-                    print_output_dimension("checkpoint b1");
+                    #print_output_dimension("checkpoint b1");
 
                 layer_dimension = layer_dimension[0]
                 layer_nonlinearity = layer_nonlinearity[0]
@@ -186,7 +186,7 @@ class BidirectionalRecurrentNeuralNetwork(network.Network):
                                                                    );
 
                 neural_network = lasagne.layers.ConcatLayer([forward_rnn_layer, backward_rnn_layer], axis=-1);
-                print_output_dimension("checkpoint b2");
+                #print_output_dimension("checkpoint b2");
             else:
                 sys.stderr.write("layer specification conflicts...\n")
                 sys.exit();
