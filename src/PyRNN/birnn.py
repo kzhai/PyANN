@@ -15,7 +15,7 @@ import optparse
 
 import lasagne
 import network
-import src.PyBiRNN.rnn
+import src.PyBiRNN.birnn
 
 from layers.dropout import GeneralizedDropoutLayer, sample_activation_probability
 
@@ -215,7 +215,7 @@ class BidirectionalRecurrentNeuralNetwork(network.Network):
         [[0],[0,1],[0,1,2],[1,2,3]]
         '''
 
-        from src.PyBiRNN.rnn import get_context_windows, get_mini_batches;
+        from src.PyBiRNN.birnn import get_context_windows, get_mini_batches;
 
         context_windows = get_context_windows(sequence, self._window_size);
         mini_batches, mini_batch_masks = get_mini_batches(context_windows, self._backprop_step);
