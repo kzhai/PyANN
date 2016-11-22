@@ -102,9 +102,9 @@ class RecurrentNeuralNetwork(network.Network):
             layer_nonlinearity = layer_nonlinearities[layer_index]
 
             if isinstance(layer_dimension, int):
-                if layer_index<=last_rnn_layer_index:
+                if layer_index <= last_rnn_layer_index:
                     neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, lasagne.layers.get_output_shape(neural_network)[-1]));
-                    print_output_dimension("checkpoint a1");
+                    #print_output_dimension("checkpoint a1");
 
                 neural_network = lasagne.layers.DenseLayer(neural_network,
                                                            layer_dimension,
@@ -112,11 +112,11 @@ class RecurrentNeuralNetwork(network.Network):
                                                                gain=network.GlorotUniformGain[
                                                                    layer_nonlinearity]),
                                                            nonlinearity=layer_nonlinearity)
-                print_output_dimension("checkpoint a2");
+                #print_output_dimension("checkpoint a2");
             elif isinstance(layer_dimension, list):
                 if not isinstance(lasagne.layers.get_all_layers(neural_network)[-1], lasagne.layers.RecurrentLayer):
                     neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, lasagne.layers.get_output_shape(neural_network)[-1]));
-                    print_output_dimension("checkpoint b1");
+                    #print_output_dimension("checkpoint b1");
 
                 layer_dimension = layer_dimension[0]
                 layer_nonlinearity = layer_nonlinearity[0]
@@ -140,11 +140,11 @@ class RecurrentNeuralNetwork(network.Network):
                                                                mask_input=input_mask,
                                                                # only_return_final=True
                                                                );
-                print_output_dimension("checkpoint b2");
+                #print_output_dimension("checkpoint b2");
             else:
                 sys.exit();
 
-        print lasagne.layers.get_all_layers(neural_network);
+        #print lasagne.layers.get_all_layers(neural_network);
 
         '''
         for pre_rnn_layer_index in xrange(len(pre_rnn_layer_dimensions)):
