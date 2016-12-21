@@ -152,52 +152,5 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
 
     return average_test_loss, average_test_accuracy;
 
-'''
-def evaluate_snapshot_batch(input_snapshot_path, test_set_x, test_set_y):
-    network = cPickle.load(open(input_snapshot_path, 'rb'));
-
-    test_prediction_distribution = lasagne.layers.get_output(network._neural_network, test_set_x, deterministic=True).eval()
-    
-    # prediction_loss_on_test_set = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction_distribution, y))
-    prediction_loss_on_test_set = 0;
-
-    test_prediction = numpy.argmax(test_prediction_distribution, axis=1);
-    test_accuracy = numpy.equal(test_prediction, test_set_y);
-    prediction_accuracy_on_test_set = numpy.mean(test_accuracy);
-    
-    return prediction_loss_on_test_set, prediction_accuracy_on_test_set;
-
-def evaluate_snapshot_through_graph(input_snapshot_path, test_set_x, test_set_y):
-    # allocate symbolic variables for the data
-    # x = theano.tensor.matrix('x')  # the data is presented as rasterized images
-    x = theano.tensor.tensor4('x')  # the data is presented as rasterized images
-    y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
-    
-    network = cPickle.load(open(input_snapshot_path, 'rb'));
-    
-    # This is to establish the computational graph
-    # network.get_all_layers()[0].input_var = x
-    network.set_input_variable(x);
-    
-    # Create a train_loss expression for validation/testing. The crucial difference
-    # here is that we do a deterministic forward pass through the networks,
-    # disabling dropout layers.
-    test_prediction = network.get_output(deterministic=True)
-    test_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction, y))
-    # As a bonus, also create an expression for the classification accuracy:
-    test_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(test_prediction, axis=1), y), dtype=theano.config.floatX)
-    
-    # compiling a Theano function that computes the mistakes that are made by the model on a minibatch
-    test_function = theano.function(
-        inputs=[x, y],
-        outputs=[test_loss, test_accuracy],
-    )
-    
-    # test it on the test set
-    prediction_loss_on_test_set, prediction_accuracy_on_test_set = test_function(test_set_x, test_set_y);
-    
-    return prediction_loss_on_test_set, prediction_accuracy_on_test_set;
-'''
-
 if __name__ == '__main__':
     launch_test()
