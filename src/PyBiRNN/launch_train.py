@@ -27,14 +27,14 @@ def parse_args():
                         
                         # parameter set 2
                         number_of_epochs=-1,
-                        # minibatch_size=100,
+                        minibatch_size=1,
                         snapshot_interval=-1,
                         validation_interval=1000,
                         
                         # parameter set 3
                         learning_rate=1e-2,
                         window_size=1,
-                        backprop_step=-1,
+                        sequence_length=100,
                         
                         # parameter set 4
                         # vocabulary_dimension=-1,
@@ -65,8 +65,8 @@ def parse_args():
                       # help="pretrained model file [None]")
 
     # parameter set 2
-    # parser.add_option("--minibatch_size", type="int", dest="minibatch_size",
-                      # help="mini-batch size [100]")
+    parser.add_option("--minibatch_size", type="int", dest="minibatch_size",
+                      help="mini-batch size [1]")
     parser.add_option("--number_of_epochs", type="int", dest="number_of_epochs",
                       help="number of epochs [-1]")
     parser.add_option("--snapshot_interval", type="int", dest="snapshot_interval",
@@ -81,8 +81,8 @@ def parse_args():
                       help="learning rate [1e-3]")
     parser.add_option("--window_size", type="int", dest="window_size",
                       help="window size [1]");
-    parser.add_option("--backprop_step", type="int", dest="backprop_step",
-                      help="number of back propagation steps [-1]");
+    parser.add_option("--sequence_length", type="int", dest="sequence_length",
+                      help="longest sequnece length for back propagation steps [100]");
                     
     # parameter set 4
     # parser.add_option("--vocabulary_dimension", type="int", dest="vocabulary_dimension",
@@ -132,8 +132,8 @@ def launch_train():
     options = parse_args();
 
     # parameter set 2
-    # assert(options.minibatch_size > 0);
-    # minibatch_size = options.minibatch_size;
+    assert(options.minibatch_size > 0);
+    minibatch_size = options.minibatch_size;
     assert(options.number_of_epochs > 0);
     number_of_epochs = options.number_of_epochs;
     assert(options.validation_interval > 0);
@@ -144,11 +144,11 @@ def launch_train():
     # parameter set 3
     assert options.learning_rate > 0;
     learning_rate = options.learning_rate;
-    assert options.window_size > 0;
+    assert options.window_size > 0
     assert options.window_size % 2 == 1;
     window_size = options.window_size;
-    assert options.backprop_step > 0;
-    backprop_step = options.backprop_step;
+    assert options.sequence_length > 0;
+    sequence_length = options.sequence_length;
     
     # parameter set 4
     # assert options.vocabulary_dimension > 0;
@@ -444,7 +444,7 @@ def launch_train():
     suffix += "-T%d" % (number_of_training_data);
     suffix += "-E%d" % (number_of_epochs);
     #suffix += "-S%d" % (snapshot_interval);
-    # suffix += "-B%d" % (minibatch_size);
+    suffix += "-B%d" % (minibatch_size);
     suffix += "-aa%f" % (learning_rate);
     # suffix += "-l1r%f" % (L1_regularizer_lambdas);
     # suffix += "-l2r%d" % (L2_regularizer_lambdas);
@@ -470,13 +470,15 @@ def launch_train():
     
     # parameter set 2
     options_output_file.write("number_of_epochs=%d\n" % (number_of_epochs));
-    # options_output_file.write("minibatch_size=" + str(minibatch_size) + "\n");
+    options_output_file.write("minibatch_size=" + str(minibatch_size) + "\n");
     options_output_file.write("snapshot_interval=%d\n" % (snapshot_interval));
     options_output_file.write("validation_interval=%d\n" % validation_interval);
     
     # parameter set 3
     options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
-    
+    options_output_file.write("window_size=" + str(window_size) + "\n");
+    options_output_file.write("sequence_length=" + str(sequence_length) + "\n");
+
     # parameter set 4
     options_output_file.write("layer_dimensions=%s\n" % (layer_dimensions))
     options_output_file.write("layer_nonlinearities=%s\n" % (layer_nonlinearities));
@@ -515,12 +517,14 @@ def launch_train():
     # print "dictionary file=" + str(dict_file)
     # parameter set 2
     print "number_of_epochs=%d" % (number_of_epochs);
-    # print "minibatch_size=" + str(minibatch_size)
+    print "minibatch_size=" + str(minibatch_size)
     print "snapshot_interval=" + str(snapshot_interval);
     print "validation_interval=%d" % validation_interval;
     
     # parameter set 3
     print "learning_rate=" + str(learning_rate)
+    print "window_size=" + str(window_size)
+    print "sequence_length=" + str(sequence_length)
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
     # parameter set 4
@@ -561,8 +565,8 @@ def launch_train():
     y = theano.tensor.ivector('y')  # label
     
     # input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
-    input_layer = lasagne.layers.InputLayer(shape=(None, backprop_step, window_size,), input_var=x)
-    mask_layer = lasagne.layers.InputLayer(shape=(None, backprop_step), input_var=m)
+    input_layer = lasagne.layers.InputLayer(shape=(None, sequence_length, window_size,), input_var=x)
+    mask_layer = lasagne.layers.InputLayer(shape=(None, sequence_length), input_var=m)
     
     '''
     embedding_layer = lasagne.layers.EmbeddingLayer(input_layer,
@@ -631,16 +635,69 @@ def launch_train():
     ########################
     
     highest_average_validate_accuracy = 0
-    #best_iteration_index = 0
-    
+
     start_train = timeit.default_timer()
     
     #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
     #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     # compute number of minibatches for training, validation and testing
-    # number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
-    # number_of_minibatches = train_set_x.shape[0] / minibatch_size
+    #number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
+    number_of_minibatches = train_set_x.shape[0] / minibatch_size
+
+    # Parse train data into sequences
+    train_sequence_x = -numpy.ones((0, sequence_length, window_size), dtype=numpy.int32);
+    train_sequence_m = numpy.zeros((0, sequence_length), dtype=numpy.int8);
+    train_sequence_y = numpy.zeros(0, dtype=numpy.int32);
+
+    train_sequence_indices_by_instance = [0];
+    for train_instance_x, train_instance_y in zip(train_set_x, train_set_y):
+        # context_windows = get_context_windows(train_sequence_x, window_size)
+        # train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+        instance_sequence_x, instance_sequence_m = network.get_instance_sequences(train_instance_x);
+        assert len(instance_sequence_x) == len(instance_sequence_m);
+        assert len(instance_sequence_x) == len(train_instance_y);
+        # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
+
+        train_sequence_x = numpy.concatenate((train_sequence_x, instance_sequence_x), axis=0);
+        train_sequence_m = numpy.concatenate((train_sequence_m, instance_sequence_m), axis=0);
+        train_sequence_y = numpy.concatenate((train_sequence_y, train_instance_y), axis=0);
+
+        train_sequence_indices_by_instance.append(len(train_sequence_y));
+
+    # Parse validate data into sequences
+    valid_sequence_x = -numpy.ones((0, sequence_length, window_size), dtype=numpy.int32);
+    valid_sequence_m = numpy.zeros((0, sequence_length), dtype=numpy.int8);
+    valid_sequence_y = numpy.zeros(0, dtype=numpy.int32);
+
+    valid_sequence_indices_by_instance = [0];
+    for valid_instance_x, valid_instance_y in zip(valid_set_x, valid_set_y):
+        instance_sequence_x, instance_sequence_m = network.get_instance_sequences(valid_instance_x);
+        assert len(instance_sequence_x) == len(instance_sequence_m);
+        assert len(instance_sequence_x) == len(valid_instance_y);
+
+        valid_sequence_x = numpy.concatenate((valid_sequence_x, instance_sequence_x), axis=0);
+        valid_sequence_m = numpy.concatenate((valid_sequence_m, instance_sequence_m), axis=0);
+        valid_sequence_y = numpy.concatenate((valid_sequence_y, valid_instance_y), axis=0);
+
+        valid_sequence_indices_by_instance.append(len(valid_sequence_y));
+
+    # Parse test data into sequences
+    test_sequence_x = -numpy.ones((0, sequence_length, window_size), dtype=numpy.int32);
+    test_sequence_m = numpy.zeros((0, sequence_length), dtype=numpy.int8);
+    test_sequence_y = numpy.zeros(0, dtype=numpy.int32);
+
+    test_sequence_indices_by_instance = [0];
+    for test_instance_x, test_instance_y in zip(test_set_x, test_set_y):
+        instance_sequence_x, instance_sequence_m = network.get_instance_sequences(test_instance_x);
+        assert len(instance_sequence_x) == len(instance_sequence_m);
+        assert len(instance_sequence_x) == len(test_instance_y);
+
+        test_sequence_x = numpy.concatenate((test_sequence_x, instance_sequence_x), axis=0);
+        test_sequence_m = numpy.concatenate((test_sequence_m, instance_sequence_m), axis=0);
+        test_sequence_y = numpy.concatenate((test_sequence_y, test_instance_y), axis=0);
+
+        test_sequence_indices_by_instance.append(len(test_sequence_y));
 
     # Finally, launch the training loop.
     # We iterate over epochs:
@@ -648,25 +705,27 @@ def launch_train():
         # In each epoch_index, we do a full pass over the training data:
         epoch_running_time = 0;
 
-        minibatch_index = 0;
-
         total_train_loss = 0;
         total_train_accuracy = 0;
-        total_train_instances = 0;
-        for train_sequence_x, train_sequence_y in zip(train_set_x, train_set_y):
+        for minibatch_index in xrange(number_of_minibatches):
             minibatch_running_time = timeit.default_timer();
 
-            iteration_index = epoch_index * len(train_set_y) + minibatch_index
-            minibatch_index += 1;
+            iteration_index = epoch_index * number_of_minibatches + minibatch_index
 
-            #context_windows = get_context_windows(train_sequence_x, window_size)
-            #train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, backprop_step);
-            train_minibatch, train_minibatch_masks = network.get_instance_sequences(train_sequence_x);
-            assert len(train_minibatch) == len(train_minibatch_masks);
-            assert len(train_minibatch) == len(train_sequence_y);
-            # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
+            instance_start_index = minibatch_index * minibatch_size;
+            instance_end_index = (minibatch_index + 1) * minibatch_size;
 
-            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(train_minibatch, train_sequence_y, train_minibatch_masks)
+            train_sequence_start_index = train_sequence_indices_by_instance[instance_start_index];
+            train_sequence_end_index = train_sequence_indices_by_instance[instance_end_index];
+
+            #print minibatch_index, instance_start_index, instance_end_index, sequence_start_index, sequence_end_index
+            #print train_sequence_x[sequence_start_index:sequence_end_index, :, :]
+            #print train_sequence_masks[sequence_start_index+1:sequence_end_index+1, :]
+
+            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(
+                train_sequence_x[train_sequence_start_index:train_sequence_end_index, :, :],
+                train_sequence_y[train_sequence_start_index:train_sequence_end_index],
+                train_sequence_m[train_sequence_start_index:train_sequence_end_index, :]);
             
             #embedding_layer = [layer for layer in network.get_all_layers() if isinstance(layer, lasagne.layers.EmbeddingLayer)][0];
             #print numpy.sum(embedding_layer.W.eval()**2)
@@ -678,11 +737,13 @@ def launch_train():
             #print numpy.sum(network._embeddings.eval()**2)
             #new_values = network._embeddings.eval();
             
-            total_train_loss += minibatch_average_train_loss * len(train_sequence_y);
-            total_train_accuracy += minibatch_average_train_accuracy * len(train_sequence_y);
-            total_train_instances += len(train_sequence_y);
+            total_train_loss += minibatch_average_train_loss * (train_sequence_end_index - train_sequence_start_index);
+            total_train_accuracy += minibatch_average_train_accuracy * (train_sequence_end_index - train_sequence_start_index);
 
             epoch_running_time += timeit.default_timer() - minibatch_running_time;
+
+            if iteration_index % 1000 == 0: # or train_sequence_end_index % 1000 == 0:
+                print "train progress: %d sequences by %d minibatches" % (train_sequence_end_index, iteration_index)
 
             #
             #
@@ -694,27 +755,23 @@ def launch_train():
             if iteration_index % validation_interval == 0 and len(valid_set_y) > 0:
                 total_validate_loss = 0;
                 total_validate_accuracy = 0;
-                total_validate_instances = 0;
-                for valid_sequence_x, valid_sequence_y in zip(valid_set_x, valid_set_y):
-                    #context_windows = get_context_windows(valid_sequence_x, window_size)
-                    #valid_minibatch, valid_minibatch_masks = get_mini_batches(context_windows, backprop_step);
-                    valid_minibatch, valid_minibatch_masks = network.get_instance_sequences(valid_sequence_x);
-                    assert len(valid_minibatch) == len(valid_minibatch_masks);
-                    assert len(valid_minibatch) == len(valid_sequence_x);
+                for valid_instance_index in xrange(len(valid_set_y)):
+                    valid_sequence_start_index = valid_sequence_indices_by_instance[valid_instance_index];
+                    valid_sequence_end_index = valid_sequence_indices_by_instance[valid_instance_index + 1];
 
-                    minibatch_validate_loss, minibatch_validate_accuracy = validate_function(valid_minibatch, valid_sequence_y, valid_minibatch_masks)
-                    #print minibatch_validate_loss, minibatch_validate_accuracy;
+                    minibatch_validate_loss, minibatch_validate_accuracy = validate_function(
+                        valid_sequence_x[valid_sequence_start_index:valid_sequence_end_index, :, :],
+                        valid_sequence_y[valid_sequence_start_index:valid_sequence_end_index],
+                        valid_sequence_m[valid_sequence_start_index:valid_sequence_end_index, :])
 
-                    total_validate_loss += minibatch_validate_loss * len(valid_sequence_y)
-                    total_validate_accuracy += minibatch_validate_accuracy * len(valid_sequence_y);
-                    total_validate_instances += len(valid_sequence_y);
+                    total_validate_loss += minibatch_validate_loss * (valid_sequence_end_index - valid_sequence_start_index);
+                    total_validate_accuracy += minibatch_validate_accuracy * (valid_sequence_end_index - valid_sequence_start_index);
 
-                    if total_validate_instances % 1000 == 0:
-                        print "validate progress: %d instances" % (total_validate_instances)
+                    if valid_instance_index % 1000 == 0: # or valid_sequence_end_index % 1000 == 0:
+                        print "validate progress: %d sequences by %d instances" % (valid_sequence_end_index, valid_instance_index)
 
                 # if we got the best validation score until now
-                average_validate_accuracy = total_validate_accuracy / total_validate_instances;
-                average_validate_loss = total_validate_loss / total_validate_instances;
+                average_validate_accuracy = total_validate_accuracy / valid_sequence_end_index;
                 if average_validate_accuracy > highest_average_validate_accuracy:
                     highest_average_validate_accuracy = average_validate_accuracy
                     #best_iteration_index = epoch_index
@@ -725,7 +782,7 @@ def launch_train():
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-                print 'validate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+                print 'validate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, total_validate_loss / valid_sequence_end_index, average_validate_accuracy * 100)
 
                 #
                 #
@@ -735,33 +792,24 @@ def launch_train():
 
                 total_test_loss = 0;
                 total_test_accuracy = 0;
-                total_test_instances = 0;
-                for test_sequence_x, test_sequence_y in zip(test_set_x, test_set_y):
-                    #context_windows = get_context_windows(test_sequence_x, window_size)
-                    #test_minibatch, test_minibatch_masks = get_mini_batches(context_windows, backprop_step);
-                    test_minibatch, test_minibatch_masks = network.get_instance_sequences(test_sequence_x);
-                    assert len(test_minibatch) == len(test_minibatch_masks);
-                    assert len(test_minibatch) == len(test_sequence_x);
+                for test_instance_index in xrange(len(test_set_y)):
+                    test_sequence_start_index = test_sequence_indices_by_instance[test_instance_index];
+                    test_sequence_end_index = test_sequence_indices_by_instance[test_instance_index + 1];
 
-                    minibatch_test_loss, minibatch_test_accuracy = validate_function(test_minibatch, test_sequence_y, test_minibatch_masks)
+                    minibatch_test_loss, minibatch_test_accuracy = validate_function(
+                        test_sequence_x[test_sequence_start_index:test_sequence_end_index, :, :],
+                        test_sequence_y[test_sequence_start_index:test_sequence_end_index],
+                        test_sequence_m[test_sequence_start_index:test_sequence_end_index, :])
 
-                    total_test_loss += minibatch_test_loss * len(test_sequence_y)
-                    total_test_accuracy += minibatch_test_accuracy * len(test_sequence_y);
-                    total_test_instances += len(test_sequence_y);
+                    total_test_loss += minibatch_test_loss * (test_sequence_end_index - test_sequence_start_index);
+                    total_test_accuracy += minibatch_test_accuracy * (test_sequence_end_index - test_sequence_start_index);
 
-                    if total_test_instances % 1000 == 0:
-                        print "test progress: %d instances" % (total_test_instances)
+                    if test_instance_index % 1000 == 0: # or test_sequence_end_index % 1000 == 0:
+                        print "test progress: %d sequences by %d instances" % (test_sequence_end_index, test_instance_index)
 
-                average_test_accuracy = total_test_accuracy / total_test_instances;
-                average_test_loss = total_test_loss / total_test_instances;
-                print 'test result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
+                print 'test result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, total_test_loss / test_sequence_end_index, total_test_accuracy / test_sequence_end_index * 100)
 
-            if total_train_instances % 1000 == 0:
-                print "train progress: %d instances" % (total_train_instances)
-
-        average_train_accuracy = total_train_accuracy / total_train_instances;
-        average_train_loss = total_train_loss / total_train_instances;
-        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
+        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index, epoch_running_time, total_train_loss / train_sequence_end_index, total_train_accuracy / train_sequence_end_index * 100)
 
         if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
@@ -776,61 +824,6 @@ def launch_train():
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
-
-def get_context_windows(sequence, window_size, vocab_size=None):
-    '''
-    window_size :: int corresponding to the size of the window
-    given a list of indexes composing a sentence
-    it will return a list of list of indexes corresponding
-    to context windows surrounding each word in the sentence
-    '''
-    assert (window_size % 2) == 1
-    assert window_size >= 1
-    sequence = list(sequence)
-
-    if vocab_size == None:
-        context_windows = -numpy.ones((len(sequence), window_size), dtype=numpy.int32);
-        padded_sequence = window_size / 2 * [-1] + sequence + window_size / 2 * [-1]
-        for i in xrange(len(sequence)):
-            context_windows[i, :] = padded_sequence[i:i + window_size];
-    else:
-        context_windows = numpy.zeros((len(sequence), vocab_size), dtype=numpy.int32);
-        padded_sequence = window_size / 2 * [-1] + sequence + window_size / 2 * [-1]
-        for i in xrange(len(sequence)):
-            for j in padded_sequence[i:i + window_size]:
-                context_windows[i, j] += 1;
-
-    # assert len(context_windows) == len(sequence)
-    return context_windows
-
-def get_mini_batches(context_windows, backprop_step):
-    '''
-    context_windows :: list of word idxs
-    return a list of minibatches of indexes
-    which size is equal to backprop_step
-    border cases are treated as follow:
-    eg: [0,1,2,3] and backprop_step = 3
-    will output:
-    [[0],[0,1],[0,1,2],[1,2,3]]
-    '''
-
-    '''
-    mini_batches = [context_windows[:i] for i in xrange(1, min(backprop_step, len(context_windows) + 1))]
-    mini_batches += [context_windows[i - backprop_step:i] for i in xrange(backprop_step, len(context_windows) + 1) ]
-    assert len(context_windows) == len(mini_batches)
-    return mini_batches
-    '''
-
-    sequence_length, window_size = context_windows.shape;
-    mini_batches = -numpy.ones((sequence_length, backprop_step, window_size), dtype=numpy.int32);
-    mini_batch_masks = numpy.zeros((sequence_length, backprop_step), dtype=numpy.int32);
-    for i in xrange(min(sequence_length, backprop_step)):
-        mini_batches[i, 0:i + 1, :] = context_windows[0:i + 1, :];
-        mini_batch_masks[i, 0:i + 1] = 1;
-    for i in xrange(min(sequence_length, backprop_step), sequence_length):
-        mini_batches[i, :, :] = context_windows[i - backprop_step + 1:i + 1, :];
-        mini_batch_masks[i, :] = 1;
-    return mini_batches, mini_batch_masks
 
 if __name__ == '__main__':
     launch_train()

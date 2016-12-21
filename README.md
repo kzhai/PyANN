@@ -255,7 +255,7 @@ The generic argument to run RNN is
 		--number_of_epochs=$NUMBER_OF_EPOCHS \
 	  	--learning_rate=$LEARNING_RATE \
 	  	--embedding_dimension=$EMBEDDING_DIMENSION \
-		--backprop_step=$BACKPROP_STEP \
+		--sequence_length=$SEQUENCE_LENGTH \
 		--window_size=$WINDOW_SIZE \
 		--layer_dimensions=$DIM_1,...,[$RNN_DIM_1,...,$RNN_DIM_N],...,$DIM_N,... \
 		--layer_nonlinearities=$F_1,...,[$RNN_F_1,...,$RNN_F_N],...,$F_N,... \
@@ -270,12 +270,12 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch bi-directional recurrent neural network (BiRNN) on atis example dataset,
 
 	python -um PyBiRNN.launch_train \
-		--input_directory=../input/atis.label/ \
+		--input_directory=../input/atis.fold0.label/ \
 		--output_directory=../output/ \
 		--number_of_epochs=50 \
 		--learning_rate=0.01 \
 		--embedding_dimension=100 \
-		--backprop_step=9 \
+		--sequence_length=9 \
 		--window_size=5 \
 		--layer_dimensions=256,[128],127 \
 		--layer_nonlinearities=sigmoid,[sigmoid],softmax \
@@ -289,7 +289,7 @@ The generic argument to run BiRNN is
 		--number_of_epochs=$NUMBER_OF_EPOCHS \
 	  	--learning_rate=$LEARNING_RATE \
 	  	--embedding_dimension=$EMBEDDING_DIMENSION \
-		--backprop_step=$BACKPROP_STEP \
+		--sequence_length=$SEQUENCE_LENGTH \
 		--window_size=$WINDOW_SIZE \
 		--layer_dimensions=$DIM_1,...,[$BiRNN_DIM_1,...,$BiRNN_DIM_N],...,$DIM_N,... \
 		--layer_nonlinearities=$F_1,...,[$BiRNN_F_1,...,$BiRNN_F_N],...,$F_N,... \

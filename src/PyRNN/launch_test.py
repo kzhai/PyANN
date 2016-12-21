@@ -138,12 +138,6 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
         total_test_accuracy += minibatch_test_accuracy * len(test_instance_y);
         total_test_instances += len(test_instance_y);
 
-        #test_prediction_distribution = lasagne.layers.get_output(network._neural_network, test_minibatch, test_minibatch_masks, deterministic=True).eval()
-
-        #total_test_loss += theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction_distribution, y)) * len(test_sequence_y)
-        #total_test_accuracy += theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(test_prediction_distribution, axis=1), y), dtype=theano.config.floatX) * len(test_sequence_y);
-        #total_test_instances += len(test_sequence_y);
-
         if total_test_instances % 1000 == 0:
             print "test progress: %d instances" % (total_test_instances)
 
