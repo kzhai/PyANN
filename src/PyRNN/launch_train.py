@@ -476,7 +476,7 @@ def launch_train():
     
     # parameter set 3
     options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
-    options_output_file.write("windows_size=" + str(window_size) + "\n");
+    options_output_file.write("window_size=" + str(window_size) + "\n");
     options_output_file.write("sequence_length=" + str(sequence_length) + "\n");
 
     # parameter set 4
@@ -523,7 +523,7 @@ def launch_train():
     
     # parameter set 3
     print "learning_rate=" + str(learning_rate)
-    print "windows_size=" + str(window_size)
+    print "window_size=" + str(window_size)
     print "sequence_length=" + str(sequence_length)
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
