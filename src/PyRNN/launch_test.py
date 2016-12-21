@@ -125,18 +125,18 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     total_test_loss = 0;
     total_test_accuracy = 0;
     total_test_instances = 0;
-    for test_sequence_x, test_sequence_y in zip(test_set_x, test_set_y):
+    for test_instance_x, test_instance_y in zip(test_set_x, test_set_y):
         #context_windows = get_context_windows(test_sequence_x, window_size)
         #test_minibatch, test_minibatch_masks = get_mini_batches(context_windows, backprop_step);
-        test_minibatch, test_minibatch_masks = network.get_instance_sequences(test_sequence_x);
-        assert len(test_minibatch) == len(test_minibatch_masks);
-        assert len(test_minibatch) == len(test_sequence_x);
+        test_sequences_x, test_sequences_m = network.get_instance_sequences(test_instance_x);
+        assert len(test_sequences_x) == len(test_sequences_m);
+        assert len(test_sequences_x) == len(test_instance_x);
 
-        minibatch_test_loss, minibatch_test_accuracy = validate_function(test_minibatch, test_sequence_y, test_minibatch_masks)
+        minibatch_test_loss, minibatch_test_accuracy = validate_function(test_sequences_x, test_instance_y, test_sequences_m)
 
-        total_test_loss += minibatch_test_loss * len(test_sequence_y)
-        total_test_accuracy += minibatch_test_accuracy * len(test_sequence_y);
-        total_test_instances += len(test_sequence_y);
+        total_test_loss += minibatch_test_loss * len(test_instance_y)
+        total_test_accuracy += minibatch_test_accuracy * len(test_instance_y);
+        total_test_instances += len(test_instance_y);
 
         #test_prediction_distribution = lasagne.layers.get_output(network._neural_network, test_minibatch, test_minibatch_masks, deterministic=True).eval()
 
