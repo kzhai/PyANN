@@ -567,15 +567,15 @@ def launch_train():
                     #best_iteration_index = iteration_index
 
                     # save the best model
-                    print 'best model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
+                    print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
 
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-                print 'validate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
 
                 average_test_loss, average_test_accuracy = validate_function(test_set_x, test_set_y);
-                print 'test result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
+                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
 
         average_train_accuracy = total_train_accuracy / total_train_instances;
         average_train_loss = total_train_loss / total_train_instances;

@@ -16,7 +16,7 @@ import lasagne
 
 import re
 
-template_pattern = re.compile(r'(?P<pre_rnn>.*)\[(?P<rnn>.+)\](?P<post_rnn>.*)')
+#template_pattern = re.compile(r'(?P<pre_rnn>.*)\[(?P<rnn>.+)\](?P<post_rnn>.*)')
 
 def parse_args():
     parser = optparse.OptionParser()
@@ -55,6 +55,7 @@ def parse_args():
                         
                         # parameter set 6
                         number_of_training_data=-1,
+                        recurrent_style="elman",
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -119,6 +120,8 @@ def parse_args():
     # parameter set 6
     parser.add_option("--number_of_training_data", type="int", dest="number_of_training_data",
                       help="training data size [-1]");
+    parser.add_option("--recurrent_style", type="string", dest="recurrent_style",
+                      help="recurrent style [elman]");
     # parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
                       # help="number of pretrain epochs [0 - no pre-training]");
                       
@@ -411,6 +414,9 @@ def launch_train():
     if number_of_training_data <= 0:
         number_of_training_data = len(data_y);
     assert number_of_training_data > 0 and number_of_training_data <= len(data_y)
+
+    recurrent_style = options.recurrent_style;
+    assert recurrent_style in ["elman", "bi_elman", "ctc"]
     
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
@@ -440,7 +446,7 @@ def launch_train():
     # create output directory
     now = datetime.datetime.now();
     suffix = now.strftime("%y%m%d-%H%M%S") + "";
-    suffix += "-%s" % ("rnn");
+    suffix += "-%s" % (recurrent_style);
     suffix += "-T%d" % (number_of_training_data);
     suffix += "-E%d" % (number_of_epochs);
     #suffix += "-S%d" % (snapshot_interval);
@@ -499,6 +505,7 @@ def launch_train():
     
     # paramter set 6
     options_output_file.write("number_of_training_data=%d\n" % (number_of_training_data));
+    options_output_file.write("recurrent_style=%s\n" % (recurrent_style));
     
     options_output_file.close()
     
@@ -544,6 +551,7 @@ def launch_train():
     
     # paramter set 6
     print "number_of_training_data=%d" % (number_of_training_data);
+    print "recurrent_style=%s" % (recurrent_style);
     print "========== ========== ========== ========== =========="
     
     ######################
@@ -575,18 +583,33 @@ def launch_train():
                                                     W=lasagne.init.GlorotUniform());
     print "----------", lasagne.layers.get_output_shape(embedding_layer, (10, 46))
     '''
-    
-    import rnn
-    network = rnn.RecurrentNeuralNetwork(
-        input_network=input_layer,
-        input_mask=mask_layer,
-        vocabulary_dimension=vocabulary_dimension,
-        embedding_dimension=embedding_dimension,
-        layer_dimensions=layer_dimensions,
-        layer_nonlinearities=layer_nonlinearities,
-        objective_to_minimize=objective_to_minimize,
+
+    if recurrent_style == "elman":
+        import elman
+        network = elman.ElmanRecurrentNeuralNetwork(
+            input_network=input_layer,
+            input_mask=mask_layer,
+            vocabulary_dimension=vocabulary_dimension,
+            embedding_dimension=embedding_dimension,
+            layer_dimensions=layer_dimensions,
+            layer_nonlinearities=layer_nonlinearities,
+            objective_to_minimize=objective_to_minimize,
         )
-    
+    elif recurrent_style=="bi_elman":
+        import bi_elman
+        network = bi_elman.BidirectionalElmanRecurrentNeuralNetwork(
+            input_network=input_layer,
+            input_mask=mask_layer,
+            vocabulary_dimension=vocabulary_dimension,
+            embedding_dimension=embedding_dimension,
+            layer_dimensions=layer_dimensions,
+            layer_nonlinearities=layer_nonlinearities,
+            objective_to_minimize=objective_to_minimize,
+            )
+    else:
+        sys.stderr.write("Undefined recurrent style %s..." % recurrent_style);
+        sys.exit();
+
     network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
     network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
     #network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
@@ -768,7 +791,7 @@ def launch_train():
                     total_validate_accuracy += minibatch_validate_accuracy * (valid_sequence_end_index - valid_sequence_start_index);
 
                     if valid_instance_index % 1000 == 0: # or valid_sequence_end_index % 1000 == 0:
-                        print "validate progress: %d sequences by %d instances" % (valid_sequence_end_index, valid_instance_index)
+                        print "\tvalidate progress: %d sequences by %d instances" % (valid_sequence_end_index, valid_instance_index)
 
                 # if we got the best validation score until now
                 average_validate_accuracy = total_validate_accuracy / valid_sequence_end_index;
@@ -777,12 +800,12 @@ def launch_train():
                     #best_iteration_index = epoch_index
 
                     # save the best model
-                    print 'best model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
+                    print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
 
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-                print 'validate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, total_validate_loss / valid_sequence_end_index, average_validate_accuracy * 100)
+                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, total_validate_loss / valid_sequence_end_index, average_validate_accuracy * 100)
 
                 #
                 #
@@ -805,9 +828,9 @@ def launch_train():
                     total_test_accuracy += minibatch_test_accuracy * (test_sequence_end_index - test_sequence_start_index);
 
                     if test_instance_index % 1000 == 0: # or test_sequence_end_index % 1000 == 0:
-                        print "test progress: %d sequences by %d instances" % (test_sequence_end_index, test_instance_index)
+                        print "\t\ttest progress: %d sequences by %d instances" % (test_sequence_end_index, test_instance_index)
 
-                print 'test result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, total_test_loss / test_sequence_end_index, total_test_accuracy / test_sequence_end_index * 100)
+                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, total_test_loss / test_sequence_end_index, total_test_accuracy / test_sequence_end_index * 100)
 
         print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index, epoch_running_time, total_train_loss / train_sequence_end_index, total_train_accuracy / train_sequence_end_index * 100)
 
