@@ -236,7 +236,7 @@ class RecurrentNeuralNetwork(network.Network):
         return train_loss
     '''
 
-    def get_mini_batches(self, sequence):
+    def get_instance_sequences(self, instance):
         '''
         context_windows :: list of word idxs
         return a list of minibatches of indexes
@@ -247,37 +247,37 @@ class RecurrentNeuralNetwork(network.Network):
         [[0],[0,1],[0,1,2],[1,2,3]]
         '''
 
-        context_windows = get_context_windows(sequence, self._window_size);
-        mini_batches, mini_batch_masks = get_mini_batches(context_windows, self._sequence_length);
-        return mini_batches, mini_batch_masks
+        context_windows = get_context_windows(instance, self._window_size);
+        sequences_x, sequences_m = get_sequences(context_windows, self._sequence_length);
+        return sequences_x, sequences_m
 
-def get_context_windows(sequence, window_size, vocab_size=None):
+def get_context_windows(instance, window_size, vocab_size=None):
     '''
     window_size :: int corresponding to the size of the window
     given a list of indexes composing a sentence
     it will return a list of list of indexes corresponding
     to context windows surrounding each word in the sentence
     '''
-    assert (window_size % 2) == 1
+    assert window_size % 2 == 1
     assert window_size >= 1
-    sequence = list(sequence)
+    instance = list(instance)
 
     if vocab_size == None:
-        context_windows = -numpy.ones((len(sequence), window_size), dtype=numpy.int32);
-        padded_sequence = window_size / 2 * [-1] + sequence + window_size / 2 * [-1]
-        for i in xrange(len(sequence)):
+        context_windows = -numpy.ones((len(instance), window_size), dtype=numpy.int32);
+        padded_sequence = window_size / 2 * [-1] + instance + window_size / 2 * [-1]
+        for i in xrange(len(instance)):
             context_windows[i, :] = padded_sequence[i:i + window_size];
     else:
-        context_windows = numpy.zeros((len(sequence), vocab_size), dtype=numpy.int32);
-        padded_sequence = window_size / 2 * [-1] + sequence + window_size / 2 * [-1]
-        for i in xrange(len(sequence)):
+        context_windows = numpy.zeros((len(instance), vocab_size), dtype=numpy.int32);
+        padded_sequence = window_size / 2 * [-1] + instance + window_size / 2 * [-1]
+        for i in xrange(len(instance)):
             for j in padded_sequence[i:i + window_size]:
                 context_windows[i, j] += 1;
 
     # assert len(context_windows) == len(sequence)
     return context_windows
 
-def get_mini_batches(context_windows, sequence_length):
+def get_sequences(context_windows, sequence_length):
     '''
     context_windows :: list of word idxs
     return a list of minibatches of indexes
@@ -289,15 +289,15 @@ def get_mini_batches(context_windows, sequence_length):
     '''
 
     number_of_tokens, window_size = context_windows.shape;
-    mini_batches = -numpy.ones((number_of_tokens, sequence_length, window_size), dtype=numpy.int32);
-    mini_batch_masks = numpy.zeros((number_of_tokens, sequence_length), dtype=numpy.int32);
+    sequences_x = -numpy.ones((number_of_tokens, sequence_length, window_size), dtype=numpy.int32);
+    sequences_m = numpy.zeros((number_of_tokens, sequence_length), dtype=numpy.int32);
     for i in xrange(min(number_of_tokens, sequence_length)):
-        mini_batches[i, 0:i + 1, :] = context_windows[0:i + 1, :];
-        mini_batch_masks[i, 0:i + 1] = 1;
+        sequences_x[i, 0:i + 1, :] = context_windows[0:i + 1, :];
+        sequences_m[i, 0:i + 1] = 1;
     for i in xrange(min(number_of_tokens, sequence_length), number_of_tokens):
-        mini_batches[i, :, :] = context_windows[i - sequence_length + 1:i + 1, :];
-        mini_batch_masks[i, :] = 1;
-    return mini_batches, mini_batch_masks
+        sequences_x[i, :, :] = context_windows[i - sequence_length + 1:i + 1, :];
+        sequences_m[i, :] = 1;
+    return sequences_x, sequences_m
 
 if __name__ == '__main__':
     window_size = 1;
@@ -316,6 +316,6 @@ if __name__ == '__main__':
     data = [554, 23, 241, 534, 358, 136, 193, 11, 208, 251, 104, 502, 413, 256, 104];
     context_windows = get_context_windows(data, window_size);
     print context_windows;
-    mini_batches, mini_batch_masks = network.get_mini_batches(data);
+    mini_batches, mini_batch_masks = network.get_instance_sequences(data);
     print mini_batches;
     print mini_batch_masks;
