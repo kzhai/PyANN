@@ -18,7 +18,7 @@ import network
 
 from layers.dropout import GeneralizedDropoutLayer, sample_activation_probability
 
-class RecurrentNeuralNetwork(network.Network):
+class ConnectionistTemporalClassification(network.Network):
     def __init__(self,
                  input_network=None,
                  input_mask=None,
@@ -37,16 +37,16 @@ class RecurrentNeuralNetwork(network.Network):
                  #window_size=5,
                  #backprop_step=9,
                  ):
-        super(RecurrentNeuralNetwork, self).__init__(input_network)
+        super(ConnectionistTemporalClassification, self).__init__(input_network)
 
         self._input_data_layer = input_network;
         self._input_mask_layer = input_mask;
 
         neural_network = input_network;
 
-        batch_size, sequence_length, window_size = lasagne.layers.get_output_shape(neural_network)
+        batch_size, backprop_step, window_size = lasagne.layers.get_output_shape(neural_network)
         self._window_size = window_size;
-        self._sequence_length = sequence_length;
+        self._backprop_step = backprop_step;
 
         #print "checkpoint a", lasagne.layers.get_output_shape(neural_network, (batch_size_example, backprop_step_example, window_size_example))
         # (13, 9, 5)
@@ -62,7 +62,7 @@ class RecurrentNeuralNetwork(network.Network):
             updates={self._embeddings: self._embeddings / theano.tensor.sqrt((self._embeddings ** 2).sum(axis=1)).dimshuffle(0, 'x')}
         )
 
-        neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, sequence_length, self._window_size * embedding_dimension));
+        neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, self._window_size * embedding_dimension));
 
         last_rnn_layer_index = 0;
         for layer_index in xrange(len(layer_dimensions)):
@@ -71,19 +71,19 @@ class RecurrentNeuralNetwork(network.Network):
                 last_rnn_layer_index = layer_index;
 
         def print_output_dimension(checkpoint_text=""):
-            sequence_length_example = 9
-            window_size_example = 1
+            backprop_step_example = 9
+            window_size_example = 5
             batch_size_example = 13
 
             reference_to_input_layers = [input_layer for input_layer in lasagne.layers.get_all_layers(neural_network) if
                                          isinstance(input_layer, lasagne.layers.InputLayer)];
             if len(reference_to_input_layers) == 1:
                 print checkpoint_text, ":", "layer", layer_index, lasagne.layers.get_output_shape(neural_network, {
-                    reference_to_input_layers[0]: (batch_size_example, sequence_length_example, window_size_example)})
+                    reference_to_input_layers[0]: (batch_size_example, backprop_step_example, window_size_example)})
             elif len(reference_to_input_layers) == 2:
                 print checkpoint_text, ":", "layer", layer_index, lasagne.layers.get_output_shape(neural_network, {
-                    reference_to_input_layers[0]: (batch_size_example, sequence_length_example, window_size_example),
-                    reference_to_input_layers[1]: (batch_size_example, sequence_length_example)})
+                    reference_to_input_layers[0]: (batch_size_example, backprop_step_example, window_size_example),
+                    reference_to_input_layers[1]: (batch_size_example, backprop_step_example)})
 
         for layer_index in xrange(len(layer_dimensions)):
             layer_dimension = layer_dimensions[layer_index]
@@ -92,7 +92,7 @@ class RecurrentNeuralNetwork(network.Network):
             if isinstance(layer_dimension, int):
                 if layer_index <= last_rnn_layer_index:
                     neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, lasagne.layers.get_output_shape(neural_network)[-1]));
-                    #print_output_dimension("checkpoint a1");
+                    print_output_dimension("checkpoint a1");
 
                 neural_network = lasagne.layers.DenseLayer(neural_network,
                                                            layer_dimension,
@@ -100,12 +100,12 @@ class RecurrentNeuralNetwork(network.Network):
                                                                gain=network.GlorotUniformGain[
                                                                    layer_nonlinearity]),
                                                            nonlinearity=layer_nonlinearity)
-                #print_output_dimension("checkpoint a2");
+                print_output_dimension("checkpoint a2");
             elif isinstance(layer_dimension, list):
                 assert isinstance(layer_nonlinearity, list)
                 if not isinstance(lasagne.layers.get_all_layers(neural_network)[-1], lasagne.layers.RecurrentLayer):
-                    neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, sequence_length, lasagne.layers.get_output_shape(neural_network)[-1]));
-                    #print_output_dimension("checkpoint b1");
+                    neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, backprop_step, lasagne.layers.get_output_shape(neural_network)[-1]));
+                    print_output_dimension("checkpoint b1");
 
                 layer_dimension = layer_dimension[0]
                 layer_nonlinearity = layer_nonlinearity[0]
@@ -129,7 +129,7 @@ class RecurrentNeuralNetwork(network.Network):
                                                                mask_input=input_mask,
                                                                # only_return_final=True
                                                                );
-                #print_output_dimension("checkpoint b2");
+                print_output_dimension("checkpoint b2");
             else:
                 sys.stderr.write("layer specification conflicts...\n")
                 sys.exit();
@@ -248,7 +248,7 @@ class RecurrentNeuralNetwork(network.Network):
         '''
 
         context_windows = get_context_windows(sequence, self._window_size);
-        mini_batches, mini_batch_masks = get_mini_batches(context_windows, self._sequence_length);
+        mini_batches, mini_batch_masks = get_mini_batches(context_windows, self._backprop_step);
         return mini_batches, mini_batch_masks
 
 def get_context_windows(sequence, window_size, vocab_size=None):
@@ -277,7 +277,7 @@ def get_context_windows(sequence, window_size, vocab_size=None):
     # assert len(context_windows) == len(sequence)
     return context_windows
 
-def get_mini_batches(context_windows, sequence_length):
+def get_mini_batches(context_windows, backprop_step):
     '''
     context_windows :: list of word idxs
     return a list of minibatches of indexes
@@ -288,22 +288,22 @@ def get_mini_batches(context_windows, sequence_length):
     [[0],[0,1],[0,1,2],[1,2,3]]
     '''
 
-    number_of_tokens, window_size = context_windows.shape;
-    mini_batches = -numpy.ones((number_of_tokens, sequence_length, window_size), dtype=numpy.int32);
-    mini_batch_masks = numpy.zeros((number_of_tokens, sequence_length), dtype=numpy.int32);
-    for i in xrange(min(number_of_tokens, sequence_length)):
+    sequence_length, window_size = context_windows.shape;
+    mini_batches = -numpy.ones((sequence_length, backprop_step, window_size), dtype=numpy.int32);
+    mini_batch_masks = numpy.zeros((sequence_length, backprop_step), dtype=numpy.int32);
+    for i in xrange(min(sequence_length, backprop_step)):
         mini_batches[i, 0:i + 1, :] = context_windows[0:i + 1, :];
         mini_batch_masks[i, 0:i + 1] = 1;
-    for i in xrange(min(number_of_tokens, sequence_length), number_of_tokens):
-        mini_batches[i, :, :] = context_windows[i - sequence_length + 1:i + 1, :];
+    for i in xrange(min(sequence_length, backprop_step), sequence_length):
+        mini_batches[i, :, :] = context_windows[i - backprop_step + 1:i + 1, :];
         mini_batch_masks[i, :] = 1;
     return mini_batches, mini_batch_masks
 
 if __name__ == '__main__':
-    window_size = 1;
+    window_size = 5;
     backprop_step = 9;
 
-    network = RecurrentNeuralNetwork(
+    network = ConnectionistTemporalClassification(
         input_network=lasagne.layers.InputLayer(shape=(None, backprop_step, window_size,)),
         input_mask=lasagne.layers.InputLayer(shape=(None, backprop_step)),
         vocabulary_dimension=100,
@@ -314,8 +314,8 @@ if __name__ == '__main__':
     )
 
     data = [554, 23, 241, 534, 358, 136, 193, 11, 208, 251, 104, 502, 413, 256, 104];
-    context_windows = get_context_windows(data, window_size);
-    print context_windows;
-    mini_batches, mini_batch_masks = network.get_mini_batches(data);
-    print mini_batches;
-    print mini_batch_masks;
+    #context_windows = network.get_context_windows(data);
+    #print context_windows;
+    #mini_batches, mini_batch_masks = network.get_mini_batches(data);
+    #print mini_batches;
+    #print mini_batch_masks;
