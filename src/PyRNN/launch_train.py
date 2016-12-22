@@ -56,6 +56,7 @@ def parse_args():
                         # parameter set 6
                         number_of_training_data=-1,
                         recurrent_style="elman",
+                        recurrent_type="RecurrentLayer"
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -121,7 +122,9 @@ def parse_args():
     parser.add_option("--number_of_training_data", type="int", dest="number_of_training_data",
                       help="training data size [-1]");
     parser.add_option("--recurrent_style", type="string", dest="recurrent_style",
-                      help="recurrent style [elman]");
+                      help="recurrent network style [elman]");
+    parser.add_option("--recurrent_type", type="string", dest="recurrent_type",
+                      help="recurrent layer type [RecurrentLayer]");
     # parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
                       # help="number of pretrain epochs [0 - no pre-training]");
                       
@@ -417,7 +420,8 @@ def launch_train():
 
     recurrent_style = options.recurrent_style;
     assert recurrent_style in ["elman", "bi_elman", "ctc"]
-    
+    recurrent_type = options.recurrent_type
+
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
     
@@ -447,6 +451,7 @@ def launch_train():
     now = datetime.datetime.now();
     suffix = now.strftime("%y%m%d-%H%M%S") + "";
     suffix += "-%s" % (recurrent_style);
+    suffix += "-%s" % (recurrent_type);
     suffix += "-T%d" % (number_of_training_data);
     suffix += "-E%d" % (number_of_epochs);
     #suffix += "-S%d" % (snapshot_interval);
@@ -506,6 +511,7 @@ def launch_train():
     # paramter set 6
     options_output_file.write("number_of_training_data=%d\n" % (number_of_training_data));
     options_output_file.write("recurrent_style=%s\n" % (recurrent_style));
+    options_output_file.write("recurrent_type=%s\n" % (recurrent_type));
     
     options_output_file.close()
     
@@ -552,6 +558,7 @@ def launch_train():
     # paramter set 6
     print "number_of_training_data=%d" % (number_of_training_data);
     print "recurrent_style=%s" % (recurrent_style);
+    print "recurrent_type=%s" % (recurrent_type);
     print "========== ========== ========== ========== =========="
     
     ######################
@@ -593,6 +600,7 @@ def launch_train():
             embedding_dimension=embedding_dimension,
             layer_dimensions=layer_dimensions,
             layer_nonlinearities=layer_nonlinearities,
+            recurrent_type=recurrent_type,
             objective_to_minimize=objective_to_minimize,
         )
     elif recurrent_style=="bi_elman":
@@ -766,7 +774,7 @@ def launch_train():
             epoch_running_time += timeit.default_timer() - minibatch_running_time;
 
             if iteration_index % 1000 == 0: # or train_sequence_end_index % 1000 == 0:
-                print "train progress: %d sequences by %d minibatches" % (train_sequence_end_index, iteration_index)
+                print "train progress: %d sequences by %d minibatches" % (train_sequence_end_index, iteration_index+1)
 
             #
             #
@@ -791,7 +799,7 @@ def launch_train():
                     total_validate_accuracy += minibatch_validate_accuracy * (valid_sequence_end_index - valid_sequence_start_index);
 
                     if valid_instance_index % 1000 == 0: # or valid_sequence_end_index % 1000 == 0:
-                        print "\tvalidate progress: %d sequences by %d instances" % (valid_sequence_end_index, valid_instance_index)
+                        print "\tvalidate progress: %d sequences by %d instances" % (valid_sequence_end_index, valid_instance_index+1)
 
                 # if we got the best validation score until now
                 average_validate_accuracy = total_validate_accuracy / valid_sequence_end_index;
@@ -800,12 +808,12 @@ def launch_train():
                     #best_iteration_index = epoch_index
 
                     # save the best model
-                    print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
+                    print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index+1, minibatch_index+1, average_validate_accuracy * 100)
 
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, total_validate_loss / valid_sequence_end_index, average_validate_accuracy * 100)
+                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index+1, minibatch_index+1, total_validate_loss / valid_sequence_end_index, average_validate_accuracy * 100)
 
                 #
                 #
@@ -828,11 +836,11 @@ def launch_train():
                     total_test_accuracy += minibatch_test_accuracy * (test_sequence_end_index - test_sequence_start_index);
 
                     if test_instance_index % 1000 == 0: # or test_sequence_end_index % 1000 == 0:
-                        print "\t\ttest progress: %d sequences by %d instances" % (test_sequence_end_index, test_instance_index)
+                        print "\t\ttest progress: %d sequences by %d instances" % (test_sequence_end_index, test_instance_index+1)
 
-                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, total_test_loss / test_sequence_end_index, total_test_accuracy / test_sequence_end_index * 100)
+                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index+1, minibatch_index+1, total_test_loss / test_sequence_end_index, total_test_accuracy / test_sequence_end_index * 100)
 
-        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index, epoch_running_time, total_train_loss / train_sequence_end_index, total_train_accuracy / train_sequence_end_index * 100)
+        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index+1, epoch_running_time, total_train_loss / train_sequence_end_index, total_train_accuracy / train_sequence_end_index * 100)
 
         if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))

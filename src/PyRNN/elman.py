@@ -29,6 +29,8 @@ class ElmanRecurrentNeuralNetwork(network.Network):
                  layer_dimensions=None,
                  layer_nonlinearities=None,
 
+                 recurrent_type="RecurrentLayer",
+
                  # layer_activation_parameters=None,
                  # layer_activation_styles=None,
                  objective_to_minimize=None,
@@ -85,6 +87,8 @@ class ElmanRecurrentNeuralNetwork(network.Network):
                     reference_to_input_layers[0]: (batch_size_example, sequence_length_example, window_size_example),
                     reference_to_input_layers[1]: (batch_size_example, sequence_length_example)})
 
+        recurrent_layer = getattr(lasagne.layers.recurrent, recurrent_type)
+
         for layer_index in xrange(len(layer_dimensions)):
             layer_dimension = layer_dimensions[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index]
@@ -103,32 +107,56 @@ class ElmanRecurrentNeuralNetwork(network.Network):
                 #print_output_dimension("checkpoint a2");
             elif isinstance(layer_dimension, list):
                 assert isinstance(layer_nonlinearity, list)
-                if not isinstance(lasagne.layers.get_all_layers(neural_network)[-1], lasagne.layers.RecurrentLayer):
+                #if not isinstance(lasagne.layers.get_all_layers(neural_network)[-1], lasagne.layers.RecurrentLayer):
+
+                if not isinstance(lasagne.layers.get_all_layers(neural_network)[-1], recurrent_layer):
                     neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, sequence_length, lasagne.layers.get_output_shape(neural_network)[-1]));
                     #print_output_dimension("checkpoint b1");
 
                 layer_dimension = layer_dimension[0]
                 layer_nonlinearity = layer_nonlinearity[0]
-                neural_network = lasagne.layers.RecurrentLayer(neural_network,
-                                                               layer_dimension,
-                                                               W_in_to_hid=lasagne.init.GlorotUniform(
-                                                                   gain=network.GlorotUniformGain[
-                                                                       layer_nonlinearity]),
-                                                               W_hid_to_hid=lasagne.init.GlorotUniform(
-                                                                   gain=network.GlorotUniformGain[
-                                                                       layer_nonlinearity]),
-                                                               b=lasagne.init.Constant(0.),
-                                                               nonlinearity=layer_nonlinearity,
-                                                               hid_init=lasagne.init.Constant(0.),
-                                                               backwards=False,
-                                                               learn_init=False,
-                                                               gradient_steps=-1,
-                                                               grad_clipping=0,
-                                                               unroll_scan=False,
-                                                               precompute_input=True,
-                                                               mask_input=input_mask,
-                                                               # only_return_final=True
-                                                               );
+                #neural_network = lasagne.layers.RecurrentLayer(neural_network,
+                if recurrent_layer==lasagne.layers.recurrent.RecurrentLayer:
+                    neural_network = lasagne.layers.RecurrentLayer(neural_network,
+                                                                   layer_dimension,
+                                                                   W_in_to_hid=lasagne.init.GlorotUniform(
+                                                                       gain=network.GlorotUniformGain[
+                                                                           layer_nonlinearity]),
+                                                                   W_hid_to_hid=lasagne.init.GlorotUniform(
+                                                                       gain=network.GlorotUniformGain[
+                                                                           layer_nonlinearity]),
+                                                                   b=lasagne.init.Constant(0.),
+                                                                   nonlinearity=layer_nonlinearity,
+                                                                   hid_init=lasagne.init.Constant(0.),
+                                                                   backwards=False,
+                                                                   learn_init=False,
+                                                                   gradient_steps=-1,
+                                                                   grad_clipping=0,
+                                                                   unroll_scan=False,
+                                                                   precompute_input=True,
+                                                                   mask_input=input_mask,
+                                                                   # only_return_final=True
+                                                                   );
+                elif recurrent_layer==lasagne.layers.recurrent.LSTMLayer:
+                    neural_network = lasagne.layers.LSTMLayer(neural_network,
+                                                              layer_dimension,
+                                                              ingate=lasagne.layers.Gate(),
+                                                              forgetgate=lasagne.layers.Gate(),
+                                                              cell=lasagne.layers.Gate(W_cell=None, nonlinearity=layer_nonlinearity),
+                                                              outgate=lasagne.layers.Gate(),
+                                                              nonlinearity=layer_nonlinearity,
+                                                              cell_init=lasagne.init.Constant(0.),
+                                                              hid_init=lasagne.init.Constant(0.),
+                                                              backwards=False,
+                                                              learn_init=False,
+                                                              peepholes=True,
+                                                              gradient_steps=-1,
+                                                              grad_clipping=0,
+                                                              unroll_scan=False,
+                                                              precompute_input=True,
+                                                              mask_input=input_mask,
+                                                              # only_return_final=True
+                                                              );
                 #print_output_dimension("checkpoint b2");
             else:
                 sys.stderr.write("layer specification conflicts...\n")
