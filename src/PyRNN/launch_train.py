@@ -34,6 +34,7 @@ def parse_args():
                         # parameter set 3
                         learning_rate=1e-2,
                         window_size=1,
+                        position_offset=-1,
                         sequence_length=100,
                         
                         # parameter set 4
@@ -83,6 +84,8 @@ def parse_args():
                       help="learning rate [1e-3]")
     parser.add_option("--window_size", type="int", dest="window_size",
                       help="window size [1]");
+    parser.add_option("--position_offset", type="int", dest="position_offset",
+                      help="position offset of current word in window [-1=window_size/2]");
     parser.add_option("--sequence_length", type="int", dest="sequence_length",
                       help="longest sequnece length for back propagation steps [100]");
                     
@@ -122,9 +125,9 @@ def parse_args():
     parser.add_option("--number_of_training_data", type="int", dest="number_of_training_data",
                       help="training data size [-1]");
     parser.add_option("--recurrent_style", type="string", dest="recurrent_style",
-                      help="recurrent network style [elman]");
+                      help="recurrent network style [default=elman, bi-elman, ctc]");
     parser.add_option("--recurrent_type", type="string", dest="recurrent_type",
-                      help="recurrent layer type [RecurrentLayer]");
+                      help="recurrent layer type [default=RecurrentLayer, LSTMLayer]");
     # parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
                       # help="number of pretrain epochs [0 - no pre-training]");
                       
@@ -151,8 +154,12 @@ def launch_train():
     assert options.learning_rate > 0;
     learning_rate = options.learning_rate;
     assert options.window_size > 0
-    assert options.window_size % 2 == 1;
+    #assert options.window_size % 2 == 1;
     window_size = options.window_size;
+    position_offset = options.position_offset;
+    if position_offset < 0:
+        position_offset = window_size / 2;
+    assert position_offset>=0 and position_offset<window_size
     assert options.sequence_length > 0;
     sequence_length = options.sequence_length;
     
@@ -419,7 +426,7 @@ def launch_train():
     assert number_of_training_data > 0 and number_of_training_data <= len(data_y)
 
     recurrent_style = options.recurrent_style;
-    assert recurrent_style in ["elman", "bi_elman", "ctc"]
+    assert recurrent_style in ["elman", "bi-elman", "ctc"]
     recurrent_type = options.recurrent_type
 
     indices = range(len(data_y))
@@ -488,6 +495,7 @@ def launch_train():
     # parameter set 3
     options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
     options_output_file.write("window_size=" + str(window_size) + "\n");
+    options_output_file.write("position_offset=" + str(position_offset) + "\n");
     options_output_file.write("sequence_length=" + str(sequence_length) + "\n");
 
     # parameter set 4
@@ -537,6 +545,7 @@ def launch_train():
     # parameter set 3
     print "learning_rate=" + str(learning_rate)
     print "window_size=" + str(window_size)
+    print "position_offset=" + str(position_offset)
     print "sequence_length=" + str(sequence_length)
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
@@ -593,27 +602,47 @@ def launch_train():
 
     if recurrent_style == "elman":
         import elman
-        network = elman.ElmanRecurrentNeuralNetwork(
+        network = elman.ElmanNetwork(
             input_network=input_layer,
             input_mask=mask_layer,
             vocabulary_dimension=vocabulary_dimension,
             embedding_dimension=embedding_dimension,
+            window_size=window_size,
+            position_offset=position_offset,
+            sequence_length=sequence_length,
             layer_dimensions=layer_dimensions,
             layer_nonlinearities=layer_nonlinearities,
             recurrent_type=recurrent_type,
             objective_to_minimize=objective_to_minimize,
         )
-    elif recurrent_style=="bi_elman":
+    elif recurrent_style=="bi-elman":
         import bi_elman
-        network = bi_elman.BidirectionalElmanRecurrentNeuralNetwork(
+        network = bi_elman.BidirectionalElmanNetwork(
             input_network=input_layer,
             input_mask=mask_layer,
             vocabulary_dimension=vocabulary_dimension,
             embedding_dimension=embedding_dimension,
+            window_size=window_size,
+            position_offset=position_offset,
+            sequence_length=sequence_length,
             layer_dimensions=layer_dimensions,
             layer_nonlinearities=layer_nonlinearities,
             objective_to_minimize=objective_to_minimize,
             )
+    elif recurrent_style == "ctc":
+        import ctc
+        network = ctc.ConnectionistTemporalClassification(
+            input_network=input_layer,
+            input_mask=mask_layer,
+            vocabulary_dimension=vocabulary_dimension,
+            embedding_dimension=embedding_dimension,
+            #window_size=window_size,
+            #position_offset=position_offset,
+            sequence_length=sequence_length,
+            layer_dimensions=layer_dimensions,
+            layer_nonlinearities=layer_nonlinearities,
+            objective_to_minimize=objective_to_minimize,
+        )
     else:
         sys.stderr.write("Undefined recurrent style %s..." % recurrent_style);
         sys.exit();
@@ -799,7 +828,7 @@ def launch_train():
                     total_validate_accuracy += minibatch_validate_accuracy * (valid_sequence_end_index - valid_sequence_start_index);
 
                     if valid_instance_index % 1000 == 0: # or valid_sequence_end_index % 1000 == 0:
-                        print "\tvalidate progress: %d sequences by %d instances" % (valid_sequence_end_index, valid_instance_index+1)
+                        print "\tvalidate progress: %d sequences by %d instances" % (valid_sequence_end_index+1, valid_instance_index+1)
 
                 # if we got the best validation score until now
                 average_validate_accuracy = total_validate_accuracy / valid_sequence_end_index;
@@ -836,7 +865,7 @@ def launch_train():
                     total_test_accuracy += minibatch_test_accuracy * (test_sequence_end_index - test_sequence_start_index);
 
                     if test_instance_index % 1000 == 0: # or test_sequence_end_index % 1000 == 0:
-                        print "\t\ttest progress: %d sequences by %d instances" % (test_sequence_end_index, test_instance_index+1)
+                        print "\t\ttest progress: %d sequences by %d instances" % (test_sequence_end_index+1, test_instance_index+1)
 
                 print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index+1, minibatch_index+1, total_test_loss / test_sequence_end_index, total_test_accuracy / test_sequence_end_index * 100)
 
