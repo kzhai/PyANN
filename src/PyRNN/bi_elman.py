@@ -56,22 +56,11 @@ class BidirectionalElmanNetwork(network.Network):
         self._position_offset = position_offset;
         self._sequence_length = sequence_length;
 
-        def print_output_dimension(checkpoint_text=""):
-            reference_to_input_layers = [input_layer for input_layer in lasagne.layers.get_all_layers(neural_network) if
-                                         isinstance(input_layer, lasagne.layers.InputLayer)];
-            if len(reference_to_input_layers) == 1:
-                print checkpoint_text, ":", "layer", lasagne.layers.get_output_shape(neural_network, {
-                    reference_to_input_layers[0]: (batch_size, sequence_length, window_size)})
-            elif len(reference_to_input_layers) == 2:
-                print checkpoint_text, ":", "layer", lasagne.layers.get_output_shape(neural_network, {
-                    reference_to_input_layers[0]: (batch_size, sequence_length, window_size),
-                    reference_to_input_layers[1]: (batch_size, sequence_length)})
-
         neural_network = lasagne.layers.EmbeddingLayer(neural_network,
                                                        input_size=vocabulary_dimension,
                                                        output_size=embedding_dimension,
                                                        W=lasagne.init.GlorotNormal());
-        #print_output_dimension("checkpoint a1");
+        print_output_dimension(neural_network, "checkpoint a1");
 
         self._embeddings = neural_network.get_params(trainable=True)[-1];
         self._normalize_embeddings_function = theano.function(
@@ -80,7 +69,7 @@ class BidirectionalElmanNetwork(network.Network):
         )
 
         neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, sequence_length, self._window_size * embedding_dimension));
-        # print_output_dimension("checkpoint a2");
+        print_output_dimension(neural_network, "checkpoint a2");
 
         last_rnn_layer_index = 0;
         for layer_index in xrange(len(layer_dimensions)):
@@ -97,7 +86,7 @@ class BidirectionalElmanNetwork(network.Network):
             if isinstance(layer_dimension, int):
                 if layer_index <= last_rnn_layer_index:
                     neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, lasagne.layers.get_output_shape(neural_network)[-1]));
-                    #print_output_dimension("checkpoint b1");
+                    print_output_dimension(neural_network, "checkpoint b1");
 
                 neural_network = lasagne.layers.DenseLayer(neural_network,
                                                            layer_dimension,
@@ -105,12 +94,12 @@ class BidirectionalElmanNetwork(network.Network):
                                                                gain=network.GlorotUniformGain[
                                                                    layer_nonlinearity]),
                                                            nonlinearity=layer_nonlinearity)
-                #print_output_dimension("checkpoint b2");
+                print_output_dimension(neural_network, "checkpoint b2");
             elif isinstance(layer_dimension, list):
                 assert isinstance(layer_nonlinearity, list)
                 if not isinstance(lasagne.layers.get_all_layers(neural_network)[-1], lasagne.layers.ConcatLayer):
                     neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, sequence_length, lasagne.layers.get_output_shape(neural_network)[-1]));
-                    #print_output_dimension("checkpoint c1");
+                    print_output_dimension(neural_network, "checkpoint c1");
 
                 layer_dimension = layer_dimension[0]
                 layer_nonlinearity = layer_nonlinearity[0]
@@ -202,7 +191,7 @@ class BidirectionalElmanNetwork(network.Network):
                                                                        );
 
                 neural_network = lasagne.layers.ConcatLayer([forward_rnn_layer, backward_rnn_layer], axis=-1);
-                #print_output_dimension("checkpoint c2");
+                print_output_dimension(neural_network, "checkpoint c2");
             else:
                 sys.stderr.write("layer specification conflicts...\n")
                 sys.exit();
@@ -248,6 +237,19 @@ class BidirectionalElmanNetwork(network.Network):
         sequences_x, sequences_m = get_sequences(context_windows, self._sequence_length);
         return sequences_x, sequences_m
 
+def print_output_dimension(neural_network, checkpoint_text=""):
+    batch_size = 13
+
+    reference_to_input_layers = [input_layer for input_layer in lasagne.layers.get_all_layers(neural_network) if
+                                 isinstance(input_layer, lasagne.layers.InputLayer)];
+    if len(reference_to_input_layers) == 1:
+        print checkpoint_text, ":", lasagne.layers.get_output_shape(neural_network, {
+            reference_to_input_layers[0]: (batch_size, sequence_length, window_size)})
+    elif len(reference_to_input_layers) == 2:
+        print checkpoint_text, ":", lasagne.layers.get_output_shape(neural_network, {
+            reference_to_input_layers[0]: (batch_size, sequence_length, window_size),
+            reference_to_input_layers[1]: (batch_size, sequence_length)})
+
 if __name__ == '__main__':
     window_size = 5;
     position_offset = -1
@@ -261,8 +263,8 @@ if __name__ == '__main__':
         window_size=window_size,
         position_offset=position_offset,
         sequence_length=sequence_length,
-        layer_dimensions=([], [128], [10]),
-        layer_nonlinearities=([], [lasagne.nonlinearities.rectify], [lasagne.nonlinearities.softmax]),
+        layer_dimensions=(32, [64], 10),
+        layer_nonlinearities=(lasagne.nonlinearities.rectify, [lasagne.nonlinearities.rectify], lasagne.nonlinearities.softmax),
         objective_to_minimize=lasagne.objectives.categorical_crossentropy,
     )
 
