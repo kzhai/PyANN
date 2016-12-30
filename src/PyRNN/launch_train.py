@@ -120,7 +120,7 @@ def parse_args():
     parser.add_option("--number_of_training_data", type="int", dest="number_of_training_data",
                       help="training data size [-1]");
     parser.add_option("--recurrent_style", type="string", dest="recurrent_style",
-                      help="recurrent network style [default=elman, bi-elman, ctc]");
+                      help="recurrent network style [default=elman, bi-elman]");
     parser.add_option("--recurrent_type", type="string", dest="recurrent_type",
                       help="recurrent layer type [default=RecurrentLayer, LSTMLayer]");
     # parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
@@ -421,7 +421,7 @@ def launch_train():
     assert number_of_training_data > 0 and number_of_training_data <= len(data_y)
 
     recurrent_style = options.recurrent_style;
-    assert recurrent_style in ["elman", "bi-elman", "ctc"]
+    assert recurrent_style in ["elman", "bi-elman"]
     recurrent_type = options.recurrent_type
 
     indices = range(len(data_y))
@@ -624,20 +624,6 @@ def launch_train():
             layer_nonlinearities=layer_nonlinearities,
             objective_to_minimize=objective_to_minimize,
             )
-    elif recurrent_style == "ctc":
-        from src.PyCTC import ctc
-        network = ctc.ConnectionistTemporalClassification(
-            input_network=input_layer,
-            input_mask=mask_layer,
-            vocabulary_dimension=vocabulary_dimension,
-            embedding_dimension=embedding_dimension,
-            #window_size=window_size,
-            #position_offset=position_offset,
-            sequence_length=sequence_length,
-            layer_dimensions=layer_dimensions,
-            layer_nonlinearities=layer_nonlinearities,
-            objective_to_minimize=objective_to_minimize,
-        )
     else:
         sys.stderr.write("Undefined recurrent style %s..." % recurrent_style);
         sys.exit();
