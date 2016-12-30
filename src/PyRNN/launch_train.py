@@ -1,20 +1,15 @@
+import cPickle
+import datetime
+import optparse
 import os
 import sys
+import timeit
 
-import cPickle
+import lasagne
 import numpy
-import scipy
-
 import theano
 import theano.tensor
 
-import timeit
-import datetime
-import optparse
-
-import lasagne
-
-import re
 
 #template_pattern = re.compile(r'(?P<pre_rnn>.*)\[(?P<rnn>.+)\](?P<post_rnn>.*)')
 
@@ -630,7 +625,7 @@ def launch_train():
             objective_to_minimize=objective_to_minimize,
             )
     elif recurrent_style == "ctc":
-        import ctc
+        from src.PyCTC import ctc
         network = ctc.ConnectionistTemporalClassification(
             input_network=input_layer,
             input_mask=mask_layer,
@@ -672,7 +667,8 @@ def launch_train():
     # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
     validate_prediction = network.get_output(deterministic=True)
-    validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y))
+    validate_loss = network.get_objective_to_minimize(y);
+    #validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y))
     # As a bonus, also create an expression for the classification accuracy:
     validate_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(validate_prediction, axis=1), y), dtype=theano.config.floatX)
 
