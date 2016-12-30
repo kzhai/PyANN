@@ -15,7 +15,7 @@ import optparse
 
 import lasagne
 
-from utils import tile_raster_images
+#from utils import tile_raster_images
 
 try:
     import PIL.Image as Image
