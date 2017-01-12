@@ -13,7 +13,7 @@ import theano.tensor
 
 #template_pattern = re.compile(r'(?P<pre_rnn>.*)\[(?P<rnn>.+)\](?P<post_rnn>.*)')
 
-numpy.random.seed(0);
+#numpy.random.seed(0);
 
 def parse_args():
     parser = optparse.OptionParser()
