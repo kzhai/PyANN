@@ -125,24 +125,18 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     total_test_loss = 0;
     total_test_accuracy = 0;
     total_test_instances = 0;
-    for test_sequence_x, test_sequence_y in zip(test_set_x, test_set_y):
+    for test_instance_x, test_instance_y in zip(test_set_x, test_set_y):
         #context_windows = get_context_windows(test_sequence_x, window_size)
         #test_minibatch, test_minibatch_masks = get_mini_batches(context_windows, backprop_step);
-        test_minibatch, test_minibatch_masks = network.get_mini_batches(test_sequence_x);
-        assert len(test_minibatch) == len(test_minibatch_masks);
-        assert len(test_minibatch) == len(test_sequence_x);
+        test_sequences_x, test_sequences_m = network.get_instance_sequences(test_instance_x);
+        assert len(test_sequences_x) == len(test_sequences_m);
+        assert len(test_sequences_x) == len(test_instance_x);
 
-        minibatch_test_loss, minibatch_test_accuracy = validate_function(test_minibatch, test_sequence_y, test_minibatch_masks)
+        minibatch_test_loss, minibatch_test_accuracy = validate_function(test_sequences_x, test_instance_y, test_sequences_m)
 
-        total_test_loss += minibatch_test_loss * len(test_sequence_y)
-        total_test_accuracy += minibatch_test_accuracy * len(test_sequence_y);
-        total_test_instances += len(test_sequence_y);
-
-        #test_prediction_distribution = lasagne.layers.get_output(network._neural_network, test_minibatch, test_minibatch_masks, deterministic=True).eval()
-
-        #total_test_loss += theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction_distribution, y)) * len(test_sequence_y)
-        #total_test_accuracy += theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(test_prediction_distribution, axis=1), y), dtype=theano.config.floatX) * len(test_sequence_y);
-        #total_test_instances += len(test_sequence_y);
+        total_test_loss += minibatch_test_loss * len(test_instance_y)
+        total_test_accuracy += minibatch_test_accuracy * len(test_instance_y);
+        total_test_instances += len(test_instance_y);
 
         if total_test_instances % 1000 == 0:
             print "test progress: %d instances" % (total_test_instances)
@@ -151,53 +145,6 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     average_test_loss = total_test_loss / total_test_instances;
 
     return average_test_loss, average_test_accuracy;
-
-'''
-def evaluate_snapshot_batch(input_snapshot_path, test_set_x, test_set_y):
-    network = cPickle.load(open(input_snapshot_path, 'rb'));
-
-    test_prediction_distribution = lasagne.layers.get_output(network._neural_network, test_set_x, deterministic=True).eval()
-    
-    # prediction_loss_on_test_set = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction_distribution, y))
-    prediction_loss_on_test_set = 0;
-
-    test_prediction = numpy.argmax(test_prediction_distribution, axis=1);
-    test_accuracy = numpy.equal(test_prediction, test_set_y);
-    prediction_accuracy_on_test_set = numpy.mean(test_accuracy);
-    
-    return prediction_loss_on_test_set, prediction_accuracy_on_test_set;
-
-def evaluate_snapshot_through_graph(input_snapshot_path, test_set_x, test_set_y):
-    # allocate symbolic variables for the data
-    # x = theano.tensor.matrix('x')  # the data is presented as rasterized images
-    x = theano.tensor.tensor4('x')  # the data is presented as rasterized images
-    y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
-    
-    network = cPickle.load(open(input_snapshot_path, 'rb'));
-    
-    # This is to establish the computational graph
-    # network.get_all_layers()[0].input_var = x
-    network.set_input_variable(x);
-    
-    # Create a train_loss expression for validation/testing. The crucial difference
-    # here is that we do a deterministic forward pass through the networks,
-    # disabling dropout layers.
-    test_prediction = network.get_output(deterministic=True)
-    test_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction, y))
-    # As a bonus, also create an expression for the classification accuracy:
-    test_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(test_prediction, axis=1), y), dtype=theano.config.floatX)
-    
-    # compiling a Theano function that computes the mistakes that are made by the model on a minibatch
-    test_function = theano.function(
-        inputs=[x, y],
-        outputs=[test_loss, test_accuracy],
-    )
-    
-    # test it on the test set
-    prediction_loss_on_test_set, prediction_accuracy_on_test_set = test_function(test_set_x, test_set_y);
-    
-    return prediction_loss_on_test_set, prediction_accuracy_on_test_set;
-'''
 
 if __name__ == '__main__':
     launch_test()

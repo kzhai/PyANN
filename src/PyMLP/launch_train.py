@@ -447,9 +447,9 @@ def launch_train():
     train_prediction = network.get_output()
     train_loss = network.get_objective_to_minimize(y);
     # train_loss = theano.tensor.mean(lasagne.objectives.categorical_crossentropy(train_prediction, y))
-    # train_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(train_prediction, y))
     train_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=1), y), dtype=theano.config.floatX)
-    
+    #train_accuracy = network.get_objective_to_minimize(y, objective_to_minimize="categorical_accuracy");
+
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
@@ -460,7 +460,7 @@ def launch_train():
     # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
     validate_prediction = network.get_output(deterministic=True)
-    validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y))
+    validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y), dtype=theano.config.floatX)
     # As a bonus, also create an expression for the classification accuracy:
     validate_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(validate_prediction, axis=1), y), dtype=theano.config.floatX)
 
@@ -528,15 +528,15 @@ def launch_train():
                     #best_iteration_index = iteration_index
                     
                     # save the best model
-                    print 'best model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
+                    print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
                     
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-                print 'validate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
 
                 average_test_loss, average_test_accuracy = validate_function(test_set_x, test_set_y);
-                print 'test result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
+                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
 
         average_train_accuracy = total_train_accuracy / total_train_instances;
         average_train_loss = total_train_loss / total_train_instances;
