@@ -39,8 +39,8 @@ def parse_args():
                         
                         objective_to_minimize=None,
                         
-                        layer_activation_parameters="1",
-                        layer_activation_styles="bernoulli",
+                        dense_activation_parameters="1",
+                        dense_activation_styles="bernoulli",
 
                         # parameter set 5
                         L1_regularizer_lambdas="0",
@@ -97,9 +97,9 @@ def parse_args():
     parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
                       help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
                     
-    parser.add_option("--layer_activation_parameters", type="string", dest="layer_activation_parameters",
+    parser.add_option("--dense_activation_parameters", type="string", dest="dense_activation_parameters",
                       help="dropout probability of different layer [1], either one number of a list of numbers, example, '0.2' represents 0.2 dropout rate for all input+hidden layers, or '0.2,0.5' represents 0.2 dropout rate for input layer and 0.5 dropout rate for first hidden layer respectively");
-    parser.add_option("--layer_activation_styles", type="string", dest="layer_activation_styles",
+    parser.add_option("--dense_activation_styles", type="string", dest="dense_activation_styles",
                       help="dropout style different layer [bernoulli], example, 'bernoulli,beta-bernoulli' represents 2 layers with bernoulli and beta-bernoulli dropout respectively");
     # parser.add_option("--layer_latent_feature_alphas", type="string", dest="layer_latent_feature_alphas",
                       # help="alpha for latent feature ");
@@ -162,7 +162,11 @@ def launch_train():
     # vocabulary_dimension = options.vocabulary_dimension
     assert options.embedding_dimension > 0;
     embedding_dimension = options.embedding_dimension
-                      
+
+    number_of_dense_layers = 0;
+    number_of_recurrent_layers = 0;
+    number_of_layers = number_of_dense_layers + number_of_recurrent_layers;
+
     assert options.layer_dimensions != None
     options_layer_dimensions = options.layer_dimensions + ","
     layer_dimensions = [];
@@ -182,11 +186,11 @@ def launch_train():
             if end_index>start_index:
                 if recurrent_mode:
                     layer_dimensions.append([int(options_layer_dimensions[start_index:end_index])]);
+                    number_of_recurrent_layers += 1;
                 else:
                     layer_dimensions.append(int(options_layer_dimensions[start_index:end_index]));
+                    number_of_dense_layers += 1;
             start_index = end_index + 1;
-
-    number_of_layers = len(layer_dimensions);
 
     assert options.layer_nonlinearities != None
     options_layer_nonlinearities = options.layer_nonlinearities + ","
@@ -242,53 +246,53 @@ def launch_train():
     objective_to_minimize = options.objective_to_minimize;
     objective_to_minimize = getattr(lasagne.objectives, objective_to_minimize)
 
-    layer_activation_styles = options.layer_activation_styles;
-    layer_activation_style_tokens = layer_activation_styles.split(",")
-    if len(layer_activation_style_tokens) == 1:
-        layer_activation_styles = [layer_activation_styles for layer_index in xrange(number_of_layers)]
-    elif len(layer_activation_style_tokens) == number_of_layers:
-        layer_activation_styles = layer_activation_style_tokens
+    dense_activation_styles = options.dense_activation_styles;
+    dense_activation_style_tokens = dense_activation_styles.split(",")
+    if len(dense_activation_style_tokens) == 1:
+        dense_activation_styles = [dense_activation_styles for layer_index in xrange(number_of_dense_layers)]
+    elif len(dense_activation_style_tokens) == number_of_dense_layers:
+        dense_activation_styles = dense_activation_style_tokens
         # [float(layer_activation_parameter) for layer_activation_parameter in layer_activation_parameter_tokens]
     else:
-        sys.stderr.write("error: unrecognized configuration for layer_activation_styles %s\n" % layer_activation_styles);
+        sys.stderr.write("error: unrecognized configuration for layer_activation_styles %s\n" % dense_activation_styles);
         sys.exit()
         
-    assert len(layer_activation_styles) == number_of_layers;
-    for layer_activation_style in layer_activation_styles:
-        assert layer_activation_style in set(["bernoulli", "beta_bernoulli", "reciprocal_beta_bernoulli", "reverse_reciprocal_beta_bernoulli", "mixed_beta_bernoulli"])
+    assert len(dense_activation_styles) == number_of_dense_layers;
+    for dense_activation_style in dense_activation_styles:
+        assert dense_activation_style in set(["bernoulli", "beta_bernoulli", "reciprocal_beta_bernoulli", "reverse_reciprocal_beta_bernoulli", "mixed_beta_bernoulli"])
     
-    layer_activation_parameters = options.layer_activation_parameters;
-    layer_activation_parameter_tokens = layer_activation_parameters.split(",")
-    if len(layer_activation_parameter_tokens) == 1:
-        layer_activation_parameters = [layer_activation_parameters for layer_index in xrange(number_of_layers)]
-    elif len(layer_activation_parameter_tokens) == number_of_layers:
-        layer_activation_parameters = layer_activation_parameter_tokens
+    dense_activation_parameters = options.dense_activation_parameters;
+    dense_activation_parameter_tokens = dense_activation_parameters.split(",")
+    if len(dense_activation_parameter_tokens) == 1:
+        dense_activation_parameters = [dense_activation_parameters for layer_index in xrange(number_of_dense_layers)]
+    elif len(dense_activation_parameter_tokens) == number_of_dense_layers:
+        dense_activation_parameters = dense_activation_parameter_tokens
         # [float(layer_activation_parameter) for layer_activation_parameter in layer_activation_parameter_tokens]
     else:
-        sys.stderr.write("error: unrecognized configuration for layer_activation_parameters %s\n" % layer_activation_parameters);
+        sys.stderr.write("error: unrecognized configuration for layer_activation_parameters %s\n" % dense_activation_parameters);
         sys.exit()
     # assert (layer_activation_parameter >= 0 for layer_activation_parameter in layer_activation_parameters)
     # assert (layer_activation_parameter <= 1 for layer_activation_parameter in layer_activation_parameters)
     
-    for layer_index in xrange(number_of_layers):
-        if layer_activation_styles[layer_index] == "bernoulli":
-            layer_activation_parameters[layer_index] = float(layer_activation_parameters[layer_index])
-            assert layer_activation_parameters[layer_index] <= 1;
-            assert layer_activation_parameters[layer_index] > 0;
-        elif layer_activation_styles[layer_index] == "beta_bernoulli" or layer_activation_styles[layer_index] == "reciprocal_beta_bernoulli" or layer_activation_styles[layer_index] == "reverse_reciprocal_beta_bernoulli" or layer_activation_styles[layer_index] == "mixed_beta_bernoulli":
-            layer_activation_parameter_tokens = layer_activation_parameters[layer_index].split("+");
-            if len(layer_activation_parameter_tokens) == 1:
-                layer_activation_parameters[layer_index] = (float(layer_activation_parameter_tokens[0]), 1.0)
-            elif len(layer_activation_parameter_tokens) == 2:
-                layer_activation_parameters[layer_index] = (float(layer_activation_parameter_tokens[0]), float(layer_activation_parameter_tokens[1]))
+    for layer_index in xrange(number_of_dense_layers):
+        if dense_activation_styles[layer_index] == "bernoulli":
+            dense_activation_parameters[layer_index] = float(dense_activation_parameters[layer_index])
+            assert dense_activation_parameters[layer_index] <= 1;
+            assert dense_activation_parameters[layer_index] > 0;
+        elif dense_activation_styles[layer_index] == "beta_bernoulli" or dense_activation_styles[layer_index] == "reciprocal_beta_bernoulli" or dense_activation_styles[layer_index] == "reverse_reciprocal_beta_bernoulli" or dense_activation_styles[layer_index] == "mixed_beta_bernoulli":
+            dense_activation_parameter_tokens = dense_activation_parameters[layer_index].split("+");
+            if len(dense_activation_parameter_tokens) == 1:
+                dense_activation_parameters[layer_index] = (float(dense_activation_parameter_tokens[0]), 1.0)
+            elif len(dense_activation_parameter_tokens) == 2:
+                dense_activation_parameters[layer_index] = (float(dense_activation_parameter_tokens[0]), float(dense_activation_parameter_tokens[1]))
             else:
-                sys.stderr.write("error: unrecognized configuration for layer_activation_style %s\n" % layer_activation_styles[layer_index]);
+                sys.stderr.write("error: unrecognized configuration for layer_activation_style %s\n" % dense_activation_styles[layer_index]);
                 sys.exit()
-            assert layer_activation_parameters[layer_index][0] > 0;
-            assert layer_activation_parameters[layer_index][1] > 0;
+            assert dense_activation_parameters[layer_index][0] > 0;
+            assert dense_activation_parameters[layer_index][1] > 0;
             
-            if layer_activation_styles[layer_index] == "mixed_beta_bernoulli":
-                assert layer_activation_parameters[layer_index][0] < 1;
+            if dense_activation_styles[layer_index] == "mixed_beta_bernoulli":
+                assert dense_activation_parameters[layer_index][0] < 1;
     
     '''
     layer_latent_feature_alphas = options.layer_latent_feature_alphas;
@@ -303,7 +307,7 @@ def launch_train():
         layer_latent_feature_alphas = [0 for layer_index in xrange(number_of_layers)]
     assert (layer_latent_feature_alpha >= 0 for layer_latent_feature_alpha in layer_latent_feature_alphas)
     '''
-        
+
     # parameter set 5
     L1_regularizer_lambdas = options.L1_regularizer_lambdas
     L1_regularizer_lambda_tokens = L1_regularizer_lambdas.split(",")
@@ -320,7 +324,8 @@ def launch_train():
     else:
         L2_regularizer_lambdas = [float(L2_regularizer_lambda_token) for L2_regularizer_lambda_token in L2_regularizer_lambda_tokens]
     assert len(L2_regularizer_lambdas) == number_of_layers;
-        
+
+    '''
     dae_regularizer_lambdas = options.dae_regularizer_lambdas
     dae_regularizer_lambda_tokens = dae_regularizer_lambdas.split(",")
     if len(dae_regularizer_lambda_tokens) == 1:
@@ -328,8 +333,10 @@ def launch_train():
     else:
         dae_regularizer_lambdas = [float(dae_regularizer_lambda_token) for dae_regularizer_lambda_token in dae_regularizer_lambda_tokens]
     assert len(dae_regularizer_lambdas) == number_of_layers - 1;
-    
+    '''
+
     # parameter set 6
+    '''
     layer_corruption_levels = options.layer_corruption_levels;
     layer_corruption_level_tokens = layer_corruption_levels.split(",")
     if len(layer_corruption_level_tokens) == 1:
@@ -340,7 +347,8 @@ def launch_train():
     assert len(layer_corruption_levels) == number_of_layers - 1;
     assert (layer_corruption_level >= 0 for layer_corruption_level in layer_corruption_levels)
     assert (layer_corruption_level <= 1 for layer_corruption_level in layer_corruption_levels)
-    
+    '''
+
     # parameter set 1
     assert(options.input_directory != None);
     assert(options.output_directory != None);
@@ -500,14 +508,14 @@ def launch_train():
 
     options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
     
-    options_output_file.write("layer_activation_parameters=%s\n" % (layer_activation_parameters));
-    options_output_file.write("layer_activation_styles=%s\n" % (layer_activation_styles));
+    options_output_file.write("layer_activation_parameters=%s\n" % (dense_activation_parameters));
+    options_output_file.write("layer_activation_styles=%s\n" % (dense_activation_styles));
     
     # parameter set 5
     options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
     options_output_file.write("L2_regularizer_lambdas=%s\n" % (L2_regularizer_lambdas));
-    options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
-    options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
+    #options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
+    #options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
     # options_output_file.write("number_of_pretrain_epochs=%s\n" % (number_of_pretrain_epochs));
     
     # paramter set 6
@@ -549,14 +557,14 @@ def launch_train():
     #print "layer_dimensions=%s,%s,%s" % (pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions)
     #print "layer_nonlinearities=%s,%s,%s" % (pre_rnn_layer_nonlinearities, rnn_layer_nonlinearities, post_rnn_layer_nonlinearities)
 
-    print "layer_activation_parameters=%s" % (layer_activation_parameters)
-    print "layer_activation_styles=%s" % (layer_activation_styles)
+    print "dense_activation_parameters=%s" % (dense_activation_parameters)
+    print "dense_activation_styles=%s" % (dense_activation_styles)
     
     # parameter set 5
     print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
     print "L2_regularizer_lambdas=%s" % (L2_regularizer_lambdas);
-    print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
-    print "layer_corruption_levels=%s" % (layer_corruption_levels);
+    #print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
+    #print "layer_corruption_levels=%s" % (layer_corruption_levels);
     
     # paramter set 6
     print "number_of_training_data=%d" % (number_of_training_data);
@@ -606,6 +614,18 @@ def launch_train():
             sequence_length=sequence_length,
             layer_dimensions=layer_dimensions,
             layer_nonlinearities=layer_nonlinearities,
+            #
+            #
+            #
+            #
+            #
+            dense_activation_parameters=dense_activation_parameters,
+            dense_activation_styles=dense_activation_styles,
+            #
+            #
+            #
+            #
+            #
             recurrent_type=recurrent_type,
             objective_to_minimize=objective_to_minimize,
         )
@@ -621,6 +641,18 @@ def launch_train():
             sequence_length=sequence_length,
             layer_dimensions=layer_dimensions,
             layer_nonlinearities=layer_nonlinearities,
+            #
+            #
+            #
+            #
+            #
+            dense_activation_parameters=dense_activation_parameters,
+            dense_activation_styles=dense_activation_styles,
+            #
+            #
+            #
+            #
+            #
             objective_to_minimize=objective_to_minimize,
             )
     else:

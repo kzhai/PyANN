@@ -33,6 +33,9 @@ class BidirectionalElmanNetwork(network.Network):
                  layer_dimensions=None,
                  layer_nonlinearities=None,
 
+                 dense_activation_parameters=None,
+                 dense_activation_styles=None,
+
                  recurrent_type="RecurrentLayer",
 
                  # layer_activation_parameters=None,
@@ -43,6 +46,20 @@ class BidirectionalElmanNetwork(network.Network):
         super(BidirectionalElmanNetwork, self).__init__(input_network)
         assert window_size > 0;
         assert sequence_length > 0;
+
+        #
+        #
+        #
+        #
+        #
+
+        dropout_layer_index = 0;
+
+        #
+        #
+        #
+        #
+        #
 
         self._input_data_layer = input_network;
         self._input_mask_layer = input_mask;
@@ -71,6 +88,30 @@ class BidirectionalElmanNetwork(network.Network):
         neural_network = lasagne.layers.ReshapeLayer(neural_network, (-1, sequence_length, self._window_size * embedding_dimension));
         #print_output_dimension("after window merge", neural_network, batch_size, sequence_length, window_size);
 
+        #
+        #
+        #
+        #
+        #
+
+        input_layer_shape = lasagne.layers.get_output_shape(neural_network)[1:]
+        previous_layer_shape = numpy.prod(input_layer_shape)
+
+        activation_probability = sample_activation_probability(previous_layer_shape,
+                                                               dense_activation_styles[dropout_layer_index],
+                                                               dense_activation_parameters[
+                                                                   dropout_layer_index]);
+        activation_probability = numpy.reshape(activation_probability, input_layer_shape)
+        dropout_layer_index += 1;
+
+        neural_network = GeneralizedDropoutLayer(neural_network, activation_probability=activation_probability);
+
+        #
+        #
+        #
+        #
+        #
+
         last_rnn_layer_index = 0;
         for layer_index in xrange(len(layer_dimensions)):
             layer_dimension = layer_dimensions[layer_index]
@@ -95,6 +136,33 @@ class BidirectionalElmanNetwork(network.Network):
                                                                    layer_nonlinearity]),
                                                            nonlinearity=layer_nonlinearity)
                 #print_output_dimension("after dense layer %i" % layer_index, neural_network, batch_size, sequence_length, window_size);
+
+                #
+                #
+                #
+                #
+                #
+
+                if dropout_layer_index >= len(dense_activation_styles):
+                    continue;
+
+                input_layer_shape = lasagne.layers.get_output_shape(neural_network)[1:]
+                previous_layer_shape = numpy.prod(input_layer_shape)
+
+                activation_probability = sample_activation_probability(previous_layer_shape,
+                                                                       dense_activation_styles[dropout_layer_index],
+                                                                       dense_activation_parameters[
+                                                                           dropout_layer_index]);
+                activation_probability = numpy.reshape(activation_probability, input_layer_shape)
+                dropout_layer_index += 1;
+
+                neural_network = GeneralizedDropoutLayer(neural_network, activation_probability=activation_probability);
+
+                #
+                #
+                #
+                #
+                #
             elif isinstance(layer_dimension, list):
                 assert isinstance(layer_nonlinearity, list)
                 if not isinstance(lasagne.layers.get_all_layers(neural_network)[-1], lasagne.layers.ConcatLayer):
