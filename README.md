@@ -236,12 +236,12 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch recurrent neural network (RNN) on atis example dataset,
 
 	python -um PyRNN.launch_train \
-		--input_directory=../input/atis.label/ \
+		--input_directory=../input/atis.fold0.label/ \
 		--output_directory=../output/ \
 		--number_of_epochs=50 \
 		--learning_rate=0.01 \
 		--embedding_dimension=100 \
-		--backprop_step=9 \
+		--sequence_length=9 \
 		--window_size=5 \
 		--layer_dimensions=256,[128],127 \
 		--layer_nonlinearities=sigmoid,[sigmoid],softmax \
@@ -255,7 +255,7 @@ The generic argument to run RNN is
 		--number_of_epochs=$NUMBER_OF_EPOCHS \
 	  	--learning_rate=$LEARNING_RATE \
 	  	--embedding_dimension=$EMBEDDING_DIMENSION \
-		--backprop_step=$BACKPROP_STEP \
+		--sequence_length=$SEQUENCE_LENGTH \
 		--window_size=$WINDOW_SIZE \
 		--layer_dimensions=$DIM_1,...,[$RNN_DIM_1,...,$RNN_DIM_N],...,$DIM_N,... \
 		--layer_nonlinearities=$F_1,...,[$RNN_F_1,...,$RNN_F_N],...,$F_N,... \
@@ -265,42 +265,38 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 
 	python -um PyRNN.launch_train --help
 
-### Launch bi-directional recurrent neural network (BiRNN)
+### Launch connectionist temporal classification (CTC)
 
-To launch bi-directional recurrent neural network (BiRNN) on atis example dataset,
+To launch connectionist temporal classification (CTC) on atis example dataset,
 
-	python -um PyBiRNN.launch_train \
-		--input_directory=../input/atis.label/ \
+	python -m PyCTC.launch_train \
+		--input_directory=../input/atis.fold0.label/
 		--output_directory=../output/ \
 		--number_of_epochs=50 \
 		--learning_rate=0.01 \
 		--embedding_dimension=100 \
-		--backprop_step=9 \
-		--window_size=5 \
+		--sequence_length=100 \
 		--layer_dimensions=256,[128],127 \
 		--layer_nonlinearities=sigmoid,[sigmoid],softmax \
 		--objective_to_minimize=categorical_crossentropy
 
-The generic argument to run BiRNN is
+The generic argument to run CTC is
 
-	python -um PyBiRNN.launch_train \
+	python -um PyCTC.launch_train \
 		--input_directory=$INPUT_DIRECTORY/$DATASET_NAME \
 		--output_directory=$OUTPUT_DIRECTORY/ \
 		--number_of_epochs=$NUMBER_OF_EPOCHS \
 	  	--learning_rate=$LEARNING_RATE \
 	  	--embedding_dimension=$EMBEDDING_DIMENSION \
-		--backprop_step=$BACKPROP_STEP \
+		--sequence_length=$SEQUENCE_LENGTH \
 		--window_size=$WINDOW_SIZE \
-		--layer_dimensions=$DIM_1,...,[$BiRNN_DIM_1,...,$BiRNN_DIM_N],...,$DIM_N,... \
-		--layer_nonlinearities=$F_1,...,[$BiRNN_F_1,...,$BiRNN_F_N],...,$F_N,... \
+		--layer_dimensions=$DIM_1,...,[$RNN_DIM_1,...,$RNN_DIM_N],...,$DIM_N,... \
+		--layer_nonlinearities=$F_1,...,[$RNN_F_1,...,$RNN_F_N],...,$F_N,... \
 		--objective_to_minimize=categorical_crossentropy
 
 Under any cirsumstances, you may also get help information and usage hints by running the following command
 
-	python -um PyBiRNN.launch_train --help
-
-
-### Launch long short-term memory (LSTM)
+	python -um PyCTC.launch_train --help
 
 Model Output and Snapshot
 ----------
