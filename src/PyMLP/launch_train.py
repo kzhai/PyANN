@@ -29,6 +29,7 @@ def parse_args():
 
                         # parameter set 3
                         learning_rate=1e-2,
+                        learning_decay=0,
                         objective_to_minimize=None,
 
                         # parameter set 4
@@ -127,7 +128,9 @@ def launch_train():
 
     # parameter set 3
     assert options.learning_rate > 0;
-    learning_rate = options.learning_rate;
+    initial_learning_rate = options.learning_rate;
+    assert options.learning_decay > 0;
+    initial_learning_decay = options.learning_decay;
 
     assert options.objective_to_minimize != None
     objective_to_minimize = options.objective_to_minimize;
@@ -319,7 +322,8 @@ def launch_train():
     suffix += "-E%d" % (number_of_epochs);
     #suffix += "-S%d" % (snapshot_interval);
     suffix += "-B%d" % (minibatch_size);
-    suffix += "-aa%f" % (learning_rate);
+    suffix += "-lr%f" % (initial_learning_rate);
+    suffix += "-ld%f" % (initial_learning_decay);
     # suffix += "-l1r%f" % (L1_regularizer_lambdas);
     # suffix += "-l2r%d" % (L2_regularizer_lambdas);
     suffix += "/";
@@ -349,7 +353,8 @@ def launch_train():
     options_output_file.write("validation_interval=%d\n" % validation_interval);
     
     # parameter set 3
-    options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
+    options_output_file.write("learning_rate=" + str(initial_learning_rate) + "\n");
+    options_output_file.write("learning_decay=" + str(initial_learning_decay) + "\n");
     options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
 
     # parameter set 4
@@ -392,7 +397,8 @@ def launch_train():
     print "validation_interval=%d" % validation_interval;
     
     # parameter set 3
-    print "learning_rate=" + str(learning_rate)
+    print "learning_rate=" + str(initial_learning_rate)
+    print "learning_decay=" + str(initial_learning_decay)
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
     # parameter set 4
@@ -420,6 +426,7 @@ def launch_train():
     # allocate symbolic variables for the data
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
+    lr = theano.tensor.scalar('learning_rate');
     
     input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
     
@@ -454,7 +461,7 @@ def launch_train():
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_params = network.get_network_params(trainable=True)
-    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, learning_rate, momentum=0.95)
+    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, lr, momentum=0.95)
     
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
@@ -467,7 +474,7 @@ def launch_train():
     # Compile a function performing a training step on a mini-batch (by giving
     # the updates dictionary) and returning the corresponding training train_loss:
     train_function = theano.function(
-        inputs=[x, y],
+        inputs=[x, y, lr],
         outputs=[train_loss, train_accuracy],
         updates=updates
     )
@@ -506,12 +513,16 @@ def launch_train():
         for minibatch_index in xrange(number_of_minibatches):
             minibatch_running_time = timeit.default_timer();
 
-            iteration_index = epoch_index * number_of_minibatches + minibatch_index
-
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
 
-            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(minibatch_x, minibatch_y)
+            iteration_index = epoch_index * number_of_minibatches + minibatch_index
+
+            learning_rate = initial_learning_rate;
+            if initial_learning_decay>0:
+                learning_rate *= (1. / (1. + initial_learning_decay * iteration_index))
+
+            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(minibatch_x, minibatch_y, learning_rate)
 
             total_train_loss += minibatch_average_train_loss * minibatch_size;
             total_train_accuracy += minibatch_average_train_accuracy * minibatch_size;
