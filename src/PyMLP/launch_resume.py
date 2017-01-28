@@ -19,6 +19,7 @@ def parse_args():
     parser.set_defaults(# parameter set 1
                         input_directory=None,
                         output_directory=None,
+                        model_directory=None,
                         pretrained_model_file=None,
                         
                         # parameter set 2
@@ -30,14 +31,14 @@ def parse_args():
                         # parameter set 3
                         learning_rate=1e-2,
                         learning_decay=0,
-                        objective_to_minimize=None,
+                        #objective_to_minimize=None,
 
                         # parameter set 4
-                        layer_dimensions=None,
-                        layer_nonlinearities=None,
+                        #layer_dimensions=None,
+                        #layer_nonlinearities=None,
 
-                        layer_activation_parameters="1",
-                        layer_activation_styles="bernoulli",
+                        #layer_activation_parameters="1",
+                        #layer_activation_styles="bernoulli",
 
                         # parameter set 5
                         L1_regularizer_lambdas="0",
@@ -54,6 +55,8 @@ def parse_args():
                       help="input directory [None]");
     parser.add_option("--output_directory", type="string", dest="output_directory",
                       help="output directory [None]");
+    parser.add_option("--model_directory", type="string", dest="model_directory",
+                      help="model directory [None]");
     parser.add_option("--pretrained_model_file", type="string", dest="pretrained_model_file",
                       help="pretrained model file [None]");
                       
@@ -247,13 +250,45 @@ def launch_train():
     assert (layer_corruption_level <= 1 for layer_corruption_level in layer_corruption_levels)
     
     # parameter set 1
-    assert(options.input_directory != None);
-    assert(options.output_directory != None);
+    assert (options.input_directory != None);
+    assert (options.model_directory != None);
+    assert (options.output_directory != None);
     
     input_directory = options.input_directory;
     input_directory = input_directory.rstrip("/");
     dataset_name = os.path.basename(input_directory);
-    
+
+    model_directory = options.model_directory;
+
+    if not os.path.exists(model_directory):
+        sys.stderr.write("model directory %s not exists...\n" % (model_directory));
+        return;
+    model_directory = model_directory.rstrip("/");
+    model_settings = os.path.basename(model_directory);
+
+    # load the existing model
+    model_snapshot_file_path = os.path.join(model_directory, "model.pkl");
+    if not os.path.exists(model_snapshot_file_path):
+        sys.stderr.write("error: model file %s not found...\n" % (model_snapshot_file_path));
+        return;
+    network = cPickle.load(open(model_snapshot_file_path, 'rb'));
+
+
+    #number_of_layers = len(network.get_all_layers()) - 1;
+
+    output_file = options.output_directory;
+    if not os.path.exists(output_file):
+        os.mkdir(output_file);
+    output_file = os.path.join(output_file, dataset_name);
+    if not os.path.exists(output_file):
+        os.mkdir(output_file);
+
+
+
+
+
+
+
     pretrained_model_file = options.pretrained_model_file;
     pretrained_model = None;
     if pretrained_model_file != None:
@@ -429,7 +464,8 @@ def launch_train():
     lr = theano.tensor.scalar('learning_rate');
     
     input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
-    
+
+    '''
     import mlp
     network = mlp.MultiLayerPerceptron(
         input_network=input_layer,
@@ -440,7 +476,8 @@ def launch_train():
         objective_to_minimize=objective_to_minimize,
         # pretrained_model=pretrained_model
         )
-    
+    '''
+
     network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
     network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
     network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
