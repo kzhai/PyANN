@@ -17,10 +17,10 @@ import lasagne
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
-                        input_directory=None,
-                        output_directory=None,
+                        #input_directory=None,
+                        #output_directory=None,
                         model_directory=None,
-                        pretrained_model_file=None,
+                        #pretrained_model_file=None,
                         
                         # parameter set 2
                         number_of_epochs=-1,
@@ -30,7 +30,7 @@ def parse_args():
 
                         # parameter set 3
                         learning_rate=1e-2,
-                        learning_decay=0,
+                        learning_rate_decay=0,
                         #objective_to_minimize=None,
 
                         # parameter set 4
@@ -41,24 +41,24 @@ def parse_args():
                         #layer_activation_styles="bernoulli",
 
                         # parameter set 5
-                        L1_regularizer_lambdas="0",
-                        L2_regularizer_lambdas="0",
+                        #L1_regularizer_lambdas="0",
+                        #L2_regularizer_lambdas="0",
                         
-                        dae_regularizer_lambdas="0",
-                        layer_corruption_levels="0",
+                        #dae_regularizer_lambdas="0",
+                        #layer_corruption_levels="0",
                         
                         # parameter set 6
-                        number_of_training_data=-1,
+                        #number_of_training_data=-1,
                         )
     # parameter set 1
-    parser.add_option("--input_directory", type="string", dest="input_directory",
-                      help="input directory [None]");
-    parser.add_option("--output_directory", type="string", dest="output_directory",
-                      help="output directory [None]");
+    #parser.add_option("--input_directory", type="string", dest="input_directory",
+                      #help="input directory [None]");
+    #parser.add_option("--output_directory", type="string", dest="output_directory",
+                      #help="output directory [None]");
     parser.add_option("--model_directory", type="string", dest="model_directory",
                       help="model directory [None]");
-    parser.add_option("--pretrained_model_file", type="string", dest="pretrained_model_file",
-                      help="pretrained model file [None]");
+    #parser.add_option("--pretrained_model_file", type="string", dest="pretrained_model_file",
+                      #help="pretrained model file [None]");
                       
     # parameter set 2
     parser.add_option("--minibatch_size", type="int", dest="minibatch_size",
@@ -75,9 +75,12 @@ def parse_args():
     # parameter set 3
     parser.add_option("--learning_rate", type="float", dest="learning_rate",
                       help="learning rate [1e-3]")
+    parser.add_option("--learning_rate_decay", type="float", dest="learning_rate_decay",
+                      help="learning rate decay [0 - no decay]")
     parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
                       help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
-    
+
+    '''
     # parameter set 4
     parser.add_option("--layer_dimensions", type="string", dest="layer_dimensions",
                       help="dimension of different layer [None], example, '100,500,10' represents 3 layers contains 100, 500, and 10 neurons respectively");
@@ -101,13 +104,14 @@ def parse_args():
                       help="dae regularization lambda [0]")
     parser.add_option("--layer_corruption_levels", type="string", dest="layer_corruption_levels",
                       help="layer corruption level for pre-training [0], either one number of a list of numbers, example, '0.2' represents 0.2 corruption level for all denoising auto encoders, or '0.2,0.5' represents 0.2 corruption level for first denoising auto encoder layer and 0.5 for second one respectively");
-    
+
     # parameter set 6
     parser.add_option("--number_of_training_data", type="int", dest="number_of_training_data",
                       help="training data size [-1]");
     # parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
                       # help="number of pretrain epochs [0 - no pre-training]");
-                      
+    '''
+
     (options, args) = parser.parse_args();
     return options;
 
@@ -134,10 +138,11 @@ def launch_train():
     assert options.learning_decay > 0;
     initial_learning_decay = options.learning_decay;
 
-    assert options.objective_to_minimize != None
-    objective_to_minimize = options.objective_to_minimize;
-    objective_to_minimize = getattr(lasagne.objectives, objective_to_minimize)
-    
+    #assert options.objective_to_minimize != None
+    #objective_to_minimize = options.objective_to_minimize;
+    #objective_to_minimize = getattr(lasagne.objectives, objective_to_minimize)
+
+    '''
     # parameter set 4
     assert options.layer_dimensions != None
     layer_dimensions = [int(dimensionality) for dimensionality in options.layer_dimensions.split(",")]
@@ -196,7 +201,8 @@ def launch_train():
             
             if layer_activation_styles[layer_index] == "mixed_beta_bernoulli":
                 assert layer_activation_parameters[layer_index][0] < 1;
-    
+    '''
+
     '''
     layer_latent_feature_alphas = options.layer_latent_feature_alphas;
     if layer_latent_feature_alphas is not None:
@@ -210,7 +216,8 @@ def launch_train():
         layer_latent_feature_alphas = [0 for layer_index in xrange(number_of_layers)]
     assert (layer_latent_feature_alpha >= 0 for layer_latent_feature_alpha in layer_latent_feature_alphas)
     '''
-        
+
+    '''
     # parameter set 5
     L1_regularizer_lambdas = options.L1_regularizer_lambdas
     L1_regularizer_lambda_tokens = L1_regularizer_lambdas.split(",")
@@ -247,23 +254,31 @@ def launch_train():
     assert len(layer_corruption_levels) == number_of_layers - 1;
     assert (layer_corruption_level >= 0 for layer_corruption_level in layer_corruption_levels)
     assert (layer_corruption_level <= 1 for layer_corruption_level in layer_corruption_levels)
-    
+    '''
+
     # parameter set 1
-    assert (options.input_directory != None);
+    #assert (options.input_directory != None);
     assert (options.model_directory != None);
-    assert (options.output_directory != None);
+    #assert (options.output_directory != None);
     
-    input_directory = options.input_directory;
-    input_directory = input_directory.rstrip("/");
-    dataset_name = os.path.basename(input_directory);
+    #input_directory = options.input_directory;
+    #input_directory = input_directory.rstrip("/");
+    #dataset_name = os.path.basename(input_directory);
 
     model_directory = options.model_directory;
-
     if not os.path.exists(model_directory):
         sys.stderr.write("model directory %s not exists...\n" % (model_directory));
         return;
-    model_directory = model_directory.rstrip("/");
-    model_settings = os.path.basename(model_directory);
+
+    train_set_x = numpy.load(os.path.join(model_directory, "train.feature.npy"));
+    train_set_y = numpy.load(os.path.join(model_directory, "train.label.npy"));
+    valid_set_x = numpy.load(os.path.join(model_directory, "valid.feature.npy"));
+    valid_set_y = numpy.load(os.path.join(model_directory, "valid.label.npy"));
+    test_set_x = numpy.load(os.path.join(model_directory, "test.feature.npy"));
+    test_set_y = numpy.load(os.path.join(model_directory, "test.label.npy"));
+
+    #model_directory = model_directory.rstrip("/");
+    #model_settings = os.path.basename(model_directory);
 
     # load the existing model
     model_snapshot_file_path = os.path.join(model_directory, "model.pkl");
@@ -272,21 +287,15 @@ def launch_train():
         return;
     network = cPickle.load(open(model_snapshot_file_path, 'rb'));
 
-
     #number_of_layers = len(network.get_all_layers()) - 1;
 
+    '''
     output_file = options.output_directory;
     if not os.path.exists(output_file):
         os.mkdir(output_file);
     output_file = os.path.join(output_file, dataset_name);
     if not os.path.exists(output_file):
         os.mkdir(output_file);
-
-
-
-
-
-
 
     pretrained_model_file = options.pretrained_model_file;
     pretrained_model = None;
@@ -300,47 +309,7 @@ def launch_train():
     output_directory = os.path.join(output_directory, dataset_name);
     if not os.path.exists(output_directory):
         os.mkdir(output_directory);
-    
-    #
-    #
-    #
-    #
-    #
-    
-    data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
-    data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
-    # data_x = numpy.asarray(data_x, numpy.float32) / 256
-    # data_x = data_x / numpy.float32(256)
-    # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
-    assert data_x.shape[0] == len(data_y);
-    
-    input_shape = list(data_x.shape[1:]);
-    input_shape.insert(0, None)
-    
-    # parameter set 6
-    # assert(options.number_of_training_data <= 0);
-    number_of_training_data = options.number_of_training_data;
-    if number_of_training_data <= 0:
-        number_of_training_data = len(data_y);
-    assert number_of_training_data > 0 and number_of_training_data <= len(data_y)
-    
-    indices = range(len(data_y))
-    numpy.random.shuffle(indices);
-    
-    train_set_x = data_x[indices[:number_of_training_data], :]
-    train_set_y = data_y[indices[:number_of_training_data]]
-
-    valid_set_x = data_x[indices[number_of_training_data:], :]
-    valid_set_y = data_y[indices[number_of_training_data:]]
-    
-    print "successfully load data with %d for training and %d for validation..." % (train_set_x.shape[0], valid_set_x.shape[0])
-
-    test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
-    test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
-    assert test_set_x.shape[0] == len(test_set_y);
-    assert numpy.all(input_shape[1:]==list(test_set_x.shape[1:])), (input_shape[1:], test_set_x.shape[1:]);
-
-    print "successfully load data with %d for testing..." % (test_set_x.shape[0])
+    '''
 
     #
     #
@@ -351,6 +320,7 @@ def launch_train():
     # create output directory
     now = datetime.datetime.now();
     suffix = now.strftime("%y%m%d-%H%M%S") + "";
+    '''
     suffix += "-%s" % ("mlp");
     suffix += "-T%d" % (number_of_training_data);
     suffix += "-E%d" % (number_of_epochs);
@@ -364,13 +334,14 @@ def launch_train():
     
     output_directory = os.path.join(output_directory, suffix);
     os.mkdir(os.path.abspath(output_directory));
-    
+    '''
     #
     #
     #
     #
     #
 
+    '''
     # store all the options to a file
     options_output_file = open(output_directory + "option.txt", 'w');
     
@@ -410,7 +381,8 @@ def launch_train():
     options_output_file.write("number_of_training_data=%d\n" % (number_of_training_data));
     
     options_output_file.close()
-    
+    '''
+
     #
     #
     #
