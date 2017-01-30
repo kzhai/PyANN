@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 
 import cPickle
 import numpy
@@ -17,7 +18,7 @@ import lasagne
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
-                        #input_directory=None,
+                        input_directory=None,
                         #output_directory=None,
                         model_directory=None,
                         #pretrained_model_file=None,
@@ -49,10 +50,11 @@ def parse_args():
                         
                         # parameter set 6
                         #number_of_training_data=-1,
+                        snapshot_index=-1,
                         )
     # parameter set 1
-    #parser.add_option("--input_directory", type="string", dest="input_directory",
-                      #help="input directory [None]");
+    parser.add_option("--input_directory", type="string", dest="input_directory",
+                      help="input directory [None]");
     #parser.add_option("--output_directory", type="string", dest="output_directory",
                       #help="output directory [None]");
     parser.add_option("--model_directory", type="string", dest="model_directory",
@@ -111,6 +113,9 @@ def parse_args():
     # parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
                       # help="number of pretrain epochs [0 - no pre-training]");
     '''
+
+    parser.add_option("--snapshot_index", type="int", dest="snapshot_index",
+                      help="snapshot index [-1 - use the best model]");
 
     (options, args) = parser.parse_args();
     return options;
@@ -257,11 +262,11 @@ def launch_train():
     '''
 
     # parameter set 1
-    #assert (options.input_directory != None);
+    assert (options.input_directory != None);
     assert (options.model_directory != None);
     #assert (options.output_directory != None);
     
-    #input_directory = options.input_directory;
+    input_directory = options.input_directory;
     #input_directory = input_directory.rstrip("/");
     #dataset_name = os.path.basename(input_directory);
 
@@ -270,12 +275,26 @@ def launch_train():
         sys.stderr.write("model directory %s not exists...\n" % (model_directory));
         return;
 
-    train_set_x = numpy.load(os.path.join(model_directory, "train.feature.npy"));
-    train_set_y = numpy.load(os.path.join(model_directory, "train.label.npy"));
-    valid_set_x = numpy.load(os.path.join(model_directory, "valid.feature.npy"));
-    valid_set_y = numpy.load(os.path.join(model_directory, "valid.label.npy"));
-    test_set_x = numpy.load(os.path.join(model_directory, "test.feature.npy"));
-    test_set_y = numpy.load(os.path.join(model_directory, "test.label.npy"));
+    data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
+    data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
+    assert data_x.shape[0] == len(data_y);
+
+    train_indices = numpy.save(os.path.join(model_directory, "train.index.npy"));
+    valid_indices = numpy.save(os.path.join(model_directory, "valid.index.npy"));
+
+    train_set_x = data_x[train_indices, :]
+    train_set_y = data_y[train_indices]
+
+    valid_set_x = data_x[valid_indices, :]
+    valid_set_y = data_y[valid_indices]
+
+    print "successfully load data with %d for training and %d for validation..." % (train_set_x.shape[0], valid_set_x.shape[0])
+
+    test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
+    test_set_y = numpy.load(os.path.join(input_directory, "test.label.npy"))
+    assert test_set_x.shape[0] == len(test_set_y);
+
+    print "successfully load data with %d for testing..." % (test_set_x.shape[0])
 
     #model_directory = model_directory.rstrip("/");
     #model_settings = os.path.basename(model_directory);
@@ -285,7 +304,6 @@ def launch_train():
     if not os.path.exists(model_snapshot_file_path):
         sys.stderr.write("error: model file %s not found...\n" % (model_snapshot_file_path));
         return;
-    network = cPickle.load(open(model_snapshot_file_path, 'rb'));
 
     #number_of_layers = len(network.get_all_layers()) - 1;
 
@@ -341,61 +359,15 @@ def launch_train():
     #
     #
 
-    '''
-    # store all the options to a file
-    options_output_file = open(output_directory + "option.txt", 'w');
-    
-    # parameter set 1
-    options_output_file.write("input_directory=" + input_directory + "\n");
-    options_output_file.write("dataset_name=" + dataset_name + "\n");
-    options_output_file.write("pretrained_model_file=" + str(pretrained_model_file) + "\n");
-    # options_output_file.write("vocabulary_path=" + str(dict_file) + "\n");
-    
-    # parameter set 2
-    options_output_file.write("number_of_epochs=%d\n" % (number_of_epochs));
-    options_output_file.write("minibatch_size=" + str(minibatch_size) + "\n");
-    options_output_file.write("snapshot_interval=%d\n" % (snapshot_interval));
-    options_output_file.write("validation_interval=%d\n" % validation_interval);
-    
-    # parameter set 3
-    options_output_file.write("learning_rate=" + str(initial_learning_rate) + "\n");
-    options_output_file.write("learning_decay=" + str(initial_learning_decay) + "\n");
-    options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
-
-    # parameter set 4
-    options_output_file.write("layer_dimensions=%s\n" % (layer_dimensions));
-    options_output_file.write("layer_nonlinearities=%s\n" % (layer_nonlinearities));
-    
-    options_output_file.write("layer_activation_parameters=%s\n" % (layer_activation_parameters));
-    options_output_file.write("layer_activation_styles=%s\n" % (layer_activation_styles));
-    
-    # parameter set 5
-    options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
-    options_output_file.write("L2_regularizer_lambdas=%s\n" % (L2_regularizer_lambdas));
-    
-    options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
-    options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
-    # options_output_file.write("number_of_pretrain_epochs=%s\n" % (number_of_pretrain_epochs));
-    
-    # paramter set 6
-    options_output_file.write("number_of_training_data=%d\n" % (number_of_training_data));
-    
-    options_output_file.close()
-    '''
-
-    #
-    #
-    #
-    #
-    #
-    
     print "========== ========== ========== ========== =========="
     # parameter set 1
-    print "output_directory=" + output_directory
+    #print "output_directory=" + output_directory
     print "input_directory=" + input_directory
-    print "dataset_name=" + dataset_name
-    print "pretrained_model_file=%s" % pretrained_model_file
+    print "model_directory=" + model_directory
+    #print "dataset_name=" + dataset_name
+    #print "pretrained_model_file=%s" % pretrained_model_file
     # print "dictionary file=" + str(dict_file)
+
     # parameter set 2
     print "number_of_epochs=%d" % (number_of_epochs);
     print "minibatch_size=" + str(minibatch_size)
@@ -405,8 +377,9 @@ def launch_train():
     # parameter set 3
     print "learning_rate=" + str(initial_learning_rate)
     print "learning_decay=" + str(initial_learning_decay)
-    print "objective_to_minimize=%s" % (objective_to_minimize)
-    
+    #print "objective_to_minimize=%s" % (objective_to_minimize)
+
+    '''
     # parameter set 4
     print "layer_dimensions=%s" % (layer_dimensions)
     print "layer_nonlinearities=%s" % (layer_nonlinearities)
@@ -423,8 +396,18 @@ def launch_train():
     
     # paramter set 6
     print "number_of_training_data=%d" % (number_of_training_data);
+    '''
     print "========== ========== ========== ========== =========="
-    
+
+    cPickle.dump(options, open(os.path.join(model_directory, "option.%s.txt" % now.strftime("%y%m%d%H%M%S")), 'wb'),
+                 protocol=cPickle.HIGHEST_PROTOCOL);
+
+    #
+    #
+    #
+    #
+    #
+
     ######################
     # BUILD ACTUAL MODEL #
     ######################
@@ -434,7 +417,7 @@ def launch_train():
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     lr = theano.tensor.scalar('learning_rate');
     
-    input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
+    #input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
 
     '''
     import mlp
@@ -449,9 +432,15 @@ def launch_train():
         )
     '''
 
-    network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
-    network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
-    network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
+    network = cPickle.load(open(model_snapshot_file_path, 'rb'));
+
+    # This is to establish the computational graph
+    # network.get_all_layers()[0].input_var = x
+    network.set_input_variable(x);
+
+    #network.set_L1_regularizer_lambda(L1_regularizer_lambdas)
+    #network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
+    #network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
     
     ########################
     # BUILD LOSS FUNCTIONS #
@@ -498,8 +487,7 @@ def launch_train():
     ########################
     
     highest_average_validate_accuracy = 0
-    #best_iteration_index = 0
-    
+
     start_train = timeit.default_timer()
     
     #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
@@ -549,7 +537,7 @@ def launch_train():
                     # save the best model
                     print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
                     
-                    best_model_file_path = os.path.join(output_directory, 'model.pkl')
+                    best_model_file_path = os.path.join(model_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
                 print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
@@ -562,11 +550,13 @@ def launch_train():
         print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
 
         if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
-            model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+            model_file_path = os.path.join(model_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
-    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    shutil.copy(os.path.join(model_directory, 'model.pkl'), os.path.join(model_directory, 'model.%s.pkl' % now.strftime("%y%m%d%H%M%S")));
+
+    model_file_path = os.path.join(model_directory, 'model-%d.pkl' % (epoch_index + 1))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     end_train = timeit.default_timer()
     print "Optimization complete..."
