@@ -29,7 +29,7 @@ def parse_args():
 
                         # parameter set 3
                         learning_rate=1e-2,
-                        learning_decay=0,
+                        learning_rate_decay=0,
                         objective_to_minimize=None,
 
                         # parameter set 4
@@ -72,6 +72,8 @@ def parse_args():
     # parameter set 3
     parser.add_option("--learning_rate", type="float", dest="learning_rate",
                       help="learning rate [1e-3]")
+    parser.add_option("--learning_rate_decay", type="float", dest="learning_rate_decay",
+                      help="learning rate decay [0 - no decay]")
     parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
                       help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
     
@@ -129,8 +131,8 @@ def launch_train():
     # parameter set 3
     assert options.learning_rate > 0;
     initial_learning_rate = options.learning_rate;
-    assert options.learning_decay > 0;
-    initial_learning_decay = options.learning_decay;
+    assert options.learning_rate_decay > 0;
+    initial_learning_rate_decay = options.learning_rate_decay;
 
     assert options.objective_to_minimize != None
     objective_to_minimize = options.objective_to_minimize;
@@ -323,7 +325,7 @@ def launch_train():
     #suffix += "-S%d" % (snapshot_interval);
     suffix += "-B%d" % (minibatch_size);
     suffix += "-lr%f" % (initial_learning_rate);
-    suffix += "-ld%f" % (initial_learning_decay);
+    suffix += "-ld%f" % (initial_learning_rate_decay);
     # suffix += "-l1r%f" % (L1_regularizer_lambdas);
     # suffix += "-l2r%d" % (L2_regularizer_lambdas);
     suffix += "/";
@@ -354,7 +356,7 @@ def launch_train():
     
     # parameter set 3
     options_output_file.write("learning_rate=" + str(initial_learning_rate) + "\n");
-    options_output_file.write("learning_decay=" + str(initial_learning_decay) + "\n");
+    options_output_file.write("learning_rate_decay=" + str(initial_learning_rate_decay) + "\n");
     options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
 
     # parameter set 4
@@ -398,7 +400,7 @@ def launch_train():
     
     # parameter set 3
     print "learning_rate=" + str(initial_learning_rate)
-    print "learning_decay=" + str(initial_learning_decay)
+    print "learning_rate_decay=" + str(initial_learning_rate_decay)
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
     # parameter set 4
@@ -519,8 +521,8 @@ def launch_train():
             iteration_index = epoch_index * number_of_minibatches + minibatch_index
 
             learning_rate = initial_learning_rate;
-            if initial_learning_decay>0:
-                learning_rate *= (1. / (1. + initial_learning_decay * iteration_index))
+            if initial_learning_rate_decay>0:
+                learning_rate *= (1. / (1. + initial_learning_rate_decay * iteration_index))
 
             minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(minibatch_x, minibatch_y, learning_rate)
 
