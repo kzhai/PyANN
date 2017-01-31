@@ -75,7 +75,7 @@ def parse_args():
     parser.add_option("--learning_rate", type="float", dest="learning_rate",
                       help="learning rate [1e-3]")
     parser.add_option("--learning_rate_decay", type="float", dest="learning_rate_decay",
-                      help="learning rate decay [0 - no decay]")
+                      help="learning rate decay [0 - no learning rate decay]")
     parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
                       help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
     
@@ -285,7 +285,6 @@ def launch_train():
     input_shape.insert(0, None)
 
     # parameter set 6
-    # assert(options.number_of_training_data <= 0);
     number_of_training_data = options.number_of_training_data;
     if number_of_training_data <= 0:
         number_of_training_data = len(data_y);
@@ -321,7 +320,7 @@ def launch_train():
     #suffix += "-ld%f" % (learning_rate_decay);
     # suffix += "-l1r%f" % (L1_regularizer_lambdas);
     # suffix += "-l2r%d" % (L2_regularizer_lambdas);
-    suffix += "/";
+    #suffix += "/";
     
     output_directory = os.path.join(output_directory, suffix);
     os.mkdir(os.path.abspath(output_directory));
@@ -364,12 +363,6 @@ def launch_train():
     # paramter set 6
     print "number_of_training_data=%d" % (number_of_training_data);
     print "========== ========== ========== ========== =========="
-
-    #
-    #
-    #
-    #
-    #
 
     cPickle.dump(options, open(os.path.join(output_directory, "option.pkl"), 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
@@ -472,10 +465,10 @@ def launch_train():
         for minibatch_index in xrange(number_of_minibatches):
             minibatch_running_time = timeit.default_timer();
 
+            iteration_index = epoch_index * number_of_minibatches + minibatch_index
+            
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
-
-            iteration_index = epoch_index * number_of_minibatches + minibatch_index
 
             learning_rate = initial_learning_rate;
             if learning_rate_decay>0:
