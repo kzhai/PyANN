@@ -33,7 +33,7 @@ To launch PyANN modules, first redirect to the parent directory of PyANN source 
 To launch multi-layer perceptron (MLP) on mnist example dataset,
 
 	python -um PyMLP.launch_train \
-		--input_directory=../input/mnist_784/ \
+		--input_directory=../input/mnist_784_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=1000 \
@@ -76,7 +76,7 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch convolutional neural network (CNN) on mnist example dataset,
 
 	python -um PyCNN.launch_train \
-		--input_directory=../input/mnist_1x28x28/ \
+		--input_directory=../input/mnist_1x28x28_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=1000 \
@@ -112,7 +112,7 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch denoising auto-encoders (DAE) on mnist example dataset,
 
 	python -um PyDAE.launch_train \
-		--input_directory=../input/mnist_784/ \
+		--input_directory=../input/mnist_784_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=15 \
@@ -144,7 +144,7 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,
 
 	python -um PySDAE.launch_train \
-		--input_directory=../input/mnist_784/ \
+		--input_directory=../input/mnist_784_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=15 \
@@ -176,7 +176,7 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch restricted Boltzmann machines (RBM) on mnist example dataset,
 
 	python -um PyRBM.launch_train \
-		--input_directory=../input/mnist_784/ \
+		--input_directory=../input/mnist_784_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=15 \
@@ -206,7 +206,7 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch deep belief networks (DBN) on mnist example dataset,
 
 	python -um PyDBN.launch_train \
-		--input_directory=../input/mnist_784/ \
+		--input_directory=../input/mnist_784_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=100 \
