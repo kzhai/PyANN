@@ -280,13 +280,11 @@ def launch_train():
     input_directory = input_directory.rstrip("/");
     dataset_name = os.path.basename(input_directory);
     
-    '''
     pretrained_model_file = options.pretrained_model_file;
     pretrained_model = None;
     if pretrained_model_file != None:
         assert os.path.exists(pretrained_model_file)
         pretrained_model = cPickle.load(open(pretrained_model_file, 'rb'));
-    '''
     
     output_directory = options.output_directory;
     if not os.path.exists(output_directory):
@@ -362,15 +360,18 @@ def launch_train():
     print "output_directory=" + output_directory
     print "input_directory=" + input_directory
     print "dataset_name=" + dataset_name
+    print "pretrained_model_file=%s" % pretrained_model_file
     # print "input_shape=" + str(input_shape)
     
     # parameter set 2
     print "number_of_epochs=%d" % (number_of_epochs);
     print "snapshot_interval=" + str(snapshot_interval);
     print "minibatch_size=" + str(minibatch_size)
+    print "validation_interval=%d" % validation_interval;
     
     # parameter set 3
     print "learning_rate=" + str(initial_learning_rate)
+    print "learning_rate_decay=" + str(learning_rate_decay)
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
     # parameter set 4
@@ -397,46 +398,11 @@ def launch_train():
 
     cPickle.dump(options, open(os.path.join(output_directory, "option.pkl"), 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-    '''
-    # store all the options to a file
-    options_output_file = open(output_directory + "option.txt", 'w');
-    # parameter set 1
-    options_output_file.write("input_directory=" + input_directory + "\n");
-    options_output_file.write("dataset_name=" + dataset_name + "\n");
-    # options_output_file.write("input_shape=" + str(input_shape) + "\n")
-    
-    # parameter set 2
-    options_output_file.write("number_of_epochs=%d\n" % (number_of_epochs));
-    options_output_file.write("snapshot_interval=%d\n" % (snapshot_interval))
-    options_output_file.write("minibatch_size=" + str(minibatch_size) + "\n");
-    
-    # parameter set 3
-    options_output_file.write("learning_rate=" + str(initial_learning_rate) + "\n");
-    options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
-    
-    # parameter set 4
-    options_output_file.write("convolution_filters=%s\n" % (convolution_filters));
-    options_output_file.write("convolution_nonlinearities=%s\n" % (convolution_nonlinearities));
-    
-    # parameter set 5
-    options_output_file.write("dense_dimensions=%s\n" % (dense_dimensions));
-    options_output_file.write("dense_nonlinearities=%s\n" % (dense_nonlinearities));
-    
-    options_output_file.write("dense_activation_parameters=%s\n" % (dense_activation_parameters));
-    options_output_file.write("dense_activation_styles=%s\n" % (dense_activation_styles));
-    
-    # parameter set 6
-    options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
-    options_output_file.write("L2_regularizer_lambdas=%s\n" % (L2_regularizer_lambdas));
-    
-    options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
-    options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
-    
-    # parameter set 7
-    options_output_file.write("number_of_training_data=%d\n" % (number_of_training_data));
-
-    options_output_file.close()
-    '''
+    #
+    #
+    #
+    #
+    #    
     
     ######################
     # BUILD ACTUAL MODEL #
@@ -448,7 +414,6 @@ def launch_train():
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     lr = theano.tensor.scalar('learning_rate');
     
-    # network = lasagne.layers.InputLayer(shape=(None, dense_dimensions[0]), input_var=input_data)
     input_layer = lasagne.layers.InputLayer(shape=tuple(input_shape), input_var=x)
         
     import cnn
@@ -468,18 +433,6 @@ def launch_train():
     network.set_L2_regularizer_lambda(L2_regularizer_lambdas)
     # network.set_dae_regularizer_lambda(dae_regularizer_lambdas, layer_corruption_levels)
     
-    ###################
-    # PRE-TRAIN MODEL #
-    ###################
-    
-    # if number_of_pretrain_epochs > 0:
-        # network.pretrain_with_dae(data_x, layer_corruption_levels, number_of_epochs=number_of_pretrain_epochs)
-    
-    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
-    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-    
-    # print network.get_output_shape(train_set_x.shape)
-
     ########################
     # BUILD LOSS FUNCTIONS #
     ########################
@@ -496,7 +449,7 @@ def launch_train():
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_params = network.get_network_params(trainable=True)
-    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, initial_learning_rate, momentum=0.95)
+    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, lr, momentum=0.95)
     # updates = lasagne.updates.adagrad(train_loss, all_params, learning_rate);
     # updates = lasagne.updates.sgd(train_loss, all_params, learning_rate);
     
@@ -527,6 +480,7 @@ def launch_train():
     ########################
     
     highest_average_validate_accuracy = 0
+    best_iteration_index = 0
     
     start_train = timeit.default_timer()
     
@@ -575,16 +529,10 @@ def launch_train():
                 average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
                 print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
 
-                #
-                #
-                #
-                #
-                #
-                
                 # if we got the best validation score until now
                 if average_validate_accuracy > highest_average_validate_accuracy:
                     highest_average_validate_accuracy = average_validate_accuracy
-                    # best_iteration_index = iteration_index
+                    best_iteration_index = iteration_index
 
                     # save the best model
                     print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
@@ -597,21 +545,89 @@ def launch_train():
 
         average_train_accuracy = total_train_accuracy / total_train_instances;
         average_train_loss = total_train_loss / total_train_instances;
-        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
-
+        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (
+            epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
+                
         if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
-    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
-    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     end_train = timeit.default_timer()
+
+    snapshot_index = now.strftime("%y%m%d%H%M%S");
+    snapshot_directory = os.path.join(output_directory, snapshot_index);
+    assert not os.path.exists(snapshot_directory);
+    os.mkdir(snapshot_directory);
+
+    shutil.copy(os.path.join(output_directory, 'model.pkl'), os.path.join(snapshot_directory, 'model.pkl'));
+    snapshot_pattern = re.compile(r'^model\-\d+.pkl$');
+    for file_name in os.listdir(output_directory):
+        if not re.match(snapshot_pattern, file_name):
+            continue;
+        shutil.move(os.path.join(output_directory, file_name), os.path.join(snapshot_directory, file_name));
+    shutil.move(os.path.join(output_directory, 'option.pkl'), os.path.join(snapshot_directory, 'option.pkl'));
+    
     print "Optimization complete..."
-    #print "Best validation score of %f%% obtained at iteration %i" % (highest_average_validate_accuracy * 100., best_iteration_index);
+    print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' + 
                           os.path.split(__file__)[1] + 
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
 
 if __name__ == '__main__':
     launch_train()
+
+    ###################
+    # PRE-TRAIN MODEL #
+    ###################
+    
+    # if number_of_pretrain_epochs > 0:
+        # network.pretrain_with_dae(data_x, layer_corruption_levels, number_of_epochs=number_of_pretrain_epochs)
+    
+    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+    
+    # print network.get_output_shape(train_set_x.shape)
+    
+    '''
+    # store all the options to a file
+    options_output_file = open(output_directory + "option.txt", 'w');
+    # parameter set 1
+    options_output_file.write("input_directory=" + input_directory + "\n");
+    options_output_file.write("dataset_name=" + dataset_name + "\n");
+    # options_output_file.write("input_shape=" + str(input_shape) + "\n")
+    
+    # parameter set 2
+    options_output_file.write("number_of_epochs=%d\n" % (number_of_epochs));
+    options_output_file.write("snapshot_interval=%d\n" % (snapshot_interval))
+    options_output_file.write("minibatch_size=" + str(minibatch_size) + "\n");
+    
+    # parameter set 3
+    options_output_file.write("learning_rate=" + str(initial_learning_rate) + "\n");
+    options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
+    
+    # parameter set 4
+    options_output_file.write("convolution_filters=%s\n" % (convolution_filters));
+    options_output_file.write("convolution_nonlinearities=%s\n" % (convolution_nonlinearities));
+    
+    # parameter set 5
+    options_output_file.write("dense_dimensions=%s\n" % (dense_dimensions));
+    options_output_file.write("dense_nonlinearities=%s\n" % (dense_nonlinearities));
+    
+    options_output_file.write("dense_activation_parameters=%s\n" % (dense_activation_parameters));
+    options_output_file.write("dense_activation_styles=%s\n" % (dense_activation_styles));
+    
+    # parameter set 6
+    options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
+    options_output_file.write("L2_regularizer_lambdas=%s\n" % (L2_regularizer_lambdas));
+    
+    options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
+    options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
+    
+    # parameter set 7
+    options_output_file.write("number_of_training_data=%d\n" % (number_of_training_data));
+
+    options_output_file.close()
+    '''

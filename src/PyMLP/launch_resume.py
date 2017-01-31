@@ -495,6 +495,7 @@ def launch_resume():
     ########################
 
     highest_average_validate_accuracy = 0
+    best_iteration_index = 0
 
     start_train = timeit.default_timer()
 
@@ -526,8 +527,7 @@ def launch_resume():
             if learning_rate_decay > 0:
                 learning_rate *= (1. / (1. + learning_rate_decay * iteration_index))
 
-            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(minibatch_x, minibatch_y,
-                                                                                            learning_rate)
+            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(minibatch_x, minibatch_y, learning_rate)
 
             total_train_loss += minibatch_average_train_loss * minibatch_size;
             total_train_accuracy += minibatch_average_train_accuracy * minibatch_size;
@@ -540,28 +540,24 @@ def launch_resume():
                         iteration_index % validation_interval == 0 and len(valid_set_y) > 0):
                 average_train_accuracy = total_train_accuracy / total_train_instances;
                 average_train_loss = total_train_loss / total_train_instances;
-                print 'train result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (
-                epoch_index, minibatch_index, average_train_loss, average_train_accuracy * 100)
+                print 'train result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_train_loss, average_train_accuracy * 100)
 
                 average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
-                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (
-                epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
 
                 # if we got the best validation score until now
                 if average_validate_accuracy > highest_average_validate_accuracy:
                     highest_average_validate_accuracy = average_validate_accuracy
-                    # best_iteration_index = iteration_index
+                    best_iteration_index = iteration_index
 
                     # save the best model
-                    print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (
-                        epoch_index, minibatch_index, average_validate_accuracy * 100)
+                    print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
 
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
                 average_test_loss, average_test_accuracy = validate_function(test_set_x, test_set_y);
-                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (
-                epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
+                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
 
         average_train_accuracy = total_train_accuracy / total_train_instances;
         average_train_loss = total_train_loss / total_train_instances;
@@ -591,7 +587,9 @@ def launch_resume():
     shutil.move(os.path.join(output_directory, 'option.pkl'), os.path.join(snapshot_directory, 'option.pkl'));
 
     print "Optimization complete..."
-    # print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
+    print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (
+        highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches,
+        best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
