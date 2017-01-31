@@ -364,8 +364,13 @@ def launch_train():
     print "number_of_training_data=%d" % (number_of_training_data);
     print "========== ========== ========== ========== =========="
 
-    cPickle.dump(options, open(os.path.join(output_directory, "option.%s.txt" % now.strftime("%y%m%d%H%M%S")), 'wb'),
-                 protocol=cPickle.HIGHEST_PROTOCOL);
+    #
+    #
+    #
+    #
+    #
+
+    cPickle.dump(options, open(os.path.join(output_directory, "option.txt"), 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
     #
     #
@@ -516,12 +521,18 @@ def launch_train():
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-    shutil.copy(os.path.join(output_directory, 'model.pkl'), os.path.join(output_directory, 'model.%s.pkl' % now.strftime("%y%m%d%H%M%S")));
+    shutil.copy(os.path.join(output_directory, 'model.pkl'), os.path.join(snapshot_directory, 'model.pkl'));
 
-    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+    model_file_path = os.path.join(snapshot_directory, 'model-%d.pkl' % (epoch_index + 1))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     end_train = timeit.default_timer()
+
+    snapshot_index = now.strftime("%y%m%d%H%M%S");
+    snapshot_directory = os.path.join(output_directory, snapshot_index);
+    assert not os.path.exists(snapshot_directory);
+    os.mkdir(snapshot_directory);
+
     print "Optimization complete..."
     #print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' + 

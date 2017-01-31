@@ -21,7 +21,7 @@ def parse_args():
                         input_directory=None,
                         #output_directory=None,
                         model_directory=None,
-                        #pretrained_model_file=None,
+                        pretrained_model_file=None,
                         
                         # parameter set 2
                         number_of_epochs=-1,
@@ -50,7 +50,7 @@ def parse_args():
                         
                         # parameter set 6
                         #number_of_training_data=-1,
-                        snapshot_index=-1,
+                        #snapshot_index=-1,
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -59,8 +59,8 @@ def parse_args():
                       #help="output directory [None]");
     parser.add_option("--model_directory", type="string", dest="model_directory",
                       help="model directory [None]");
-    #parser.add_option("--pretrained_model_file", type="string", dest="pretrained_model_file",
-                      #help="pretrained model file [None]");
+    parser.add_option("--pretrained_model_file", type="string", dest="pretrained_model_file",
+                      help="pretrained model file [None]");
                       
     # parameter set 2
     parser.add_option("--minibatch_size", type="int", dest="minibatch_size",
@@ -114,13 +114,13 @@ def parse_args():
                       # help="number of pretrain epochs [0 - no pre-training]");
     '''
 
-    parser.add_option("--snapshot_index", type="int", dest="snapshot_index",
-                      help="snapshot index [-1 - use the best model]");
+    #parser.add_option("--snapshot_index", type="int", dest="snapshot_index",
+                      #help="snapshot index [-1 - use the best model]");
 
     (options, args) = parser.parse_args();
     return options;
 
-def launch_train():
+def launch_resume():
     """
     Demonstrate stochastic gradient descent optimization for a multilayer perceptron
     """
@@ -140,8 +140,8 @@ def launch_train():
     # parameter set 3
     assert options.learning_rate > 0;
     initial_learning_rate = options.learning_rate;
-    assert options.learning_decay > 0;
-    initial_learning_decay = options.learning_decay;
+    assert options.learning_rate_decay >= 0;
+    learning_rate_decay = options.learning_rate_decay;
 
     #assert options.objective_to_minimize != None
     #objective_to_minimize = options.objective_to_minimize;
@@ -270,17 +270,17 @@ def launch_train():
     #input_directory = input_directory.rstrip("/");
     #dataset_name = os.path.basename(input_directory);
 
-    model_directory = options.model_directory;
-    if not os.path.exists(model_directory):
-        sys.stderr.write("model directory %s not exists...\n" % (model_directory));
+    output_directory = options.model_directory;
+    if not os.path.exists(output_directory):
+        sys.stderr.write("model directory %s not exists...\n" % (output_directory));
         return;
 
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
     data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
     assert data_x.shape[0] == len(data_y);
 
-    train_indices = numpy.save(os.path.join(model_directory, "train.index.npy"));
-    valid_indices = numpy.save(os.path.join(model_directory, "valid.index.npy"));
+    train_indices = numpy.load(os.path.join(output_directory, "train.index.npy"));
+    valid_indices = numpy.load(os.path.join(output_directory, "valid.index.npy"));
 
     train_set_x = data_x[train_indices, :]
     train_set_y = data_y[train_indices]
@@ -296,13 +296,14 @@ def launch_train():
 
     print "successfully load data with %d for testing..." % (test_set_x.shape[0])
 
-    #model_directory = model_directory.rstrip("/");
-    #model_settings = os.path.basename(model_directory);
-
     # load the existing model
-    model_snapshot_file_path = os.path.join(model_directory, "model.pkl");
-    if not os.path.exists(model_snapshot_file_path):
-        sys.stderr.write("error: model file %s not found...\n" % (model_snapshot_file_path));
+    if options.pretrained_model_file==None:
+        pretrained_model_file = os.path.join(output_directory, "model.pkl");
+    else:
+        pretrained_model_file = options.pretrained_model_file;
+
+    if not os.path.exists(pretrained_model_file):
+        sys.stderr.write("error: model file %s not found...\n" % (pretrained_model_file));
         return;
 
     #number_of_layers = len(network.get_all_layers()) - 1;
@@ -363,7 +364,7 @@ def launch_train():
     # parameter set 1
     #print "output_directory=" + output_directory
     print "input_directory=" + input_directory
-    print "model_directory=" + model_directory
+    print "output_directory=" + output_directory
     #print "dataset_name=" + dataset_name
     #print "pretrained_model_file=%s" % pretrained_model_file
     # print "dictionary file=" + str(dict_file)
@@ -376,7 +377,7 @@ def launch_train():
     
     # parameter set 3
     print "learning_rate=" + str(initial_learning_rate)
-    print "learning_decay=" + str(initial_learning_decay)
+    print "learning_rate_decay=" + str(learning_rate_decay)
     #print "objective_to_minimize=%s" % (objective_to_minimize)
 
     '''
@@ -399,7 +400,18 @@ def launch_train():
     '''
     print "========== ========== ========== ========== =========="
 
-    cPickle.dump(options, open(os.path.join(model_directory, "option.%s.txt" % now.strftime("%y%m%d%H%M%S")), 'wb'),
+    #
+    #
+    #
+    #
+    #
+
+    snapshot_index = now.strftime("%y%m%d%H%M%S");
+    snapshot_directory = os.path.join(output_directory, snapshot_index);
+    assert not os.path.exists(snapshot_directory);
+    os.mkdir(snapshot_directory);
+
+    cPickle.dump(options, open(os.path.join(snapshot_directory, "option.txt"), 'wb'),
                  protocol=cPickle.HIGHEST_PROTOCOL);
 
     #
@@ -432,7 +444,7 @@ def launch_train():
         )
     '''
 
-    network = cPickle.load(open(model_snapshot_file_path, 'rb'));
+    network = cPickle.load(open(pretrained_model_file, 'rb'));
 
     # This is to establish the computational graph
     # network.get_all_layers()[0].input_var = x
@@ -485,14 +497,14 @@ def launch_train():
     ########################
     # START MODEL TRAINING #
     ########################
-    
+
     highest_average_validate_accuracy = 0
 
     start_train = timeit.default_timer()
-    
-    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
-    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-    
+
+    # model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
+    # cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+
     # compute number of minibatches for training, validation and testing
     # number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
     number_of_minibatches = train_set_x.shape[0] / minibatch_size
@@ -515,10 +527,11 @@ def launch_train():
             iteration_index = epoch_index * number_of_minibatches + minibatch_index
 
             learning_rate = initial_learning_rate;
-            if initial_learning_decay>0:
-                learning_rate *= (1. / (1. + initial_learning_decay * iteration_index))
+            if learning_rate_decay > 0:
+                learning_rate *= (1. / (1. + learning_rate_decay * iteration_index))
 
-            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(minibatch_x, minibatch_y, learning_rate)
+            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(minibatch_x, minibatch_y,
+                                                                                            learning_rate)
 
             total_train_loss += minibatch_average_train_loss * minibatch_size;
             total_train_accuracy += minibatch_average_train_accuracy * minibatch_size;
@@ -527,43 +540,53 @@ def launch_train():
             epoch_running_time += timeit.default_timer() - minibatch_running_time;
 
             # And a full pass over the validation data:
-            if iteration_index % number_of_minibatches==0 or (iteration_index % validation_interval == 0 and len(valid_set_y) > 0):
+            if iteration_index % number_of_minibatches == 0 or (
+                        iteration_index % validation_interval == 0 and len(valid_set_y) > 0):
+                average_train_accuracy = total_train_accuracy / total_train_instances;
+                average_train_loss = total_train_loss / total_train_instances;
+                print 'train result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (
+                epoch_index, minibatch_index, average_train_loss, average_train_accuracy * 100)
+
                 average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
+                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (
+                epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+
                 # if we got the best validation score until now
                 if average_validate_accuracy > highest_average_validate_accuracy:
                     highest_average_validate_accuracy = average_validate_accuracy
-                    #best_iteration_index = iteration_index
-                    
+                    # best_iteration_index = iteration_index
+
                     # save the best model
-                    print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
-                    
-                    best_model_file_path = os.path.join(model_directory, 'model.pkl')
+                    print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (
+                        epoch_index, minibatch_index, average_validate_accuracy * 100)
+
+                    best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
-
                 average_test_loss, average_test_accuracy = validate_function(test_set_x, test_set_y);
-                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
+                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (
+                epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
 
         average_train_accuracy = total_train_accuracy / total_train_instances;
         average_train_loss = total_train_loss / total_train_instances;
-        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
+        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (
+            epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
 
-        if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
-            model_file_path = os.path.join(model_directory, 'model-%d.pkl' % (epoch_index + 1))
+        if snapshot_interval > 0 and (epoch_index + 1) % snapshot_interval == 0:
+            model_file_path = os.path.join(snapshot_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-    shutil.copy(os.path.join(model_directory, 'model.pkl'), os.path.join(model_directory, 'model.%s.pkl' % now.strftime("%y%m%d%H%M%S")));
+    shutil.copy(os.path.join(output_directory, 'model.pkl'), os.path.join(snapshot_directory, 'model.pkl'));
 
-    model_file_path = os.path.join(model_directory, 'model-%d.pkl' % (epoch_index + 1))
+    model_file_path = os.path.join(snapshot_directory, 'model-%d.pkl' % (epoch_index + 1))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-    
+
     end_train = timeit.default_timer()
     print "Optimization complete..."
-    #print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
-    print >> sys.stderr, ('The code for file ' + 
-                          os.path.split(__file__)[1] + 
+    # print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
+    print >> sys.stderr, ('The code for file ' +
+                          os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
 
 if __name__ == '__main__':
-    launch_train()
+    launch_resume()
