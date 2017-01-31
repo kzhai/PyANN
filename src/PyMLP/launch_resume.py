@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+import re
 
 import cPickle
 import numpy
@@ -406,12 +407,7 @@ def launch_resume():
     #
     #
 
-    snapshot_index = now.strftime("%y%m%d%H%M%S");
-    snapshot_directory = os.path.join(output_directory, snapshot_index);
-    assert not os.path.exists(snapshot_directory);
-    os.mkdir(snapshot_directory);
-
-    cPickle.dump(options, open(os.path.join(snapshot_directory, "option.txt"), 'wb'),
+    cPickle.dump(options, open(os.path.join(output_directory, "option.pkl"), 'wb'),
                  protocol=cPickle.HIGHEST_PROTOCOL);
 
     #
@@ -573,15 +569,27 @@ def launch_resume():
             epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
 
         if snapshot_interval > 0 and (epoch_index + 1) % snapshot_interval == 0:
-            model_file_path = os.path.join(snapshot_directory, 'model-%d.pkl' % (epoch_index + 1))
+            model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-    shutil.copy(os.path.join(output_directory, 'model.pkl'), os.path.join(snapshot_directory, 'model.pkl'));
-
-    model_file_path = os.path.join(snapshot_directory, 'model-%d.pkl' % (epoch_index + 1))
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
     cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
     end_train = timeit.default_timer()
+
+    snapshot_index = now.strftime("%y%m%d%H%M%S");
+    snapshot_directory = os.path.join(output_directory, snapshot_index);
+    assert not os.path.exists(snapshot_directory);
+    os.mkdir(snapshot_directory);
+
+    shutil.copy(os.path.join(output_directory, 'model.pkl'), os.path.join(snapshot_directory, 'model.pkl'));
+    snapshot_pattern = re.compile(r'^model\-\d+.pkl$');
+    for file_name in os.listdir(output_directory):
+        if not re.match(snapshot_pattern, file_name):
+            continue;
+        shutil.move(os.path.join(output_directory, file_name), os.path.join(snapshot_directory, file_name));
+    shutil.move(os.path.join(output_directory, 'option.pkl'), os.path.join(snapshot_directory, 'option.pkl'));
+
     print "Optimization complete..."
     # print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' +
