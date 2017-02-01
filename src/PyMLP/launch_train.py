@@ -427,7 +427,8 @@ def launch_train():
     # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
     validate_prediction = network.get_output(deterministic=True)
-    validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y), dtype=theano.config.floatX)
+    validate_loss = network.get_objective_to_minimize(y, deterministic=True);
+    #validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y), dtype=theano.config.floatX)
     # As a bonus, also create an expression for the classification accuracy:
     validate_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(validate_prediction, axis=1), y), dtype=theano.config.floatX)
 

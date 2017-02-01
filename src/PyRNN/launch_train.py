@@ -1,14 +1,20 @@
-import cPickle
-import datetime
-import optparse
 import os
 import sys
-import timeit
+import shutil
+import re
 
-import lasagne
+import cPickle
 import numpy
+import scipy
+
 import theano
 import theano.tensor
+
+import timeit
+import datetime
+import optparse
+
+import lasagne
 
 #template_pattern = re.compile(r'(?P<pre_rnn>.*)\[(?P<rnn>.+)\](?P<post_rnn>.*)')
 
@@ -27,6 +33,7 @@ def parse_args():
                         
                         # parameter set 3
                         learning_rate=1e-2,
+                        learning_rate_decay=0,
                         window_size=1,
                         position_offset=-1,
                         sequence_length=100,
@@ -76,13 +83,17 @@ def parse_args():
     # parameter set 3
     parser.add_option("--learning_rate", type="float", dest="learning_rate",
                       help="learning rate [1e-3]")
+    parser.add_option("--learning_rate_decay", type="float", dest="learning_rate_decay",
+                      help="learning rate decay [0 - no learning rate decay]")
     parser.add_option("--window_size", type="int", dest="window_size",
                       help="window size [1]");
     parser.add_option("--position_offset", type="int", dest="position_offset",
                       help="position offset of current word in window [-1=window_size/2]");
     parser.add_option("--sequence_length", type="int", dest="sequence_length",
                       help="longest sequnece length for back propagation steps [100]");
-                    
+    parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
+                      help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
+    
     # parameter set 4
     # parser.add_option("--vocabulary_dimension", type="int", dest="vocabulary_dimension",
                       # help="vocabulary size [-1]");
@@ -93,10 +104,7 @@ def parse_args():
                       help="dimension of different layer [None], example, '100,[200,500],10' represents 3 layers contains 100, 200, 500, and 10 neurons respectively, where [*] indicates the recurrent layers");
     parser.add_option("--layer_nonlinearities", type="string", dest="layer_nonlinearities",
                       help="activation functions of different layer [None], example, 'tanh,softmax' represents 2 layers with tanh and softmax activation function respectively");
-                      
-    parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
-                      help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
-                    
+    
     parser.add_option("--dense_activation_parameters", type="string", dest="dense_activation_parameters",
                       help="dropout probability of different layer [1], either one number of a list of numbers, example, '0.2' represents 0.2 dropout rate for all input+hidden layers, or '0.2,0.5' represents 0.2 dropout rate for input layer and 0.5 dropout rate for first hidden layer respectively");
     parser.add_option("--dense_activation_styles", type="string", dest="dense_activation_styles",
@@ -116,14 +124,15 @@ def parse_args():
                       help="layer corruption level for pre-training [0], either one number of a list of numbers, example, '0.2' represents 0.2 corruption level for all denoising auto encoders, or '0.2,0.5' represents 0.2 corruption level for first denoising auto encoder layer and 0.5 for second one respectively");
     
     # parameter set 6
-    parser.add_option("--number_of_training_data", type="int", dest="number_of_training_data",
-                      help="training data size [-1]");
     parser.add_option("--recurrent_style", type="string", dest="recurrent_style",
                       help="recurrent network style [default=elman, bi-elman]");
     parser.add_option("--recurrent_type", type="string", dest="recurrent_type",
                       help="recurrent layer type [default=RecurrentLayer, LSTMLayer]");
     # parser.add_option("--number_of_pretrain_epochs", type="int", dest="number_of_pretrain_epochs",
                       # help="number of pretrain epochs [0 - no pre-training]");
+
+    parser.add_option("--number_of_training_data", type="int", dest="number_of_training_data",
+                      help="training data size [-1]");
                       
     (options, args) = parser.parse_args();
     return options;
@@ -146,7 +155,9 @@ def launch_train():
 
     # parameter set 3
     assert options.learning_rate > 0;
-    learning_rate = options.learning_rate;
+    initial_learning_rate = options.learning_rate;
+    assert options.learning_rate_decay >= 0;
+    learning_rate_decay = options.learning_rate_decay;
     assert options.window_size > 0
     #assert options.window_size % 2 == 1;
     window_size = options.window_size;
@@ -371,7 +382,12 @@ def launch_train():
     output_directory = os.path.join(output_directory, dataset_name);
     if not os.path.exists(output_directory):
         os.mkdir(output_directory);
-    
+
+    # parameter set 6
+    recurrent_style = options.recurrent_style;
+    assert recurrent_style in ["elman", "bi-elman"]
+    recurrent_type = options.recurrent_type
+        
     #
     #
     #
@@ -394,42 +410,13 @@ def launch_train():
     label_dimension = 0;
     for line in open(os.path.join(input_directory, "mapping.label"), 'r'):
         label_dimension += 1;
-    
-    #
-    #
-    #
-    #
-    #
 
-    '''
-    # padding data into lasagne format
-    maximum_sequence_length = 0;
-    for datum_y in data_y:
-        maximum_sequence_length = max(maximum_sequence_length, len(datum_y));
-    new_data_x = -numpy.ones((len(data_x), maximum_sequence_length), dtype=numpy.int32)
-    new_data_y = -numpy.ones((len(data_y), maximum_sequence_length), dtype=numpy.int32)
-    new_data_m = numpy.zeros((len(data_x), maximum_sequence_length), dtype=numpy.int32)
-    for index in xrange(len(data_y)):
-        datum_x = data_x[index];
-        datum_y = data_y[index];
-        new_data_x[index, :len(datum_x)] = datum_x;
-        new_data_y[index, :len(datum_y)] = datum_y;
-        new_data_m[index, :len(datum_y)] = 1;
-    data_x = new_data_x
-    data_y = new_data_y
-    data_m = new_data_m
-    '''
-    
     # parameter set 6
     # assert(options.number_of_training_data <= 0);
     number_of_training_data = options.number_of_training_data;
     if number_of_training_data <= 0:
         number_of_training_data = len(data_y);
     assert number_of_training_data > 0 and number_of_training_data <= len(data_y)
-
-    recurrent_style = options.recurrent_style;
-    assert recurrent_style in ["elman", "bi-elman"]
-    recurrent_type = options.recurrent_type
 
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
@@ -462,23 +449,64 @@ def launch_train():
     suffix += "-%s" % (recurrent_style);
     suffix += "-%s" % (recurrent_type);
     suffix += "-T%d" % (number_of_training_data);
-    suffix += "-E%d" % (number_of_epochs);
+    #suffix += "-E%d" % (number_of_epochs);
     #suffix += "-S%d" % (snapshot_interval);
-    suffix += "-B%d" % (minibatch_size);
-    suffix += "-aa%f" % (learning_rate);
+    #suffix += "-B%d" % (minibatch_size);
+    #suffix += "-aa%f" % (initial_learning_rate);
     # suffix += "-l1r%f" % (L1_regularizer_lambdas);
     # suffix += "-l2r%d" % (L2_regularizer_lambdas);
     suffix += "/";
     
     output_directory = os.path.join(output_directory, suffix);
     os.mkdir(os.path.abspath(output_directory));
-    
-    #
-    #
-    #
-    #
-    #
 
+    numpy.save(os.path.join(output_directory, "train.index.npy"), indices[:number_of_training_data]);
+    numpy.save(os.path.join(output_directory, "valid.index.npy"), indices[number_of_training_data:]);
+    
+    print "========== ========== ========== ========== =========="
+    # parameter set 1
+    print "output_directory=" + output_directory
+    print "input_directory=" + input_directory
+    print "dataset_name=" + dataset_name
+    # print "pretrained_model_file=%s" % pretrained_model_file
+    # print "dictionary file=" + str(dict_file)
+    # parameter set 2
+    print "number_of_epochs=%d" % (number_of_epochs);
+    print "minibatch_size=" + str(minibatch_size)
+    print "snapshot_interval=" + str(snapshot_interval);
+    print "validation_interval=%d" % validation_interval;
+    
+    # parameter set 3
+    print "learning_rate=" + str(initial_learning_rate)
+    print "window_size=" + str(window_size)
+    print "position_offset=" + str(position_offset)
+    print "sequence_length=" + str(sequence_length)
+    print "objective_to_minimize=%s" % (objective_to_minimize)
+    
+    # parameter set 4
+    print "layer_dimensions=%s" % (layer_dimensions)
+    print "layer_nonlinearities=%s" % (layer_nonlinearities)
+    #print "layer_dimensions=%s,%s,%s" % (pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions)
+    #print "layer_nonlinearities=%s,%s,%s" % (pre_rnn_layer_nonlinearities, rnn_layer_nonlinearities, post_rnn_layer_nonlinearities)
+
+    print "dense_activation_parameters=%s" % (dense_activation_parameters)
+    print "dense_activation_styles=%s" % (dense_activation_styles)
+    
+    # parameter set 5
+    print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
+    print "L2_regularizer_lambdas=%s" % (L2_regularizer_lambdas);
+    #print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
+    #print "layer_corruption_levels=%s" % (layer_corruption_levels);
+    
+    # paramter set 6
+    print "number_of_training_data=%d" % (number_of_training_data);
+    print "recurrent_style=%s" % (recurrent_style);
+    print "recurrent_type=%s" % (recurrent_type);
+    print "========== ========== ========== ========== =========="
+
+    cPickle.dump(options, open(os.path.join(output_directory, "option.pkl"), 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+
+    '''
     # store all the options to a file
     options_output_file = open(output_directory + "option.txt", 'w');
     
@@ -495,7 +523,7 @@ def launch_train():
     options_output_file.write("validation_interval=%d\n" % validation_interval);
     
     # parameter set 3
-    options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
+    options_output_file.write("learning_rate=" + str(initial_learning_rate) + "\n");
     options_output_file.write("window_size=" + str(window_size) + "\n");
     options_output_file.write("position_offset=" + str(position_offset) + "\n");
     options_output_file.write("sequence_length=" + str(sequence_length) + "\n");
@@ -524,64 +552,12 @@ def launch_train():
     options_output_file.write("recurrent_type=%s\n" % (recurrent_type));
     
     options_output_file.close()
-    
-    #
-    #
-    #
-    #
-    #
-    
-    print "========== ========== ========== ========== =========="
-    # parameter set 1
-    print "output_directory=" + output_directory
-    print "input_directory=" + input_directory
-    print "dataset_name=" + dataset_name
-    # print "pretrained_model_file=%s" % pretrained_model_file
-    # print "dictionary file=" + str(dict_file)
-    # parameter set 2
-    print "number_of_epochs=%d" % (number_of_epochs);
-    print "minibatch_size=" + str(minibatch_size)
-    print "snapshot_interval=" + str(snapshot_interval);
-    print "validation_interval=%d" % validation_interval;
-    
-    # parameter set 3
-    print "learning_rate=" + str(learning_rate)
-    print "window_size=" + str(window_size)
-    print "position_offset=" + str(position_offset)
-    print "sequence_length=" + str(sequence_length)
-    print "objective_to_minimize=%s" % (objective_to_minimize)
-    
-    # parameter set 4
-    print "layer_dimensions=%s" % (layer_dimensions)
-    print "layer_nonlinearities=%s" % (layer_nonlinearities)
-    #print "layer_dimensions=%s,%s,%s" % (pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions)
-    #print "layer_nonlinearities=%s,%s,%s" % (pre_rnn_layer_nonlinearities, rnn_layer_nonlinearities, post_rnn_layer_nonlinearities)
+    '''
 
-    print "dense_activation_parameters=%s" % (dense_activation_parameters)
-    print "dense_activation_styles=%s" % (dense_activation_styles)
-    
-    # parameter set 5
-    print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
-    print "L2_regularizer_lambdas=%s" % (L2_regularizer_lambdas);
-    #print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
-    #print "layer_corruption_levels=%s" % (layer_corruption_levels);
-    
-    # paramter set 6
-    print "number_of_training_data=%d" % (number_of_training_data);
-    print "recurrent_style=%s" % (recurrent_style);
-    print "recurrent_type=%s" % (recurrent_type);
-    print "========== ========== ========== ========== =========="
-    
     ######################
     # BUILD ACTUAL MODEL #
     ######################
-    
-    #
-    #
-    #
-    #
-    #
-    
+
     # allocate symbolic variables for the data
     x = theano.tensor.itensor3('x')  # as many columns as context window size/lines as words in the sentence
     # m = theano.tensor.itensor3('m')  # as many columns as context window size/lines as words in the sentence
@@ -589,19 +565,12 @@ def launch_train():
     m = theano.tensor.imatrix('m')  # as many columns as context window size/lines as words in the sentence
     # y = theano.tensor.imatrix('y')  # label
     y = theano.tensor.ivector('y')  # label
+    lr = theano.tensor.scalar('learning_rate');
     
     # input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
     input_layer = lasagne.layers.InputLayer(shape=(None, sequence_length, window_size,), input_var=x)
     mask_layer = lasagne.layers.InputLayer(shape=(None, sequence_length), input_var=m)
     
-    '''
-    embedding_layer = lasagne.layers.EmbeddingLayer(input_layer,
-                                                    input_size=vocabulary_dimension,
-                                                    output_size=embedding_dimension,
-                                                    W=lasagne.init.GlorotUniform());
-    print "----------", lasagne.layers.get_output_shape(embedding_layer, (10, 46))
-    '''
-
     if recurrent_style == "elman":
         import elman
         network = elman.ElmanNetwork(
@@ -669,8 +638,8 @@ def launch_train():
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
-    train_prediction = network.get_output()
-    train_loss = network.get_objective_to_minimize(y);
+    train_prediction = network.get_output(dtype=theano.config.floatX)
+    train_loss = network.get_objective_to_minimize(y, dtype=theano.config.floatX);
     # train_loss = theano.tensor.mean(lasagne.objectives.categorical_crossentropy(train_prediction, y))
     train_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=1), y), dtype=theano.config.floatX)
     
@@ -678,21 +647,21 @@ def launch_train():
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_params = network.get_network_params(trainable=True)
-    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, learning_rate, momentum=0.95)
+    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, lr, momentum=0.95)
     
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
-    validate_prediction = network.get_output(deterministic=True)
-    validate_loss = network.get_objective_to_minimize(y);
-    #validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y))
+    validate_prediction = network.get_output(deterministic=True, dtype=theano.config.floatX)
+    validate_loss = network.get_objective_to_minimize(y, deterministic=True, dtype=theano.config.floatX);
+    #validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y), dtype=theano.config.floatX)
     # As a bonus, also create an expression for the classification accuracy:
     validate_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(validate_prediction, axis=1), y), dtype=theano.config.floatX)
 
     # Compile a function performing a training step on a mini-batch (by giving
     # the updates dictionary) and returning the corresponding training train_loss:
     train_function = theano.function(
-        inputs=[x, y, m],
+        inputs=[x, y, m, lr],
         outputs=[train_loss, train_accuracy],
         updates=updates
     )
@@ -708,7 +677,8 @@ def launch_train():
     ########################
     
     highest_average_validate_accuracy = 0
-
+    best_iteration_index = 0
+    
     start_train = timeit.default_timer()
     
     #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (0))
@@ -718,6 +688,13 @@ def launch_train():
     #number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
     number_of_minibatches = train_set_x.shape[0] / minibatch_size
 
+    #
+    #
+    #
+    #
+    #
+
+    '''
     # Parse train data into sequences
     train_sequence_x = -numpy.ones((0, sequence_length, window_size), dtype=numpy.int32);
     train_sequence_m = numpy.zeros((0, sequence_length), dtype=numpy.int8);
@@ -771,7 +748,18 @@ def launch_train():
         test_sequence_y = numpy.concatenate((test_sequence_y, test_instance_y), axis=0);
 
         test_sequence_indices_by_instance.append(len(test_sequence_y));
+    '''
 
+    train_sequence_x, train_sequence_m, train_sequence_y, train_sequence_indices_by_instance = network.parse_sequence(train_set_x, train_set_y)
+    valid_sequence_x, valid_sequence_m, valid_sequence_y, valid_sequence_indices_by_instance = network.parse_sequence(valid_set_x, valid_set_y)
+    test_sequence_x, test_sequence_m, test_sequence_y, test_sequence_indices_by_instance = network.parse_sequence(test_set_x, test_set_y)
+
+    #
+    #
+    #
+    #
+    #
+    
     # Finally, launch the training loop.
     # We iterate over epochs:
     for epoch_index in range(number_of_epochs):
@@ -791,20 +779,19 @@ def launch_train():
             train_sequence_start_index = train_sequence_indices_by_instance[instance_start_index];
             train_sequence_end_index = train_sequence_indices_by_instance[instance_end_index];
 
-            #print minibatch_index, instance_start_index, instance_end_index, sequence_start_index, sequence_end_index
-            #print train_sequence_x[sequence_start_index:sequence_end_index, :, :]
-            #print train_sequence_masks[sequence_start_index+1:sequence_end_index+1, :]
+            learning_rate = initial_learning_rate;
+            if learning_rate_decay>0:
+                learning_rate *= (1. / (1. + learning_rate_decay * iteration_index))
 
             minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(
                 train_sequence_x[train_sequence_start_index:train_sequence_end_index, :, :],
                 train_sequence_y[train_sequence_start_index:train_sequence_end_index],
-                train_sequence_m[train_sequence_start_index:train_sequence_end_index, :]);
+                train_sequence_m[train_sequence_start_index:train_sequence_end_index, :],
+                learning_rate);
             
             #embedding_layer = [layer for layer in network.get_all_layers() if isinstance(layer, lasagne.layers.EmbeddingLayer)][0];
             #print numpy.sum(embedding_layer.W.eval()**2)
-
             #print numpy.sum(network._embeddings.eval()**2)
-            #old_values = network._embeddings.eval()
             #normalize_embedding_function();
             network._normalize_embeddings_function();
             #print numpy.sum(network._embeddings.eval()**2)
@@ -815,6 +802,7 @@ def launch_train():
 
             epoch_running_time += timeit.default_timer() - minibatch_running_time;
 
+            # TODO:
             if iteration_index % 1000 == 0: # or train_sequence_end_index % 1000 == 0:
                 print "train progress: %d sequences by %d minibatches" % (train_sequence_end_index, iteration_index+1)
 
@@ -825,9 +813,17 @@ def launch_train():
             #
 
             # And a full pass over the validation data:
-            if iteration_index % validation_interval == 0 and len(valid_set_y) > 0:
+            if iteration_index % number_of_minibatches == 0 or (iteration_index % validation_interval == 0 and len(valid_set_y) > 0):
+
+                #
+                #
+                #
+                #
+                #
+
                 total_validate_loss = 0;
                 total_validate_accuracy = 0;
+                print len(valid_set_y)
                 for valid_instance_index in xrange(len(valid_set_y)):
                     valid_sequence_start_index = valid_sequence_indices_by_instance[valid_instance_index];
                     valid_sequence_end_index = valid_sequence_indices_by_instance[valid_instance_index + 1];
@@ -840,22 +836,24 @@ def launch_train():
                     total_validate_loss += minibatch_validate_loss * (valid_sequence_end_index - valid_sequence_start_index);
                     total_validate_accuracy += minibatch_validate_accuracy * (valid_sequence_end_index - valid_sequence_start_index);
 
+                    # TODO:
                     if valid_instance_index % 1000 == 0: # or valid_sequence_end_index % 1000 == 0:
                         print "\tvalidate progress: %d sequences by %d instances" % (valid_sequence_end_index+1, valid_instance_index+1)
 
-                # if we got the best validation score until now
+                average_validate_loss = total_validate_loss / valid_sequence_end_index;
                 average_validate_accuracy = total_validate_accuracy / valid_sequence_end_index;
+                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+                        
+                # if we got the best validation score until now
                 if average_validate_accuracy > highest_average_validate_accuracy:
                     highest_average_validate_accuracy = average_validate_accuracy
-                    #best_iteration_index = epoch_index
-
+                    best_iteration_index = iteration_index
+                    
                     # save the best model
                     print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index+1, minibatch_index+1, average_validate_accuracy * 100)
 
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-
-                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index+1, minibatch_index+1, total_validate_loss / valid_sequence_end_index, average_validate_accuracy * 100)
 
                 #
                 #
@@ -879,24 +877,69 @@ def launch_train():
 
                     if test_instance_index % 1000 == 0: # or test_sequence_end_index % 1000 == 0:
                         print "\t\ttest progress: %d sequences by %d instances" % (test_sequence_end_index+1, test_instance_index+1)
+                        
+                average_test_loss = total_test_loss / test_sequence_end_index;
+                average_test_accuracy = total_test_accuracy / test_sequence_end_index;
+                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
 
-                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index+1, minibatch_index+1, total_test_loss / test_sequence_end_index, total_test_accuracy / test_sequence_end_index * 100)
 
-        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index+1, epoch_running_time, total_train_loss / train_sequence_end_index, total_train_accuracy / train_sequence_end_index * 100)
+        average_train_loss = total_train_loss / train_sequence_end_index
+        average_train_accuracy = total_train_accuracy / train_sequence_end_index
+        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (
+            epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
 
         if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-    
-    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
-    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
     
     end_train = timeit.default_timer()
+
+    snapshot_index = now.strftime("%y%m%d%H%M%S");
+    snapshot_directory = os.path.join(output_directory, snapshot_index);
+    assert not os.path.exists(snapshot_directory);
+    os.mkdir(snapshot_directory);
+
+    shutil.copy(os.path.join(output_directory, 'model.pkl'), os.path.join(snapshot_directory, 'model.pkl'));
+    snapshot_pattern = re.compile(r'^model\-\d+.pkl$');
+    for file_name in os.listdir(output_directory):
+        if not re.match(snapshot_pattern, file_name):
+            continue;
+        shutil.move(os.path.join(output_directory, file_name), os.path.join(snapshot_directory, file_name));
+    shutil.move(os.path.join(output_directory, 'option.pkl'), os.path.join(snapshot_directory, 'option.pkl'));
+    
     print "Optimization complete..."
-    #print "Best validation score of %f%% obtained at epoch %i on get_mini_batches %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
+    print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (
+        highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches,
+        best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
+
+'''
+def parse_sequence(set_x, set_y, sequence_length, window_size):
+    # Parse train data into sequences
+    sequence_x = -numpy.ones((0, sequence_length, window_size), dtype=numpy.int32);
+    sequence_m = numpy.zeros((0, sequence_length), dtype=numpy.int8);
+    sequence_y = numpy.zeros(0, dtype=numpy.int32);
+
+    sequence_indices_by_instance = [0];
+    for instance_x, instance_y in zip(set_x, set_y):
+        # context_windows = get_context_windows(train_sequence_x, window_size)
+        # train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+        instance_sequence_x, instance_sequence_m = network.get_instance_sequences(instance_x);
+        assert len(instance_sequence_x) == len(instance_sequence_m);
+        assert len(instance_sequence_x) == len(instance_y);
+        # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
+
+        sequence_x = numpy.concatenate((sequence_x, instance_sequence_x), axis=0);
+        sequence_m = numpy.concatenate((sequence_m, instance_sequence_m), axis=0);
+        sequence_y = numpy.concatenate((sequence_y, instance_y), axis=0);
+
+        sequence_indices_by_instance.append(len(sequence_y));
+'''
 
 """
 def get_context_windows(sequence, window_size, vocab_size=None):
@@ -954,6 +997,8 @@ def get_mini_batches(context_windows, backprop_step):
         mini_batch_masks[i, :] = 1;
     return mini_batches, mini_batch_masks
 """
+
+
 
 if __name__ == '__main__':
     launch_train()

@@ -22,7 +22,7 @@ def parse_args():
                         input_directory=None,
                         #output_directory=None,
                         model_directory=None,
-                        pretrained_model_file=None,
+                        model_snapshot=None,
                         
                         # parameter set 2
                         number_of_epochs=-1,
@@ -60,8 +60,8 @@ def parse_args():
                       #help="output directory [None]");
     parser.add_option("--model_directory", type="string", dest="model_directory",
                       help="model directory [None]");
-    parser.add_option("--pretrained_model_file", type="string", dest="pretrained_model_file",
-                      help="pretrained model file [None]");
+    parser.add_option("--model_snapshot", type="string", dest="model_snapshot",
+                      help="model snapshot [None]");
                       
     # parameter set 2
     parser.add_option("--minibatch_size", type="int", dest="minibatch_size",
@@ -298,13 +298,13 @@ def launch_resume():
     print "successfully load data with %d for testing..." % (test_set_x.shape[0])
 
     # load the existing model
-    if options.pretrained_model_file==None:
-        pretrained_model_file = os.path.join(output_directory, "model.pkl");
+    if options.model_snapshot==None:
+        model_snapshot = os.path.join(output_directory, "model.pkl");
     else:
-        pretrained_model_file = options.pretrained_model_file;
+        model_snapshot = options.model_snapshot;
 
-    if not os.path.exists(pretrained_model_file):
-        sys.stderr.write("error: model file %s not found...\n" % (pretrained_model_file));
+    if not os.path.exists(model_snapshot):
+        sys.stderr.write("error: model file %s not found...\n" % (model_snapshot));
         return;
 
     #number_of_layers = len(network.get_all_layers()) - 1;
@@ -367,7 +367,7 @@ def launch_resume():
     print "input_directory=" + input_directory
     print "output_directory=" + output_directory
     #print "dataset_name=" + dataset_name
-    #print "pretrained_model_file=%s" % pretrained_model_file
+    print "model_snapshot=%s" % model_snapshot
     # print "dictionary file=" + str(dict_file)
 
     # parameter set 2
@@ -428,7 +428,7 @@ def launch_resume():
     
     #input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
 
-    network = cPickle.load(open(pretrained_model_file, 'rb'));
+    network = cPickle.load(open(model_snapshot, 'rb'));
 
     # This is to establish the computational graph
     # network.get_all_layers()[0].input_var = x
@@ -460,7 +460,8 @@ def launch_resume():
     # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
     validate_prediction = network.get_output(deterministic=True)
-    validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y), dtype=theano.config.floatX)
+    validate_loss = network.get_objective_to_minimize(y, deterministic=True);
+    #validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y), dtype=theano.config.floatX)
     # As a bonus, also create an expression for the classification accuracy:
     validate_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(validate_prediction, axis=1), y), dtype=theano.config.floatX)
 
