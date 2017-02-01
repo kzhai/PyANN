@@ -802,7 +802,6 @@ def launch_train():
 
             epoch_running_time += timeit.default_timer() - minibatch_running_time;
 
-            # TODO:
             if iteration_index % 1000 == 0: # or train_sequence_end_index % 1000 == 0:
                 print "train progress: %d sequences by %d minibatches" % (train_sequence_end_index, iteration_index+1)
 
@@ -823,7 +822,6 @@ def launch_train():
 
                 total_validate_loss = 0;
                 total_validate_accuracy = 0;
-                print len(valid_set_y)
                 for valid_instance_index in xrange(len(valid_set_y)):
                     valid_sequence_start_index = valid_sequence_indices_by_instance[valid_instance_index];
                     valid_sequence_end_index = valid_sequence_indices_by_instance[valid_instance_index + 1];
@@ -836,7 +834,6 @@ def launch_train():
                     total_validate_loss += minibatch_validate_loss * (valid_sequence_end_index - valid_sequence_start_index);
                     total_validate_accuracy += minibatch_validate_accuracy * (valid_sequence_end_index - valid_sequence_start_index);
 
-                    # TODO:
                     if valid_instance_index % 1000 == 0: # or valid_sequence_end_index % 1000 == 0:
                         print "\tvalidate progress: %d sequences by %d instances" % (valid_sequence_end_index+1, valid_instance_index+1)
 
