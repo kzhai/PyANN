@@ -36,6 +36,7 @@ def parse_args():
                         
                         # parameter set 3
                         learning_rate=1e-3,
+                        #learning_rate_decay=0,
                         objective_to_minimize="None",
 
                         # parameter set 4
@@ -68,6 +69,8 @@ def parse_args():
     # parameter set 3
     parser.add_option("--learning_rate", type="float", dest="learning_rate",
                       help="learning rate [1e-3]")
+    #parser.add_option("--learning_rate_decay", type="float", dest="learning_rate_decay",
+                      #help="learning rate [0 - no learning rate decay]")
     parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
                       help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");    
     

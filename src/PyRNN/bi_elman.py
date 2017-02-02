@@ -288,22 +288,39 @@ class BidirectionalElmanNetwork(network.Network):
         return train_loss
     '''
 
+
+    def parse_sequence(self, sequence_set_x, sequence_set_y):
+        from elman import get_context_sequences, get_context, get_sequences
+
+        # Parse data into sequences
+        sequence_x = -numpy.ones((0, self._sequence_length, self._window_size), dtype=numpy.int32);
+        sequence_m = numpy.zeros((0, self._sequence_length), dtype=numpy.int8);
+        sequence_y = numpy.zeros(0, dtype=numpy.int32);
+
+        sequence_indices_by_instance = [0];
+        for instance_x, instance_y in zip(sequence_set_x, sequence_set_y):
+            # context_windows = get_context_windows(train_sequence_x, window_size)
+            # train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+            instance_sequence_x, instance_sequence_m = get_context_sequences(instance_x, self._sequence_length, self._window_size, self._position_offset);
+            assert len(instance_sequence_x) == len(instance_sequence_m);
+            assert len(instance_sequence_x) == len(instance_y);
+
+            sequence_x = numpy.concatenate((sequence_x, instance_sequence_x), axis=0);
+            sequence_m = numpy.concatenate((sequence_m, instance_sequence_m), axis=0);
+            sequence_y = numpy.concatenate((sequence_y, instance_y), axis=0);
+
+            sequence_indices_by_instance.append(len(sequence_y));
+
+        return sequence_x, sequence_m, sequence_y, sequence_indices_by_instance
+
+    '''
     def get_instance_sequences(self, instance):
-        '''
-        context_windows :: list of word idxs
-        return a list of minibatches of indexes
-        which size is equal to backprop_step
-        border cases are treated as follow:
-        eg: [0,1,2,3] and backprop_step = 3
-        will output:
-        [[0],[0,1],[0,1,2],[1,2,3]]
-        '''
+        from elman import get_context, get_sequences
 
-        from elman import get_context_windows, get_sequences
-
-        context_windows = get_context_windows(instance, self._window_size, self._position_offset);
+        context_windows = get_context(instance, self._window_size, self._position_offset);
         sequences_x, sequences_m = get_sequences(context_windows, self._sequence_length);
         return sequences_x, sequences_m
+    '''
 
 def print_output_dimension(checkpoint_text, neural_network, batch_size, sequence_length, window_size):
     reference_to_input_layers = [input_layer for input_layer in lasagne.layers.get_all_layers(neural_network) if
