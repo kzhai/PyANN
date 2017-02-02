@@ -33,7 +33,7 @@ To launch PyANN modules, first redirect to the parent directory of PyANN source 
 To launch multi-layer perceptron (MLP) on mnist example dataset,
 
 	python -um PyMLP.launch_train \
-		--input_directory=../input/mnist_784/ \
+		--input_directory=../input/mnist_784_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=1000 \
@@ -76,7 +76,7 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch convolutional neural network (CNN) on mnist example dataset,
 
 	python -um PyCNN.launch_train \
-		--input_directory=../input/mnist_1x28x28/ \
+		--input_directory=../input/mnist_1x28x28_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=1000 \
@@ -112,7 +112,7 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch denoising auto-encoders (DAE) on mnist example dataset,
 
 	python -um PyDAE.launch_train \
-		--input_directory=../input/mnist_784/ \
+		--input_directory=../input/mnist_784_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=15 \
@@ -144,7 +144,7 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch stacked denoising auto-encoders (SDAE) on mnist example dataset,
 
 	python -um PySDAE.launch_train \
-		--input_directory=../input/mnist_784/ \
+		--input_directory=../input/mnist_784_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=15 \
@@ -176,7 +176,7 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch restricted Boltzmann machines (RBM) on mnist example dataset,
 
 	python -um PyRBM.launch_train \
-		--input_directory=../input/mnist_784/ \
+		--input_directory=../input/mnist_784_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=15 \
@@ -206,7 +206,7 @@ Under any cirsumstances, you may also get help information and usage hints by ru
 To launch deep belief networks (DBN) on mnist example dataset,
 
 	python -um PyDBN.launch_train \
-		--input_directory=../input/mnist_784/ \
+		--input_directory=../input/mnist_784_unitized/ \
 		--output_directory=../output/ \
 		--minibatch_size=1 \
 		--number_of_epochs=100 \
@@ -243,6 +243,7 @@ To launch recurrent neural network (RNN) on atis example dataset,
 		--embedding_dimension=100 \
 		--sequence_length=9 \
 		--window_size=5 \
+		--number_of_training_data=3000 \
 		--layer_dimensions=256,[128],127 \
 		--layer_nonlinearities=sigmoid,[sigmoid],softmax \
 		--objective_to_minimize=categorical_crossentropy
@@ -261,9 +262,18 @@ The generic argument to run RNN is
 		--layer_nonlinearities=$F_1,...,[$RNN_F_1,...,$RNN_F_N],...,$F_N,... \
 		--objective_to_minimize=categorical_crossentropy
 		
-Under any cirsumstances, you may also get help information and usage hints by running the following command
+Under any circumstances, you may also get help information and usage hints by running the following command
 
 	python -um PyRNN.launch_train --help
+
+Note that sometimes you may get following value casting error
+
+	ValueError: When compiling the inner function of scan the following error has been encountered: The initial state (`outputs_info` in scan nomenclature) of variable IncSubtensor{Set;:int64:}.0 (argument number 2) has dtype float32, while the result of the inner function (`fn`) has dtype float64. This can happen if the inner function of scan results in an upcast or downcast.
+
+I do not have a clear understanding on why such error is raised during ```scan``` function, likely resulted from an internal type casting operation. This is possibility due to some precision constrain in regards to the well-known gradient vanishing and exploding problem.
+In such case, you may want to include following ```THEANO_FLAGS``` when invoking the module (just insert the following command before the python command).
+
+	THEANO_FLAGS='floatX=float64'
 
 ### Launch connectionist temporal classification (CTC)
 
@@ -276,6 +286,7 @@ To launch connectionist temporal classification (CTC) on atis example dataset,
 		--learning_rate=0.01 \
 		--embedding_dimension=100 \
 		--sequence_length=100 \
+		--number_of_training_data=3000 \
 		--layer_dimensions=256,[128],127 \
 		--layer_nonlinearities=sigmoid,[sigmoid],softmax \
 		--objective_to_minimize=categorical_crossentropy

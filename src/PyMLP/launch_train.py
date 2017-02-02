@@ -1,5 +1,7 @@
 import os
 import sys
+import shutil
+import re
 
 import cPickle
 import numpy
@@ -29,6 +31,7 @@ def parse_args():
 
                         # parameter set 3
                         learning_rate=1e-2,
+                        learning_rate_decay=0,
                         objective_to_minimize=None,
 
                         # parameter set 4
@@ -62,7 +65,7 @@ def parse_args():
     parser.add_option("--number_of_epochs", type="int", dest="number_of_epochs",
                       help="number of epochs [-1]");
     parser.add_option("--snapshot_interval", type="int", dest="snapshot_interval",
-                      help="snapshot interval in number of epochs [-1]");
+                      help="snapshot interval in number of epochs [-1 - no snapshot]");
     parser.add_option("--validation_interval", type="int", dest="validation_interval",
                       help="validation interval in number of mini-batches [1000]");
     # parser.add_option("--improvement_threshold", type="float", dest="improvement_threshold",
@@ -71,6 +74,8 @@ def parse_args():
     # parameter set 3
     parser.add_option("--learning_rate", type="float", dest="learning_rate",
                       help="learning rate [1e-3]")
+    parser.add_option("--learning_rate_decay", type="float", dest="learning_rate_decay",
+                      help="learning rate decay [0 - no learning rate decay]")
     parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
                       help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
     
@@ -127,7 +132,9 @@ def launch_train():
 
     # parameter set 3
     assert options.learning_rate > 0;
-    learning_rate = options.learning_rate;
+    initial_learning_rate = options.learning_rate;
+    assert options.learning_rate_decay >= 0;
+    learning_rate_decay = options.learning_rate_decay;
 
     assert options.objective_to_minimize != None
     objective_to_minimize = options.objective_to_minimize;
@@ -272,30 +279,26 @@ def launch_train():
     
     data_x = numpy.load(os.path.join(input_directory, "train.feature.npy"))
     data_y = numpy.load(os.path.join(input_directory, "train.label.npy"))
-    # data_x = numpy.asarray(data_x, numpy.float32) / 256
-    # data_x = data_x / numpy.float32(256)
-    # data_x = (data_x - numpy.float32(128)) / numpy.float32(128)
     assert data_x.shape[0] == len(data_y);
-    
+
     input_shape = list(data_x.shape[1:]);
     input_shape.insert(0, None)
-    
+
     # parameter set 6
-    # assert(options.number_of_training_data <= 0);
     number_of_training_data = options.number_of_training_data;
     if number_of_training_data <= 0:
         number_of_training_data = len(data_y);
     assert number_of_training_data > 0 and number_of_training_data <= len(data_y)
-    
+
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
-    
+
     train_set_x = data_x[indices[:number_of_training_data], :]
     train_set_y = data_y[indices[:number_of_training_data]]
 
     valid_set_x = data_x[indices[number_of_training_data:], :]
     valid_set_y = data_y[indices[number_of_training_data:]]
-    
+
     print "successfully load data with %d for training and %d for validation..." % (train_set_x.shape[0], valid_set_x.shape[0])
 
     test_set_x = numpy.load(os.path.join(input_directory, "test.feature.npy"))
@@ -315,69 +318,22 @@ def launch_train():
     now = datetime.datetime.now();
     suffix = now.strftime("%y%m%d-%H%M%S") + "";
     suffix += "-%s" % ("mlp");
-    suffix += "-T%d" % (number_of_training_data);
-    suffix += "-E%d" % (number_of_epochs);
+    suffix += "-D%d" % (number_of_training_data);
+    #suffix += "-E%d" % (number_of_epochs);
     #suffix += "-S%d" % (snapshot_interval);
-    suffix += "-B%d" % (minibatch_size);
-    suffix += "-aa%f" % (learning_rate);
+    #suffix += "-B%d" % (minibatch_size);
+    #suffix += "-lr%f" % (initial_learning_rate);
+    #suffix += "-ld%f" % (learning_rate_decay);
     # suffix += "-l1r%f" % (L1_regularizer_lambdas);
     # suffix += "-l2r%d" % (L2_regularizer_lambdas);
-    suffix += "/";
+    #suffix += "/";
     
     output_directory = os.path.join(output_directory, suffix);
     os.mkdir(os.path.abspath(output_directory));
-    
-    #
-    #
-    #
-    #
-    #
 
-    # store all the options to a file
-    options_output_file = open(output_directory + "option.txt", 'w');
-    
-    # parameter set 1
-    options_output_file.write("input_directory=" + input_directory + "\n");
-    options_output_file.write("dataset_name=" + dataset_name + "\n");
-    options_output_file.write("pretrained_model_file=" + str(pretrained_model_file) + "\n");
-    # options_output_file.write("vocabulary_path=" + str(dict_file) + "\n");
-    
-    # parameter set 2
-    options_output_file.write("number_of_epochs=%d\n" % (number_of_epochs));
-    options_output_file.write("minibatch_size=" + str(minibatch_size) + "\n");
-    options_output_file.write("snapshot_interval=%d\n" % (snapshot_interval));
-    options_output_file.write("validation_interval=%d\n" % validation_interval);
-    
-    # parameter set 3
-    options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
-    options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
+    numpy.save(os.path.join(output_directory, "train.index.npy"), indices[:number_of_training_data]);
+    numpy.save(os.path.join(output_directory, "valid.index.npy"), indices[number_of_training_data:]);
 
-    # parameter set 4
-    options_output_file.write("layer_dimensions=%s\n" % (layer_dimensions));
-    options_output_file.write("layer_nonlinearities=%s\n" % (layer_nonlinearities));
-    
-    options_output_file.write("layer_activation_parameters=%s\n" % (layer_activation_parameters));
-    options_output_file.write("layer_activation_styles=%s\n" % (layer_activation_styles));
-    
-    # parameter set 5
-    options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
-    options_output_file.write("L2_regularizer_lambdas=%s\n" % (L2_regularizer_lambdas));
-    
-    options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
-    options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
-    # options_output_file.write("number_of_pretrain_epochs=%s\n" % (number_of_pretrain_epochs));
-    
-    # paramter set 6
-    options_output_file.write("number_of_training_data=%d\n" % (number_of_training_data));
-    
-    options_output_file.close()
-    
-    #
-    #
-    #
-    #
-    #
-    
     print "========== ========== ========== ========== =========="
     # parameter set 1
     print "output_directory=" + output_directory
@@ -385,6 +341,7 @@ def launch_train():
     print "dataset_name=" + dataset_name
     print "pretrained_model_file=%s" % pretrained_model_file
     # print "dictionary file=" + str(dict_file)
+    
     # parameter set 2
     print "number_of_epochs=%d" % (number_of_epochs);
     print "minibatch_size=" + str(minibatch_size)
@@ -392,7 +349,8 @@ def launch_train():
     print "validation_interval=%d" % validation_interval;
     
     # parameter set 3
-    print "learning_rate=" + str(learning_rate)
+    print "learning_rate=" + str(initial_learning_rate)
+    print "learning_rate_decay=" + str(learning_rate_decay)
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
     # parameter set 4
@@ -412,7 +370,15 @@ def launch_train():
     # paramter set 6
     print "number_of_training_data=%d" % (number_of_training_data);
     print "========== ========== ========== ========== =========="
-    
+
+    cPickle.dump(options, open(os.path.join(output_directory, "option.pkl"), 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+
+    #
+    #
+    #
+    #
+    #
+
     ######################
     # BUILD ACTUAL MODEL #
     ######################
@@ -420,6 +386,7 @@ def launch_train():
     # allocate symbolic variables for the data
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
+    lr = theano.tensor.scalar('learning_rate');
     
     input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
     
@@ -454,20 +421,21 @@ def launch_train():
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_params = network.get_network_params(trainable=True)
-    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, learning_rate, momentum=0.95)
+    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, lr, momentum=0.95)
     
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
     validate_prediction = network.get_output(deterministic=True)
-    validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y), dtype=theano.config.floatX)
+    validate_loss = network.get_objective_to_minimize(y, deterministic=True);
+    #validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y), dtype=theano.config.floatX)
     # As a bonus, also create an expression for the classification accuracy:
     validate_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(validate_prediction, axis=1), y), dtype=theano.config.floatX)
 
     # Compile a function performing a training step on a mini-batch (by giving
     # the updates dictionary) and returning the corresponding training train_loss:
     train_function = theano.function(
-        inputs=[x, y],
+        inputs=[x, y, lr],
         outputs=[train_loss, train_accuracy],
         updates=updates
     )
@@ -483,7 +451,7 @@ def launch_train():
     ########################
     
     highest_average_validate_accuracy = 0
-    #best_iteration_index = 0
+    best_iteration_index = 0
     
     start_train = timeit.default_timer()
     
@@ -507,11 +475,15 @@ def launch_train():
             minibatch_running_time = timeit.default_timer();
 
             iteration_index = epoch_index * number_of_minibatches + minibatch_index
-
+            
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
 
-            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(minibatch_x, minibatch_y)
+            learning_rate = initial_learning_rate;
+            if learning_rate_decay>0:
+                learning_rate *= (1. / (1. + learning_rate_decay * iteration_index))
+
+            minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(minibatch_x, minibatch_y, learning_rate)
 
             total_train_loss += minibatch_average_train_loss * minibatch_size;
             total_train_accuracy += minibatch_average_train_accuracy * minibatch_size;
@@ -521,38 +493,59 @@ def launch_train():
 
             # And a full pass over the validation data:
             if iteration_index % number_of_minibatches==0 or (iteration_index % validation_interval == 0 and len(valid_set_y) > 0):
+                average_train_accuracy = total_train_accuracy / total_train_instances;
+                average_train_loss = total_train_loss / total_train_instances;
+                print 'train result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_train_loss, average_train_accuracy * 100)
+
                 average_validate_loss, average_validate_accuracy = validate_function(valid_set_x, valid_set_y);
+                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
+
                 # if we got the best validation score until now
                 if average_validate_accuracy > highest_average_validate_accuracy:
                     highest_average_validate_accuracy = average_validate_accuracy
-                    #best_iteration_index = iteration_index
-                    
+                    best_iteration_index = iteration_index
+
                     # save the best model
                     print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_accuracy * 100)
-                    
+
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-
-                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_validate_loss, average_validate_accuracy * 100)
 
                 average_test_loss, average_test_accuracy = validate_function(test_set_x, test_set_y);
                 print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
 
         average_train_accuracy = total_train_accuracy / total_train_instances;
         average_train_loss = total_train_loss / total_train_instances;
-        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
+        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (
+            epoch_index, epoch_running_time, average_train_loss, average_train_accuracy * 100)
 
         if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
 
-    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
-    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-    
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+
     end_train = timeit.default_timer()
+
+    snapshot_index = now.strftime("%y%m%d%H%M%S");
+    snapshot_directory = os.path.join(output_directory, snapshot_index);
+    assert not os.path.exists(snapshot_directory);
+    os.mkdir(snapshot_directory);
+
+    shutil.copy(os.path.join(output_directory, 'model.pkl'), os.path.join(snapshot_directory, 'model.pkl'));
+    snapshot_pattern = re.compile(r'^model\-\d+.pkl$');
+    for file_name in os.listdir(output_directory):
+        if not re.match(snapshot_pattern, file_name):
+            continue;
+        shutil.move(os.path.join(output_directory, file_name), os.path.join(snapshot_directory, file_name));
+    shutil.move(os.path.join(output_directory, 'option.pkl'), os.path.join(snapshot_directory, 'option.pkl'));
+
     print "Optimization complete..."
-    #print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
-    print >> sys.stderr, ('The code for file ' + 
+    print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (
+        highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches,
+        best_iteration_index % number_of_minibatches);
+    print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] + 
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))
 
