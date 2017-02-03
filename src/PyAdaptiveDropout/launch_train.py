@@ -418,7 +418,6 @@ def launch_train():
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_params = network.get_network_params(trainable=True)
     updates = lasagne.updates.nesterov_momentum(train_loss, all_params, lr, momentum=0.95)
-    #print all_params
 
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
@@ -528,7 +527,6 @@ def launch_train():
                 after_matrices.append(layer.W.eval());
                 after_matrices.append(layer.b.eval());
 
-        print network.get_network_params(trainable=True)
         for before_matrix, after_matrix in zip(before_matrices, after_matrices):
             print numpy.sum(before_matrix==after_matrix), before_matrix.shape, after_matrix.shape
         '''

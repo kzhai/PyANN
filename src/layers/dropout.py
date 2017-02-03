@@ -123,17 +123,17 @@ class GeneralizedDropoutLayer(Layer):
     def __init__(self, incoming, activation_probability, rescale=True, **kwargs):
         super(GeneralizedDropoutLayer, self).__init__(incoming, **kwargs)
         self._srng = RandomStreams(get_rng().randint(1, 2147462579))
-        
+
         '''
         self._alpha_alpha = alpha;
-        
+
         assert len(self.input_shape)==2;
         dimensionality = self.input_shape[1];
         #dimensionality = np.prod(self.input_shape[1:]);
-        
+
         shape_alpha = self._alpha_alpha / numpy.arange(1, dimensionality + 1);
         shape_beta = 1.0;
-        
+
         activation_probability = numpy.zeros(dimensionality);
         for index in xrange(dimensionality):
             activation_probability[index] = numpy.random.beta(shape_alpha[index], shape_beta);
@@ -172,7 +172,9 @@ class AdaptiveDropoutLayer(Layer):
                  num_units,
                  W=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[lasagne.nonlinearities.sigmoid]),
                  b=lasagne.init.Constant(0.),
+                 alpha=1,
                  rescale=True,
+                 #beta=0,
                  **kwargs):
         super(AdaptiveDropoutLayer, self).__init__(incoming, **kwargs)
         self._srng = RandomStreams(get_rng().randint(1, 2147462579))
@@ -180,14 +182,37 @@ class AdaptiveDropoutLayer(Layer):
         self.num_units = num_units
         num_inputs = int(numpy.prod(self.input_shape[1:]))
 
-        self.W = self.add_param(W, (num_inputs, num_units), name="W", trainable=False, adaptable=True)
+        self.alpha = alpha
+
         #self.W = self.add_param(W, (num_inputs, num_units), name="W", adaptable=True)
-        self.b = self.add_param(b, (num_units,), name="b", regularizable=False, adaptable=True);
+        self.W = self.add_param(W, (num_inputs, num_units), name="W", trainable=False, adaptable=True)
+        self.b = self.add_param(b, (num_units,), name="b", regularizable=False, trainable=False, adaptable=True);
 
         self.rescale = rescale
 
     def get_output_shape_for(self, input_shape):
         return (input_shape[0], self.num_units)
+
+    def get_output_for(self, input, deterministic=False, **kwargs):
+        """
+        Parameters
+        ----------
+        input : tensor
+            output from the previous layer
+        """
+        if deterministic:
+            return get_filter((input.shape[0], self.num_units), 1.0, rng=RandomStreams());
+
+        layer_signal = T.mul(self.alpha, T.dot(input, self.W));
+        if self.b is not None:
+            layer_signal = layer_signal + self.b.dimshuffle('x', 0)
+        activation_probability = lasagne.nonlinearities.sigmoid(layer_signal);
+
+        activation_flag = get_filter((input.shape[0], self.num_units), activation_probability, rng=RandomStreams());
+        if self.rescale:
+            activation_flag = activation_flag / activation_probability;
+
+        return activation_flag;
 
     '''
     def get_output_for(self, input, deterministic=False, **kwargs):
@@ -229,23 +254,3 @@ class AdaptiveDropoutLayer(Layer):
             activation_probability = activation_probability + self.b.dimshuffle('x', 0)
         return activation_probability
     '''
-
-    def get_output_for(self, input, deterministic=False, **kwargs):
-        """
-        Parameters
-        ----------
-        input : tensor
-            output from the previous layer
-        """
-        if deterministic:
-            return get_filter((input.shape[0], self.num_units), 1.0, rng=RandomStreams());
-
-        activation_probability = T.dot(input, self.W)
-        if self.b is not None:
-            activation_probability = activation_probability + self.b.dimshuffle('x', 0)
-
-        activation_flag = get_filter((input.shape[0], self.num_units), activation_probability, rng=RandomStreams());
-        if self.rescale:
-            activation_flag = activation_flag / activation_probability;
-
-        return activation_flag;
