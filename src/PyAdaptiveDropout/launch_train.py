@@ -465,13 +465,14 @@ def launch_train():
         # In each epoch_index, we do a full pass over the training data:
         epoch_running_time = 0;
 
-        print "before"
+        '''
         before_matrices = [];
         from layers.dropout import AdaptiveDropoutLayer
         for layer in lasagne.layers.get_all_layers(network._neural_network):
             if isinstance(layer, AdaptiveDropoutLayer) or isinstance(layer, lasagne.layers.DenseLayer):
                 before_matrices.append(layer.W.eval());
                 before_matrices.append(layer.b.eval());
+        '''
 
         total_train_loss = 0;
         total_train_accuracy = 0;
@@ -519,7 +520,7 @@ def launch_train():
                 average_test_loss, average_test_accuracy = validate_function(test_set_x, test_set_y);
                 print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
 
-        print "after"
+        '''
         after_matrices = []
         from layers.dropout import AdaptiveDropoutLayer
         for layer in lasagne.layers.get_all_layers(network._neural_network):
@@ -530,7 +531,7 @@ def launch_train():
         print network.get_network_params(trainable=True)
         for before_matrix, after_matrix in zip(before_matrices, after_matrices):
             print numpy.sum(before_matrix==after_matrix), before_matrix.shape, after_matrix.shape
-        sys.exit();
+        '''
 
         average_train_accuracy = total_train_accuracy / total_train_instances;
         average_train_loss = total_train_loss / total_train_instances;

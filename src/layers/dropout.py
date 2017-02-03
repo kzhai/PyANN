@@ -180,10 +180,8 @@ class AdaptiveDropoutLayer(Layer):
         self.num_units = num_units
         num_inputs = int(numpy.prod(self.input_shape[1:]))
 
-        #self.W = self.add_param(W, (num_inputs, num_units), name="W", trainable=False, adaptable=True)
-        #self.b = self.add_param(b, (num_units,), name="b", trainable=False, regularizable=False, adaptable=True);
-
-        self.W = self.add_param(W, (num_inputs, num_units), name="W", adaptable=True)
+        self.W = self.add_param(W, (num_inputs, num_units), name="W", trainable=False, adaptable=True)
+        #self.W = self.add_param(W, (num_inputs, num_units), name="W", adaptable=True)
         self.b = self.add_param(b, (num_units,), name="b", regularizable=False, adaptable=True);
 
         self.rescale = rescale
