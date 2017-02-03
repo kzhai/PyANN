@@ -199,20 +199,6 @@ def launch_train():
             if layer_activation_styles[layer_index] == "mixed_beta_bernoulli":
                 assert layer_activation_parameters[layer_index][0] < 1;
     
-    '''
-    layer_latent_feature_alphas = options.layer_latent_feature_alphas;
-    if layer_latent_feature_alphas is not None:
-        layer_latent_feature_alpha_tokens = layer_latent_feature_alphas.split(",")
-        if len(layer_latent_feature_alpha_tokens) == 1:
-            layer_latent_feature_alphas = [float(layer_latent_feature_alphas) for layer_index in xrange(number_of_layers)]
-        else:
-            assert len(layer_latent_feature_alpha_tokens) == number_of_layers;
-            layer_latent_feature_alphas = [float(layer_latent_feature_alpha) for layer_latent_feature_alpha in layer_latent_feature_alpha_tokens]
-    else:
-        layer_latent_feature_alphas = [0 for layer_index in xrange(number_of_layers)]
-    assert (layer_latent_feature_alpha >= 0 for layer_latent_feature_alpha in layer_latent_feature_alphas)
-    '''
-        
     # parameter set 5
     L1_regularizer_lambdas = options.L1_regularizer_lambdas
     L1_regularizer_lambda_tokens = L1_regularizer_lambdas.split(",")
