@@ -4,6 +4,7 @@ import numpy
 
 import sys
 import lasagne
+import network
 
 import theano.sandbox
 import theano.sandbox.cuda
@@ -169,124 +170,28 @@ class AdaptiveDropoutLayer(Layer):
     def __init__(self,
                  incoming,
                  num_units,
-                 #corruption_level,
-                 #W_decoder=None,
-                 #b_decoder=init.Constant(0.),
-                 #encoder_nonlinearity=nonlinearities.sigmoid,
-                 #decoder_nonlinearity=nonlinearities.sigmoid,
+                 W=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[lasagne.nonlinearities.sigmoid]),
+                 b=lasagne.init.Constant(0.),
+                 rescale=True,
                  **kwargs):
-        super(AdaptiveDropoutLayer, self).__init__(incoming, **kwargs)
-
-        W = init.GlorotUniform(gain=network.GlorotUniformGain[nonlinearities.sigmoid]);
-        b = init.Constant(0.);
-
-
-
-        #self.encoder_nonlinearity = (nonlinearities.identity if encoder_nonlinearity is None
-                                     #else encoder_nonlinearity)
-        #self.decoder_nonlinearity = (nonlinearities.identity if decoder_nonlinearity is None
-                                     #else decoder_nonlinearity)
-
-        #self.corruption_level = corruption_level;
-
-        self.num_units = num_units
-
-        num_inputs = int(numpy.prod(self.input_shape[1:]))
-
-        self.W = self.add_param(W, (num_inputs, num_units), name="W")
-
-        if W_decoder is None:
-            self.W_decoder = self.W.T
-        else:
-            self.W_decoder = self.add_param(W_decoder, (num_units, num_inputs), name="W_decoder")
-
-        self.b_encoder = self.add_param(b, (num_units,), name="b_encoder", regularizable=False)
-
-        self.b_decoder = self.add_param(b_decoder, (num_inputs,), name="b_decoder", regularizable=False)
-
-    def get_decoder_shape_for(self, input_shape):
-        return input_shape
-
-    def get_encoder_shape_for(self, input_shape):
-        return (input_shape[0], self.num_units)
-
-    def get_output_shape_for(self, input_shape):
-        return self.get_decoder_shape_for(input_shape);
-
-    def get_encoder_output_for(self, input):
-        """
-        Computes the encoder output given the input
-        """
-        if input.ndim > 2:
-            # if the input has more than two dimensions, flatten it into a
-            # batch of feature vectors.
-            input = input.flatten(2)
-
-        activation = T.dot(input, self.W)
-        if self.b_encoder is not None:
-            activation = activation + self.b_encoder.dimshuffle('x', 0)
-
-        return self.encoder_nonlinearity(activation);
-
-    def get_decoder_output_for(self, input):
-        """
-        Computes the decoder output given the encoder output
-        """
-
-        activation = T.dot(input, self.W_decoder)
-        if self.b_decoder is not None:
-            activation = activation + self.b_decoder.dimshuffle('x', 0)
-
-        return self.decoder_nonlinearity(activation);
-
-    def get_output_for(self, input, **kwargs):
-        '''
-        if 'corruption_level' in kwargs:
-            corruption_level = kwargs['corruption_level'];
-            print "corruption_level:", corruption_level
-            filter_mask = get_filter_mask(input, 1 - corruption_level);
-            input *= filter_mask
-        '''
-
-        if input.ndim > 2:
-            # if the input has more than two dimensions, flatten it into a
-            # batch of feature vectors.
-            input = input.flatten(2)
-
-        filter_mask = get_filter_mask(input, 1 - self.corruption_level);
-        input_tilde = input * filter_mask
-
-        return self.get_decoder_output_for(self.get_encoder_output_for(input_tilde))
-
-
-
-
-
-
-
-    def __init__(self, incoming, rescale=True, **kwargs):
         super(AdaptiveDropoutLayer, self).__init__(incoming, **kwargs)
         self._srng = RandomStreams(get_rng().randint(1, 2147462579))
 
-        '''
-        self._alpha_alpha = alpha;
+        self.num_units = num_units
+        num_inputs = int(numpy.prod(self.input_shape[1:]))
 
-        assert len(self.input_shape)==2;
-        dimensionality = self.input_shape[1];
-        #dimensionality = np.prod(self.input_shape[1:]);
+        #self.W = self.add_param(W, (num_inputs, num_units), name="W", trainable=False, adaptable=True)
+        #self.b = self.add_param(b, (num_units,), name="b", trainable=False, regularizable=False, adaptable=True);
 
-        shape_alpha = self._alpha_alpha / numpy.arange(1, dimensionality + 1);
-        shape_beta = 1.0;
-
-        activation_probability = numpy.zeros(dimensionality);
-        for index in xrange(dimensionality):
-            activation_probability[index] = numpy.random.beta(shape_alpha[index], shape_beta);
-        '''
-
-        self.activation_probability = activation_probability;
+        self.W = self.add_param(W, (num_inputs, num_units), name="W", adaptable=True)
+        self.b = self.add_param(b, (num_units,), name="b", regularizable=False, adaptable=True);
 
         self.rescale = rescale
 
+    def get_output_shape_for(self, input_shape):
+        return (input_shape[0], self.num_units)
+
+    '''
     def get_output_for(self, input, deterministic=False, **kwargs):
         """
         Parameters
@@ -296,10 +201,14 @@ class AdaptiveDropoutLayer(Layer):
         deterministic : bool
             If true dropout and scaling is disabled, see notes
         """
-        if deterministic or numpy.all(self.activation_probability == 1):
+        if deterministic:
+            return input
+
+        activation_probability = self.get_output_for(input, **kwargs);
+        if numpy.all(activation_probability == 1):
             return input
         else:
-            retain_prob = self.activation_probability
+            retain_prob = activation_probability
             if self.rescale:
                 input /= retain_prob
 
@@ -309,3 +218,36 @@ class AdaptiveDropoutLayer(Layer):
                 input_shape = input.shape
 
             return input * get_filter(input_shape, retain_prob, rng=RandomStreams())
+
+    def get_activation_probability(self, input, **kwargs):
+        """
+        Parameters
+        ----------
+        input : tensor
+            output from the previous layer
+        """
+        activation_probability = T.dot(input, self.W)
+        if self.b is not None:
+            activation_probability = activation_probability + self.b.dimshuffle('x', 0)
+        return activation_probability
+    '''
+
+    def get_output_for(self, input, deterministic=False, **kwargs):
+        """
+        Parameters
+        ----------
+        input : tensor
+            output from the previous layer
+        """
+        if deterministic:
+            return get_filter((input.shape[0], self.num_units), 1.0, rng=RandomStreams());
+
+        activation_probability = T.dot(input, self.W)
+        if self.b is not None:
+            activation_probability = activation_probability + self.b.dimshuffle('x', 0)
+
+        activation_flag = get_filter((input.shape[0], self.num_units), activation_probability, rng=RandomStreams());
+        if self.rescale:
+            activation_flag = activation_flag / activation_probability;
+
+        return activation_flag;
