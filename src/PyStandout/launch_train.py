@@ -311,7 +311,7 @@ def launch_train():
     # create output directory
     now = datetime.datetime.now();
     suffix = now.strftime("%y%m%d-%H%M%S") + "";
-    suffix += "-%s" % ("mlp");
+    suffix += "-%s" % ("mlp.standout");
     suffix += "-D%d" % (number_of_training_data);
     #suffix += "-E%d" % (number_of_epochs);
     #suffix += "-S%d" % (snapshot_interval);
