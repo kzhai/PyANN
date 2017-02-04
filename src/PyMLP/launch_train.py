@@ -416,8 +416,6 @@ def launch_train():
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_params = network.get_network_params(trainable=True)
     updates = lasagne.updates.nesterov_momentum(train_loss, all_params, lr, momentum=0.95)
-    if max_norm_regularizer>0:
-        updates = lasagne.updates.norm_constraint(updates, max_norm_regularizer);
     
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
@@ -441,6 +439,15 @@ def launch_train():
         inputs=[x, y],
         outputs=[validate_loss, validate_accuracy],
     )
+
+    # Compile a third function to impose max norm constraint:
+    if max_norm_regularizer>0:
+        max_norm_function = theano.function(
+            inputs=[x, y],
+            outputs=[validate_loss, validate_accuracy],
+        )
+        for
+        updates = lasagne.updates.norm_constraint(updates, max_norm_regularizer);
     
     ########################
     # START MODEL TRAINING #
