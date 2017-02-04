@@ -441,13 +441,14 @@ def launch_train():
     )
 
     # Compile a third function to impose max norm constraint:
+    '''
     if max_norm_regularizer>0:
         max_norm_function = theano.function(
             inputs=[x, y],
             outputs=[validate_loss, validate_accuracy],
         )
-        for
         updates = lasagne.updates.norm_constraint(updates, max_norm_regularizer);
+    '''
     
     ########################
     # START MODEL TRAINING #
