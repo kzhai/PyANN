@@ -44,7 +44,8 @@ def parse_args():
                         # parameter set 5
                         L1_regularizer_lambdas="0",
                         L2_regularizer_lambdas="0",
-                        
+                        max_norm_regularizer=0,
+
                         dae_regularizer_lambdas="0",
                         layer_corruption_levels="0",
                         
@@ -97,6 +98,9 @@ def parse_args():
                       help="L1 regularization lambda [0]")
     parser.add_option("--L2_regularizer_lambdas", type="string", dest="L2_regularizer_lambdas",
                       help="L2 regularization lambda [0]")
+
+    parser.add_option("--max_norm_regularizer", type="float", dest="max_norm_regularizer",
+                      help="max norm regularizer [0 - no max norm regularization, normally set to a value between 3 and 4]")
     
     parser.add_option("--dae_regularizer_lambdas", type="string", dest="dae_regularizer_lambdas",
                       help="dae regularization lambda [0]")
@@ -215,6 +219,9 @@ def launch_train():
     else:
         L2_regularizer_lambdas = [float(L2_regularizer_lambda_token) for L2_regularizer_lambda_token in L2_regularizer_lambda_tokens]
     assert len(L2_regularizer_lambdas) == number_of_layers;
+
+    assert options.max_norm_regularizer >= 0;
+    max_norm_regularizer = options.max_norm_regularizer;
         
     dae_regularizer_lambdas = options.dae_regularizer_lambdas
     dae_regularizer_lambda_tokens = dae_regularizer_lambdas.split(",")
@@ -349,6 +356,7 @@ def launch_train():
     # parameter set 5
     print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
     print "L2_regularizer_lambdas=%s" % (L2_regularizer_lambdas);
+    print "max_norm_regularizer=%s" % str(max_norm_regularizer);
     
     print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
     print "layer_corruption_levels=%s" % (layer_corruption_levels);
@@ -408,6 +416,11 @@ def launch_train():
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_params = network.get_network_params(trainable=True)
     updates = lasagne.updates.nesterov_momentum(train_loss, all_params, lr, momentum=0.95)
+
+    # Add max norm constraint to update dependency graph:
+    if max_norm_regularizer>0:
+        for param in network.get_network_params(regularizable=True):
+            updates[param] = lasagne.updates.norm_constraint(param, max_norm_regularizer)
     
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
@@ -431,7 +444,7 @@ def launch_train():
         inputs=[x, y],
         outputs=[validate_loss, validate_accuracy],
     )
-    
+
     ########################
     # START MODEL TRAINING #
     ########################
