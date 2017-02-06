@@ -684,8 +684,6 @@ def launch_train():
 
             iteration_index = epoch_index * number_of_minibatches + minibatch_index
 
-            # TODO: check following codes
-
             #instance_start_index = minibatch_index * minibatch_size;
             #instance_end_index = (minibatch_index + 1) * minibatch_size;
 
@@ -716,7 +714,8 @@ def launch_train():
             minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(
                 train_sequence_x[train_sequence_start_index:train_sequence_end_index, :, :],
                 train_sequence_y[train_sequence_start_index:train_sequence_end_index, :],
-                train_sequence_m[train_sequence_start_index:train_sequence_end_index, :]);
+                train_sequence_m[train_sequence_start_index:train_sequence_end_index, :],
+                learning_rate);
             #print minibatch_average_train_loss
             #print minibatch_average_train_accuracy
 
@@ -759,19 +758,20 @@ def launch_train():
                     if valid_instance_index % 1000 == 0: # or valid_sequence_end_index % 1000 == 0:
                         print "\tvalidate progress: %d sequences by %d instances" % (valid_sequence_end_index+1, valid_instance_index+1)
 
-                # if we got the best validation score until now
+                average_validate_loss = total_validate_loss / valid_sequence_end_index;
                 average_validate_accuracy = total_validate_accuracy / valid_sequence_end_index;
+                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index + 1, minibatch_index + 1, total_validate_loss / valid_sequence_end_index, average_validate_accuracy * 100)
+
+                # if we got the best validation score until now
                 if average_validate_accuracy > highest_average_validate_accuracy:
                     highest_average_validate_accuracy = average_validate_accuracy
-                    #best_iteration_index = epoch_index
+                    best_iteration_index = epoch_index
 
                     # save the best model
                     print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index+1, minibatch_index+1, average_validate_accuracy * 100)
 
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-
-                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index+1, minibatch_index+1, total_validate_loss / valid_sequence_end_index, average_validate_accuracy * 100)
 
                 #
                 #
@@ -798,20 +798,42 @@ def launch_train():
                     if test_instance_index % 1000 == 0: # or test_sequence_end_index % 1000 == 0:
                         print "\t\ttest progress: %d sequences by %d instances" % (test_sequence_end_index+1, test_instance_index+1)
 
-                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index+1, minibatch_index+1, total_test_loss / test_sequence_end_index, total_test_accuracy / test_sequence_end_index * 100)
+                average_test_loss = total_test_loss / test_sequence_end_index;
+                average_test_accuracy = total_test_accuracy / test_sequence_end_index;
+                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index + 1, minibatch_index + 1, average_test_loss, average_test_accuracy * 100)
 
-        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index+1, epoch_running_time, total_train_loss / train_sequence_end_index, total_train_accuracy / train_sequence_end_index * 100)
+        average_train_loss = total_train_loss / train_sequence_end_index
+        average_train_accuracy = total_train_accuracy / train_sequence_end_index
+        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (
+            epoch_index + 1, epoch_running_time, average_train_loss, average_train_accuracy * 100)
 
         if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-    
-    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
-    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-    
+
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+
+    end_train = timeit.default_timer()
+
+    snapshot_index = now.strftime("%y%m%d%H%M%S");
+    snapshot_directory = os.path.join(output_directory, snapshot_index);
+    assert not os.path.exists(snapshot_directory);
+    os.mkdir(snapshot_directory);
+
+    shutil.copy(os.path.join(output_directory, 'model.pkl'), os.path.join(snapshot_directory, 'model.pkl'));
+    snapshot_pattern = re.compile(r'^model\-\d+.pkl$');
+    for file_name in os.listdir(output_directory):
+        if not re.match(snapshot_pattern, file_name):
+            continue;
+        shutil.move(os.path.join(output_directory, file_name), os.path.join(snapshot_directory, file_name));
+    shutil.move(os.path.join(output_directory, 'option.pkl'), os.path.join(snapshot_directory, 'option.pkl'));
+
     end_train = timeit.default_timer()
     print "Optimization complete..."
-    #print "Best validation score of %f%% obtained at epoch %i on get_mini_batches %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
+    print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (
+        highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches,
+        best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))

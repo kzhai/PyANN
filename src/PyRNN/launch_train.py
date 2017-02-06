@@ -831,7 +831,6 @@ def launch_train():
                 average_test_accuracy = total_test_accuracy / test_sequence_end_index;
                 print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index, minibatch_index, average_test_loss, average_test_accuracy * 100)
 
-
         average_train_loss = total_train_loss / train_sequence_end_index
         average_train_accuracy = total_train_accuracy / train_sequence_end_index
         print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (
