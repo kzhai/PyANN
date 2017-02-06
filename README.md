@@ -280,7 +280,7 @@ In such case, you may want to include following ```THEANO_FLAGS``` when invoking
 To launch connectionist temporal classification (CTC) on atis example dataset,
 
 	python -m PyCTC.launch_train \
-		--input_directory=../input/atis.fold0.label/
+		--input_directory=../input/atis.fold0.label/ \
 		--output_directory=../output/ \
 		--number_of_epochs=50 \
 		--learning_rate=0.01 \

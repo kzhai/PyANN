@@ -52,8 +52,8 @@ def parse_args():
                         # parameter set 5
                         L1_regularizer_lambdas="0",
                         L2_regularizer_lambdas="0",
-                        dae_regularizer_lambdas="0",
-                        layer_corruption_levels="0",
+                        #dae_regularizer_lambdas="0",
+                        #layer_corruption_levels="0",
                         
                         # parameter set 6
                         number_of_training_data=-1,
@@ -492,8 +492,8 @@ def launch_train():
     # parameter set 5
     print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
     print "L2_regularizer_lambdas=%s" % (L2_regularizer_lambdas);
-    print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
-    print "layer_corruption_levels=%s" % (layer_corruption_levels);
+    #print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
+    #print "layer_corruption_levels=%s" % (layer_corruption_levels);
     
     # paramter set 6
     print "number_of_training_data=%d" % (number_of_training_data);
@@ -604,7 +604,13 @@ def launch_train():
     #number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
     number_of_minibatches = train_set_x.shape[0] / minibatch_size
 
-    # TODO: replace following blocks
+    #
+    #
+    #
+    #
+    #
+
+    '''
     # Parse train data into sequences
     train_sequence_x = -numpy.ones((0, sequence_length, window_size), dtype=numpy.int32);
     train_sequence_m = numpy.zeros((0, sequence_length), dtype=numpy.int8);
@@ -614,7 +620,7 @@ def launch_train():
     for train_instance_x, train_instance_y in zip(train_set_x, train_set_y):
         # context_windows = get_context_windows(train_sequence_x, window_size)
         # train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, backprop_step);
-        instance_sequence_x, instance_sequence_m = network.get_instance_sequences(train_instance_x);
+        instance_sequence_x, instance_sequence_m = network.get_context_sequences(train_instance_x);
         assert len(instance_sequence_x) == len(instance_sequence_m);
         #assert len(instance_sequence_x) == len(train_instance_y);
         # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
@@ -636,7 +642,7 @@ def launch_train():
 
     #valid_sequence_indices_by_instance = [0];
     for valid_instance_x, valid_instance_y in zip(valid_set_x, valid_set_y):
-        instance_sequence_x, instance_sequence_m = network.get_instance_sequences(valid_instance_x);
+        instance_sequence_x, instance_sequence_m = network.get_context_sequences(valid_instance_x);
         assert len(instance_sequence_x) == len(instance_sequence_m);
         #assert len(instance_sequence_x) == len(valid_instance_y);
 
@@ -657,7 +663,7 @@ def launch_train():
 
     #test_sequence_indices_by_instance = [0];
     for test_instance_x, test_instance_y in zip(test_set_x, test_set_y):
-        instance_sequence_x, instance_sequence_m = network.get_instance_sequences(test_instance_x);
+        instance_sequence_x, instance_sequence_m = network.get_context_sequences(test_instance_x);
         assert len(instance_sequence_x) == len(instance_sequence_m);
         #assert len(instance_sequence_x) == len(test_instance_y);
 
@@ -670,6 +676,17 @@ def launch_train():
         test_sequence_y = numpy.concatenate((test_sequence_y, test_instance_y_temp), axis=0);
 
         #test_sequence_indices_by_instance.append(len(test_sequence_y));
+    '''
+
+    train_sequence_x, train_sequence_m, train_sequence_y = network.parse_sequence(train_set_x, train_set_y)
+    valid_sequence_x, valid_sequence_m, valid_sequence_y = network.parse_sequence(valid_set_x, valid_set_y)
+    test_sequence_x, test_sequence_m, test_sequence_y = network.parse_sequence(test_set_x, test_set_y)
+
+    #
+    #
+    #
+    #
+    #
 
     # Finally, launch the training loop.
     # We iterate over epochs:
@@ -760,7 +777,7 @@ def launch_train():
 
                 average_validate_loss = total_validate_loss / valid_sequence_end_index;
                 average_validate_accuracy = total_validate_accuracy / valid_sequence_end_index;
-                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index + 1, minibatch_index + 1, total_validate_loss / valid_sequence_end_index, average_validate_accuracy * 100)
+                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index + 1, minibatch_index + 1, average_validate_loss, average_validate_accuracy * 100)
 
                 # if we got the best validation score until now
                 if average_validate_accuracy > highest_average_validate_accuracy:
@@ -804,8 +821,7 @@ def launch_train():
 
         average_train_loss = total_train_loss / train_sequence_end_index
         average_train_accuracy = total_train_accuracy / train_sequence_end_index
-        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (
-            epoch_index + 1, epoch_running_time, average_train_loss, average_train_accuracy * 100)
+        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index + 1, epoch_running_time, average_train_loss, average_train_accuracy * 100)
 
         if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))

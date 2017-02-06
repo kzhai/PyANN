@@ -946,7 +946,5 @@ def get_mini_batches(context_windows, backprop_step):
     return mini_batches, mini_batch_masks
 """
 
-
-
 if __name__ == '__main__':
     launch_train()
