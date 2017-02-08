@@ -420,7 +420,8 @@ def launch_train():
     # Add max norm constraint to update dependency graph:
     if max_norm_regularizer>0:
         for param in network.get_network_params(regularizable=True):
-            updates[param] = lasagne.updates.norm_constraint(param, max_norm_regularizer)
+            #updates[param] = lasagne.updates.norm_constraint(param, max_norm_regularizer)
+            updates[param] = lasagne.updates.norm_constraint(param, max_norm_regularizer * lasagne.utils.compute_norms(param.get_value(), norm_axes=(0,)).mean())
 
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
