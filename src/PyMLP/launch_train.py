@@ -421,7 +421,7 @@ def launch_train():
     if max_norm_regularizer>0:
         for param in network.get_network_params(regularizable=True):
             updates[param] = lasagne.updates.norm_constraint(param, max_norm_regularizer)
-    
+
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
@@ -482,7 +482,36 @@ def launch_train():
             if learning_rate_decay>0:
                 learning_rate *= (1. / (1. + learning_rate_decay * iteration_index))
 
+            '''
+            before_update = [];
+            for param in network.get_network_params(trainable=True, regularizable=True):
+                before_update.append(param.eval());
+            '''
+
             minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(minibatch_x, minibatch_y, learning_rate)
+
+            '''
+            after_update = [];
+            for param in network.get_network_params(trainable=True, regularizable=True):
+                after_update.append(param.eval());
+
+            for param_before, param_after in zip(before_update, after_update):
+                norms_before = numpy.linalg.norm(param_before, axis=0);
+                norms_after = numpy.linalg.norm(param_after, axis=0);
+                #norms_before = numpy.linalg.norm(param_before, axis=1);
+                #norms_after = numpy.linalg.norm(param_after, axis=1);
+                print "----------"
+                print param_before.shape, param_after.shape
+                print norms_before.shape, norms_after.shape
+                print numpy.max(norms_before), numpy.max(norms_after)
+                print numpy.sum(norms_before), numpy.sum(norms_after)
+                print "value", numpy.sum(param_before == param_after);
+                print "norm", numpy.sum(norms_before == norms_after);
+                print "old norm", numpy.all(norms_before <= max_norm_regularizer);
+                print "new norm", numpy.all(norms_after <= max_norm_regularizer);
+                #print "old norm", numpy.isclose(numpy.max(norms_before), max_norm_regularizer);
+                #print "new norm", numpy.isclose(numpy.max(norms_after), max_norm_regularizer);
+            '''
 
             total_train_loss += minibatch_average_train_loss * minibatch_size;
             total_train_accuracy += minibatch_average_train_accuracy * minibatch_size;

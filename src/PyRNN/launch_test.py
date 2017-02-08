@@ -128,7 +128,7 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     for test_instance_x, test_instance_y in zip(test_set_x, test_set_y):
         #context_windows = get_context_windows(test_sequence_x, window_size)
         #test_minibatch, test_minibatch_masks = get_mini_batches(context_windows, backprop_step);
-        test_sequences_x, test_sequences_m = network.get_instance_sequences(test_instance_x);
+        test_sequences_x, test_sequences_m = network.get_context_sequences(test_instance_x);
         assert len(test_sequences_x) == len(test_sequences_m);
         assert len(test_sequences_x) == len(test_instance_x);
 

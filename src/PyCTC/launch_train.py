@@ -1,19 +1,22 @@
-import cPickle
-import datetime
-import optparse
 import os
 import sys
-import timeit
+import shutil
+import re
 
-import lasagne
+import cPickle
 import numpy
+import scipy
+
 import theano
 import theano.tensor
 
+import timeit
+import datetime
+import optparse
+
+import lasagne
 
 #template_pattern = re.compile(r'(?P<pre_rnn>.*)\[(?P<rnn>.+)\](?P<post_rnn>.*)')
-
-#numpy.random.seed(0);
 
 def parse_args():
     parser = optparse.OptionParser()
@@ -30,6 +33,7 @@ def parse_args():
                         
                         # parameter set 3
                         learning_rate=1e-2,
+                        learning_rate_decay=0,
                         window_size=1,
                         position_offset=-1,
                         sequence_length=100,
@@ -48,8 +52,8 @@ def parse_args():
                         # parameter set 5
                         L1_regularizer_lambdas="0",
                         L2_regularizer_lambdas="0",
-                        dae_regularizer_lambdas="0",
-                        layer_corruption_levels="0",
+                        #dae_regularizer_lambdas="0",
+                        #layer_corruption_levels="0",
                         
                         # parameter set 6
                         number_of_training_data=-1,
@@ -79,6 +83,8 @@ def parse_args():
     # parameter set 3
     parser.add_option("--learning_rate", type="float", dest="learning_rate",
                       help="learning rate [1e-3]")
+    parser.add_option("--learning_rate_decay", type="float", dest="learning_rate_decay",
+                      help="learning rate decay [0 - no learning rate decay]")
     parser.add_option("--window_size", type="int", dest="window_size",
                       help="window size [1]");
     parser.add_option("--position_offset", type="int", dest="position_offset",
@@ -149,7 +155,9 @@ def launch_train():
 
     # parameter set 3
     assert options.learning_rate > 0;
-    learning_rate = options.learning_rate;
+    initial_learning_rate = options.learning_rate;
+    assert options.learning_rate_decay >= 0;
+    learning_rate_decay = options.learning_rate_decay;
     assert options.window_size > 0
     #assert options.window_size % 2 == 1;
     window_size = options.window_size;
@@ -323,7 +331,8 @@ def launch_train():
     else:
         L2_regularizer_lambdas = [float(L2_regularizer_lambda_token) for L2_regularizer_lambda_token in L2_regularizer_lambda_tokens]
     assert len(L2_regularizer_lambdas) == number_of_layers;
-        
+
+    '''
     dae_regularizer_lambdas = options.dae_regularizer_lambdas
     dae_regularizer_lambda_tokens = dae_regularizer_lambdas.split(",")
     if len(dae_regularizer_lambda_tokens) == 1:
@@ -331,8 +340,10 @@ def launch_train():
     else:
         dae_regularizer_lambdas = [float(dae_regularizer_lambda_token) for dae_regularizer_lambda_token in dae_regularizer_lambda_tokens]
     assert len(dae_regularizer_lambdas) == number_of_layers - 1;
-    
+    '''
+
     # parameter set 6
+    '''
     layer_corruption_levels = options.layer_corruption_levels;
     layer_corruption_level_tokens = layer_corruption_levels.split(",")
     if len(layer_corruption_level_tokens) == 1:
@@ -343,7 +354,8 @@ def launch_train():
     assert len(layer_corruption_levels) == number_of_layers - 1;
     assert (layer_corruption_level >= 0 for layer_corruption_level in layer_corruption_levels)
     assert (layer_corruption_level <= 1 for layer_corruption_level in layer_corruption_levels)
-    
+    '''
+
     # parameter set 1
     assert(options.input_directory != None);
     assert(options.output_directory != None);
@@ -366,7 +378,12 @@ def launch_train():
     output_directory = os.path.join(output_directory, dataset_name);
     if not os.path.exists(output_directory):
         os.mkdir(output_directory);
-    
+
+    # parameter set 6
+    #recurrent_style = options.recurrent_style;
+    #assert recurrent_style in ["elman", "bi-elman", "ctc"]
+    recurrent_type = options.recurrent_type
+
     #
     #
     #
@@ -390,41 +407,12 @@ def launch_train():
     for line in open(os.path.join(input_directory, "mapping.label"), 'r'):
         label_dimension += 1;
     
-    #
-    #
-    #
-    #
-    #
-
-    '''
-    # padding data into lasagne format
-    maximum_sequence_length = 0;
-    for datum_y in data_y:
-        maximum_sequence_length = max(maximum_sequence_length, len(datum_y));
-    new_data_x = -numpy.ones((len(data_x), maximum_sequence_length), dtype=numpy.int32)
-    new_data_y = -numpy.ones((len(data_y), maximum_sequence_length), dtype=numpy.int32)
-    new_data_m = numpy.zeros((len(data_x), maximum_sequence_length), dtype=numpy.int32)
-    for index in xrange(len(data_y)):
-        datum_x = data_x[index];
-        datum_y = data_y[index];
-        new_data_x[index, :len(datum_x)] = datum_x;
-        new_data_y[index, :len(datum_y)] = datum_y;
-        new_data_m[index, :len(datum_y)] = 1;
-    data_x = new_data_x
-    data_y = new_data_y
-    data_m = new_data_m
-    '''
-    
     # parameter set 6
     # assert(options.number_of_training_data <= 0);
     number_of_training_data = options.number_of_training_data;
     if number_of_training_data <= 0:
         number_of_training_data = len(data_y);
     assert number_of_training_data > 0 and number_of_training_data <= len(data_y)
-
-    #recurrent_style = options.recurrent_style;
-    #assert recurrent_style in ["elman", "bi-elman", "ctc"]
-    recurrent_type = options.recurrent_type
 
     indices = range(len(data_y))
     numpy.random.shuffle(indices);
@@ -457,75 +445,20 @@ def launch_train():
     suffix += "-%s" % ("ctc");
     suffix += "-%s" % (recurrent_type);
     suffix += "-T%d" % (number_of_training_data);
-    suffix += "-E%d" % (number_of_epochs);
+    #suffix += "-E%d" % (number_of_epochs);
     #suffix += "-S%d" % (snapshot_interval);
-    suffix += "-B%d" % (minibatch_size);
-    suffix += "-aa%f" % (learning_rate);
+    #suffix += "-B%d" % (minibatch_size);
+    #suffix += "-aa%f" % (learning_rate);
     # suffix += "-l1r%f" % (L1_regularizer_lambdas);
     # suffix += "-l2r%d" % (L2_regularizer_lambdas);
     suffix += "/";
     
     output_directory = os.path.join(output_directory, suffix);
     os.mkdir(os.path.abspath(output_directory));
-    
-    #
-    #
-    #
-    #
-    #
 
-    # store all the options to a file
-    options_output_file = open(output_directory + "option.txt", 'w');
-    
-    # parameter set 1
-    options_output_file.write("input_directory=" + input_directory + "\n");
-    options_output_file.write("dataset_name=" + dataset_name + "\n");
-    # options_output_file.write("pretrained_model_file=" + str(pretrained_model_file) + "\n");
-    # options_output_file.write("vocabulary_path=" + str(dict_file) + "\n");
-    
-    # parameter set 2
-    options_output_file.write("number_of_epochs=%d\n" % (number_of_epochs));
-    options_output_file.write("minibatch_size=" + str(minibatch_size) + "\n");
-    options_output_file.write("snapshot_interval=%d\n" % (snapshot_interval));
-    options_output_file.write("validation_interval=%d\n" % validation_interval);
-    
-    # parameter set 3
-    options_output_file.write("learning_rate=" + str(learning_rate) + "\n");
-    options_output_file.write("window_size=" + str(window_size) + "\n");
-    options_output_file.write("position_offset=" + str(position_offset) + "\n");
-    options_output_file.write("sequence_length=" + str(sequence_length) + "\n");
+    numpy.save(os.path.join(output_directory, "train.index.npy"), indices[:number_of_training_data]);
+    numpy.save(os.path.join(output_directory, "valid.index.npy"), indices[number_of_training_data:]);
 
-    # parameter set 4
-    options_output_file.write("layer_dimensions=%s\n" % (layer_dimensions))
-    options_output_file.write("layer_nonlinearities=%s\n" % (layer_nonlinearities));
-    #options_output_file.write("layer_dimensions=%s,%s,%s\n" % (pre_rnn_layer_dimensions, rnn_layer_dimensions, post_rnn_layer_dimensions))
-    #options_output_file.write("layer_nonlinearities=%s,%s,%s\n" % (pre_rnn_layer_nonlinearities, rnn_layer_nonlinearities, post_rnn_layer_nonlinearities));
-
-    options_output_file.write("objective_to_minimize=%s\n" % (objective_to_minimize));
-    
-    options_output_file.write("layer_activation_parameters=%s\n" % (layer_activation_parameters));
-    options_output_file.write("layer_activation_styles=%s\n" % (layer_activation_styles));
-    
-    # parameter set 5
-    options_output_file.write("L1_regularizer_lambdas=%s\n" % (L1_regularizer_lambdas));
-    options_output_file.write("L2_regularizer_lambdas=%s\n" % (L2_regularizer_lambdas));
-    options_output_file.write("dae_regularizer_lambdas=%s\n" % (dae_regularizer_lambdas));
-    options_output_file.write("layer_corruption_levels=%s\n" % (layer_corruption_levels));
-    # options_output_file.write("number_of_pretrain_epochs=%s\n" % (number_of_pretrain_epochs));
-    
-    # paramter set 6
-    options_output_file.write("number_of_training_data=%d\n" % (number_of_training_data));
-    #options_output_file.write("recurrent_style=%s\n" % (recurrent_style));
-    options_output_file.write("recurrent_type=%s\n" % (recurrent_type));
-    
-    options_output_file.close()
-    
-    #
-    #
-    #
-    #
-    #
-    
     print "========== ========== ========== ========== =========="
     # parameter set 1
     print "output_directory=" + output_directory
@@ -540,7 +473,8 @@ def launch_train():
     print "validation_interval=%d" % validation_interval;
     
     # parameter set 3
-    print "learning_rate=" + str(learning_rate)
+    print "learning_rate=" + str(initial_learning_rate)
+    print "learning_rate_decay=" + str(learning_rate_decay)
     print "window_size=" + str(window_size)
     print "position_offset=" + str(position_offset)
     print "sequence_length=" + str(sequence_length)
@@ -558,24 +492,20 @@ def launch_train():
     # parameter set 5
     print "L1_regularizer_lambdas=%s" % (L1_regularizer_lambdas)
     print "L2_regularizer_lambdas=%s" % (L2_regularizer_lambdas);
-    print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
-    print "layer_corruption_levels=%s" % (layer_corruption_levels);
+    #print "dae_regularizer_lambdas=%s" % (dae_regularizer_lambdas);
+    #print "layer_corruption_levels=%s" % (layer_corruption_levels);
     
     # paramter set 6
     print "number_of_training_data=%d" % (number_of_training_data);
     #print "recurrent_style=%s" % (recurrent_style);
     print "recurrent_type=%s" % (recurrent_type);
     print "========== ========== ========== ========== =========="
-    
+
+    cPickle.dump(options, open(os.path.join(output_directory, "option.pkl"), 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+
     ######################
     # BUILD ACTUAL MODEL #
     ######################
-    
-    #
-    #
-    #
-    #
-    #
     
     # allocate symbolic variables for the data
     x = theano.tensor.itensor3('x')  # as many columns as context window size/lines as words in the sentence
@@ -584,19 +514,12 @@ def launch_train():
     m = theano.tensor.imatrix('m')  # as many columns as context window size/lines as words in the sentence
     y = theano.tensor.imatrix('y')  # label
     # y = theano.tensor.ivector('y')  # label
+    lr = theano.tensor.scalar('learning_rate');
     
     # input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
     input_layer = lasagne.layers.InputLayer(shape=(None, sequence_length, window_size), input_var=x)
     mask_layer = lasagne.layers.InputLayer(shape=(None, sequence_length), input_var=m)
     
-    '''
-    embedding_layer = lasagne.layers.EmbeddingLayer(input_layer,
-                                                    input_size=vocabulary_dimension,
-                                                    output_size=embedding_dimension,
-                                                    W=lasagne.init.GlorotUniform());
-    print "----------", lasagne.layers.get_output_shape(embedding_layer, (10, 46))
-    '''
-
     import ctc
     network = ctc.ConnectionistTemporalClassification(
         input_network=input_layer,
@@ -622,8 +545,8 @@ def launch_train():
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
-    train_prediction = network.get_output()
-    train_loss = network.get_objective_to_minimize(y, m);
+    train_prediction = network.get_output(dtype=theano.config.floatX)
+    train_loss = network.get_objective_to_minimize(y, m, dtype=theano.config.floatX);
     # train_loss = theano.tensor.mean(lasagne.objectives.categorical_crossentropy(train_prediction, y))
     #train_accuracy = theano.tensor.sum(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=2), y) * m, dtype=theano.config.floatX)
     train_accuracy = network.get_classification_accuracy(y, m)
@@ -632,14 +555,13 @@ def launch_train():
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
     all_params = network.get_network_params(trainable=True)
-    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, learning_rate, momentum=0.95)
+    updates = lasagne.updates.nesterov_momentum(train_loss, all_params, lr, momentum=0.95)
     
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
-    validate_prediction = network.get_output(deterministic=True)
-    # validate_loss = network.get_objective_to_minimize(y)
-    validate_loss = network.get_objective_to_minimize(y, m, deterministic=True)
+    validate_prediction = network.get_output(deterministic=True, dtype=theano.config.floatX)
+    validate_loss = network.get_objective_to_minimize(y, deterministic=True, dtype=theano.config.floatX);
     # As a bonus, also create an expression for the classification accuracy:
     validate_accuracy = network.get_classification_accuracy(y, m, deterministic=True)
 
@@ -655,7 +577,7 @@ def launch_train():
     # Compile a function performing a training step on a mini-batch (by giving
     # the updates dictionary) and returning the corresponding training train_loss:
     train_function = theano.function(
-        inputs=[x, y, m],
+        inputs=[x, y, m, lr],
         outputs=[train_loss, train_accuracy],
         updates=updates
     )
@@ -671,6 +593,7 @@ def launch_train():
     ########################
     
     highest_average_validate_accuracy = 0
+    best_iteration_index = 0
 
     start_train = timeit.default_timer()
     
@@ -681,6 +604,13 @@ def launch_train():
     #number_of_minibatches = train_set_x.get_value(borrow=True).shape[0] / minibatch_size
     number_of_minibatches = train_set_x.shape[0] / minibatch_size
 
+    #
+    #
+    #
+    #
+    #
+
+    '''
     # Parse train data into sequences
     train_sequence_x = -numpy.ones((0, sequence_length, window_size), dtype=numpy.int32);
     train_sequence_m = numpy.zeros((0, sequence_length), dtype=numpy.int8);
@@ -690,7 +620,7 @@ def launch_train():
     for train_instance_x, train_instance_y in zip(train_set_x, train_set_y):
         # context_windows = get_context_windows(train_sequence_x, window_size)
         # train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, backprop_step);
-        instance_sequence_x, instance_sequence_m = network.get_instance_sequences(train_instance_x);
+        instance_sequence_x, instance_sequence_m = network.get_context_sequences(train_instance_x);
         assert len(instance_sequence_x) == len(instance_sequence_m);
         #assert len(instance_sequence_x) == len(train_instance_y);
         # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
@@ -712,7 +642,7 @@ def launch_train():
 
     #valid_sequence_indices_by_instance = [0];
     for valid_instance_x, valid_instance_y in zip(valid_set_x, valid_set_y):
-        instance_sequence_x, instance_sequence_m = network.get_instance_sequences(valid_instance_x);
+        instance_sequence_x, instance_sequence_m = network.get_context_sequences(valid_instance_x);
         assert len(instance_sequence_x) == len(instance_sequence_m);
         #assert len(instance_sequence_x) == len(valid_instance_y);
 
@@ -733,7 +663,7 @@ def launch_train():
 
     #test_sequence_indices_by_instance = [0];
     for test_instance_x, test_instance_y in zip(test_set_x, test_set_y):
-        instance_sequence_x, instance_sequence_m = network.get_instance_sequences(test_instance_x);
+        instance_sequence_x, instance_sequence_m = network.get_context_sequences(test_instance_x);
         assert len(instance_sequence_x) == len(instance_sequence_m);
         #assert len(instance_sequence_x) == len(test_instance_y);
 
@@ -746,6 +676,17 @@ def launch_train():
         test_sequence_y = numpy.concatenate((test_sequence_y, test_instance_y_temp), axis=0);
 
         #test_sequence_indices_by_instance.append(len(test_sequence_y));
+    '''
+
+    train_sequence_x, train_sequence_m, train_sequence_y = network.parse_sequence(train_set_x, train_set_y)
+    valid_sequence_x, valid_sequence_m, valid_sequence_y = network.parse_sequence(valid_set_x, valid_set_y)
+    test_sequence_x, test_sequence_m, test_sequence_y = network.parse_sequence(test_set_x, test_set_y)
+
+    #
+    #
+    #
+    #
+    #
 
     # Finally, launch the training loop.
     # We iterate over epochs:
@@ -783,10 +724,15 @@ def launch_train():
             print minibatch_average_train_accuracy
             '''
 
+            learning_rate = initial_learning_rate;
+            if learning_rate_decay>0:
+                learning_rate *= (1. / (1. + learning_rate_decay * iteration_index))
+
             minibatch_average_train_loss, minibatch_average_train_accuracy = train_function(
                 train_sequence_x[train_sequence_start_index:train_sequence_end_index, :, :],
                 train_sequence_y[train_sequence_start_index:train_sequence_end_index, :],
-                train_sequence_m[train_sequence_start_index:train_sequence_end_index, :]);
+                train_sequence_m[train_sequence_start_index:train_sequence_end_index, :],
+                learning_rate);
             #print minibatch_average_train_loss
             #print minibatch_average_train_accuracy
 
@@ -829,19 +775,20 @@ def launch_train():
                     if valid_instance_index % 1000 == 0: # or valid_sequence_end_index % 1000 == 0:
                         print "\tvalidate progress: %d sequences by %d instances" % (valid_sequence_end_index+1, valid_instance_index+1)
 
-                # if we got the best validation score until now
+                average_validate_loss = total_validate_loss / valid_sequence_end_index;
                 average_validate_accuracy = total_validate_accuracy / valid_sequence_end_index;
+                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index + 1, minibatch_index + 1, average_validate_loss, average_validate_accuracy * 100)
+
+                # if we got the best validation score until now
                 if average_validate_accuracy > highest_average_validate_accuracy:
                     highest_average_validate_accuracy = average_validate_accuracy
-                    #best_iteration_index = epoch_index
+                    best_iteration_index = epoch_index
 
                     # save the best model
                     print '\tbest model found: epoch %i, minibatch %i, accuracy %f%%' % (epoch_index+1, minibatch_index+1, average_validate_accuracy * 100)
 
                     best_model_file_path = os.path.join(output_directory, 'model.pkl')
                     cPickle.dump(network, open(best_model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-
-                print '\tvalidate result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index+1, minibatch_index+1, total_validate_loss / valid_sequence_end_index, average_validate_accuracy * 100)
 
                 #
                 #
@@ -868,20 +815,41 @@ def launch_train():
                     if test_instance_index % 1000 == 0: # or test_sequence_end_index % 1000 == 0:
                         print "\t\ttest progress: %d sequences by %d instances" % (test_sequence_end_index+1, test_instance_index+1)
 
-                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index+1, minibatch_index+1, total_test_loss / test_sequence_end_index, total_test_accuracy / test_sequence_end_index * 100)
+                average_test_loss = total_test_loss / test_sequence_end_index;
+                average_test_accuracy = total_test_accuracy / test_sequence_end_index;
+                print '\t\ttest result: epoch %i, minibatch %i, loss %f, accuracy %f%%' % (epoch_index + 1, minibatch_index + 1, average_test_loss, average_test_accuracy * 100)
 
-        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index+1, epoch_running_time, total_train_loss / train_sequence_end_index, total_train_accuracy / train_sequence_end_index * 100)
+        average_train_loss = total_train_loss / train_sequence_end_index
+        average_train_accuracy = total_train_accuracy / train_sequence_end_index
+        print 'train result: epoch %i, duration %fs, loss %f, accuracy %f%%' % (epoch_index + 1, epoch_running_time, average_train_loss, average_train_accuracy * 100)
 
         if snapshot_interval>0 and (epoch_index + 1) % snapshot_interval == 0:
             model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
             cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-    
-    #model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
-    #cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
-    
+
+    model_file_path = os.path.join(output_directory, 'model-%d.pkl' % (epoch_index + 1))
+    cPickle.dump(network, open(model_file_path, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL);
+
+    end_train = timeit.default_timer()
+
+    snapshot_index = now.strftime("%y%m%d%H%M%S");
+    snapshot_directory = os.path.join(output_directory, snapshot_index);
+    assert not os.path.exists(snapshot_directory);
+    os.mkdir(snapshot_directory);
+
+    shutil.copy(os.path.join(output_directory, 'model.pkl'), os.path.join(snapshot_directory, 'model.pkl'));
+    snapshot_pattern = re.compile(r'^model\-\d+.pkl$');
+    for file_name in os.listdir(output_directory):
+        if not re.match(snapshot_pattern, file_name):
+            continue;
+        shutil.move(os.path.join(output_directory, file_name), os.path.join(snapshot_directory, file_name));
+    shutil.move(os.path.join(output_directory, 'option.pkl'), os.path.join(snapshot_directory, 'option.pkl'));
+
     end_train = timeit.default_timer()
     print "Optimization complete..."
-    #print "Best validation score of %f%% obtained at epoch %i on get_mini_batches %i" % (highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches, best_iteration_index % number_of_minibatches);
+    print "Best validation score of %f%% obtained at epoch %i on minibatch %i" % (
+        highest_average_validate_accuracy * 100., best_iteration_index / number_of_minibatches,
+        best_iteration_index % number_of_minibatches);
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_train - start_train) / 60.))

@@ -220,23 +220,48 @@ class ConnectionistTemporalClassification(network.Network):
 
         return model_accuracy
 
-    def get_instance_sequences(self, instance):
-        '''
-        context_windows :: list of word idxs
-        return a list of minibatches of indexes
-        which size is equal to backprop_step
-        border cases are treated as follow:
-        eg: [0,1,2,3] and backprop_step = 3
-        will output:
-        [[0],[0,1],[0,1,2],[1,2,3]]
-        '''
+    def parse_sequence(self, sequence_set_x, sequence_set_y):
+        # Parse data into sequences
+        sequence_x = -numpy.ones((0, self._sequence_length, self._window_size), dtype=numpy.int32);
+        sequence_m = numpy.zeros((0, self._sequence_length), dtype=numpy.int8);
+        sequence_y = numpy.zeros((0, self._sequence_length), dtype=numpy.int32);
 
-        context_windows = get_context_windows(instance, self._window_size, self._position_offset)
-        sequence_x, sequence_m = get_sequence(context_windows, self._sequence_length)
+        # train_sequence_indices_by_instance = [0];
+        for instance_x, instance_y in zip(sequence_set_x, sequence_set_y):
+            # context_windows = get_context_windows(train_sequence_x, window_size)
+            # train_minibatch, train_minibatch_masks = get_mini_batches(context_windows, backprop_step);
+            instance_sequence_x, instance_sequence_m = get_context_sequences(instance_x, self._sequence_length,
+                                                                             self._window_size, self._position_offset);
+            assert len(instance_sequence_x) == len(instance_sequence_m);
+            # print mini_batches.shape, mini_batch_masks.shape, train_sequence_y.shape
 
-        return sequence_x, sequence_m
+            sequence_x = numpy.concatenate((sequence_x, instance_sequence_x), axis=0);
+            sequence_m = numpy.concatenate((sequence_m, instance_sequence_m), axis=0);
 
-def get_context_windows(instance, window_size, position_offset=-1, vocab_size=None):
+            assert self._sequence_length >= len(instance_y);
+            instance_y_temp = numpy.zeros((1, self._sequence_length), dtype=numpy.int32);
+            instance_y_temp[0, :len(instance_y)] = instance_y;
+            sequence_y = numpy.concatenate((sequence_y, instance_y_temp), axis=0);
+            # sequence_indices_by_instance.append(len(sequence_y));
+
+        return sequence_x, sequence_m, sequence_y
+
+def get_context_sequences(instance, sequence_length, window_size, position_offset=-1):
+    '''
+    context_windows :: list of word idxs
+    return a list of minibatches of indexes
+    which size is equal to backprop_step
+    border cases are treated as follow:
+    eg: [0,1,2,3] and backprop_step = 3
+    will output:
+    [[0],[0,1],[0,1,2],[1,2,3]]
+    '''
+
+    context_windows = get_context(instance, window_size, position_offset)
+    sequence_x, sequence_m = get_sequences(context_windows, sequence_length)
+    return sequence_x, sequence_m
+
+def get_context(instance, window_size, position_offset=-1, vocab_size=None):
     '''
     window_size :: int corresponding to the size of the window
     given a list of indexes composing a sentence
@@ -269,7 +294,7 @@ def get_context_windows(instance, window_size, position_offset=-1, vocab_size=No
     # assert len(context_windows) == len(sequence)
     return context_windows
 
-def get_sequence(context_windows, sequence_length):
+def get_sequences(context_windows, sequence_length):
     '''
     context_windows :: list of word idxs
     return a list of minibatches of indexes
@@ -287,8 +312,6 @@ def get_sequence(context_windows, sequence_length):
     sequences_m = numpy.zeros((sequence_length), dtype=numpy.int32);
     sequences_m[:number_of_tokens] = 1;
     sequences_m = sequences_m[numpy.newaxis, :]
-
-    #print sequences_x.shape, sequences_m.shape
     return sequences_x, sequences_m
 
 def print_output_dimension(checkpoint_text, neural_network, batch_size, sequence_length, window_size):
@@ -322,8 +345,9 @@ if __name__ == '__main__':
     )
 
     data = [554, 23, 241, 534, 358, 136, 193, 11, 208, 251, 104, 502, 413, 256, 104];
-    context_windows = get_context_windows(data, 3, 1)
+    label = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    context_windows = get_context(data, 3, 1)
     print context_windows;
-    sequence_x, sequence_m = get_sequence(context_windows, 20)
+    sequence_x, sequence_m = get_sequences(context_windows, 20)
     print sequence_x.shape, sequence_x
     print sequence_m.shape, sequence_m
