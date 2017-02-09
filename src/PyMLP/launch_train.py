@@ -75,8 +75,10 @@ def parse_args():
     # parameter set 3
     parser.add_option("--learning_rate", type="float", dest="learning_rate",
                       help="learning rate [1e-3]")
-    parser.add_option("--learning_rate_decay", type="float", dest="learning_rate_decay",
-                      help="learning rate decay [0 - no learning rate decay]")
+    parser.add_option("--learning_rate_decay_style", type="string", dest="learning_rate_decay_style",
+                      help="learning rate decay style [None], example, 'inverse_t', 'exponential'");
+    parser.add_option("--learning_rate_decay_parameter", type="float", dest="learning_rate_decay_parameter",
+                      help="learning rate decay [0 - no learning rate decay], example, half life iterations for inverse_t or exponential decay")
     parser.add_option("--objective_to_minimize", type="string", dest="objective_to_minimize",
                       help="objective function to minimize [None], example, 'squared_error' represents the neural network optimizes squared error");
     
@@ -137,8 +139,10 @@ def launch_train():
     # parameter set 3
     assert options.learning_rate > 0;
     initial_learning_rate = options.learning_rate;
-    assert options.learning_rate_decay >= 0;
-    learning_rate_decay = options.learning_rate_decay;
+    learning_rate_decay_style = options.learning_rate_decay_style;
+    assert learning_rate_decay_style==None or learning_rate_decay_style in ["inverse_t", "exponential"];
+    assert options.learning_rate_decay_parameter >= 0;
+    learning_rate_decay_parameter = options.learning_rate_decay_parameter;
 
     assert options.objective_to_minimize != None
     objective_to_minimize = options.objective_to_minimize;
@@ -316,7 +320,7 @@ def launch_train():
     #suffix += "-S%d" % (snapshot_interval);
     #suffix += "-B%d" % (minibatch_size);
     #suffix += "-lr%f" % (initial_learning_rate);
-    #suffix += "-ld%f" % (learning_rate_decay);
+    #suffix += "-ld%f" % (learning_rate_decay_parameter);
     # suffix += "-l1r%f" % (L1_regularizer_lambdas);
     # suffix += "-l2r%d" % (L2_regularizer_lambdas);
     #suffix += "/";
@@ -343,7 +347,8 @@ def launch_train():
     
     # parameter set 3
     print "learning_rate=" + str(initial_learning_rate)
-    print "learning_rate_decay=" + str(learning_rate_decay)
+    print "learning_rate_decay_style=" + str(learning_rate_decay_style)
+    print "learning_rate_decay_parameter=" + str(learning_rate_decay_parameter)
     print "objective_to_minimize=%s" % (objective_to_minimize)
     
     # parameter set 4
@@ -478,9 +483,14 @@ def launch_train():
             minibatch_x = train_set_x[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size, :]
             minibatch_y = train_set_y[minibatch_index * minibatch_size:(minibatch_index + 1) * minibatch_size]
 
-            learning_rate = initial_learning_rate;
-            if learning_rate_decay>0:
-                learning_rate *= (1. / (1. + learning_rate_decay * iteration_index))
+            if learning_rate_decay_style==None:
+                learning_rate = initial_learning_rate;
+            elif learning_rate_decay_style=="inverse_t":
+                learning_rate = initial_learning_rate / (1. + float(iteration_index) / learning_rate_decay_parameter)
+            elif learning_rate_decay_style=="exponential":
+                learning_rate = initial_learning_rate * numpy.power(2, -float(iteration_index) / learning_rate_decay_parameter);
+            else:
+                sys.exit()
 
             '''
             before_update = [];
