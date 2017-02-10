@@ -22,43 +22,51 @@ __all__ = [
     "AdaptiveDropoutLayer"
 ]
 
-def sample_activation_probability(input_size, activation_style, activation_parameter):
+def sample_activation_probability(input_dimensions, activation_style, activation_parameter):
     activation_probability = None;
     if activation_style == "bernoulli":
-        activation_probability = numpy.zeros(input_size) + activation_parameter;
+        activation_probability = numpy.zeros(input_dimensions) + activation_parameter;
     elif activation_style == "beta_bernoulli":
         shape_alpha, shape_beta = activation_parameter;
-        activation_probability = numpy.random.beta(shape_alpha, shape_beta, size=input_size);
+        activation_probability = numpy.random.beta(shape_alpha, shape_beta, size=input_dimensions);
     elif activation_style == "reciprocal_beta_bernoulli":
         shape_alpha, shape_beta = activation_parameter;
-        ranked_shape_alpha = shape_alpha / numpy.arange(1, input_size + 1);
-        activation_probability = numpy.zeros(input_size);
-        for index in xrange(input_size):
+        input_number_of_neurons = numpy.prod(input_dimensions);
+        activation_probability = numpy.zeros(input_number_of_neurons);
+        ranked_shape_alpha = shape_alpha / numpy.arange(1, input_number_of_neurons + 1);
+        for index in xrange(input_number_of_neurons):
             activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
+        activation_probability = numpy.reshape(activation_probability, input_dimensions);
     elif activation_style == "reverse_reciprocal_beta_bernoulli":
         shape_alpha, shape_beta = activation_parameter;
-        ranked_shape_alpha = shape_alpha / numpy.arange(1, input_size + 1)[::-1]; 
-        activation_probability = numpy.zeros(input_size);
-        for index in xrange(input_size):
+        ranked_shape_alpha = shape_alpha / numpy.arange(1, input_dimensions + 1)[::-1];
+        input_number_of_neurons = numpy.prod(input_dimensions);
+        activation_probability = numpy.zeros(input_number_of_neurons);
+        for index in xrange(input_number_of_neurons):
             activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
+        activation_probability = numpy.reshape(activation_probability, input_dimensions);
     elif activation_style == "mixed_beta_bernoulli":
         beta_mean, shape_beta = activation_parameter;
         scale = beta_mean / (1. - beta_mean);
-        activation_probability = numpy.zeros(input_size);
-        for index in xrange(input_size):
+        input_number_of_neurons = numpy.prod(input_dimensions);
+        activation_probability = numpy.zeros(input_number_of_neurons);
+        for index in xrange(input_number_of_neurons):
             rank = index + 1;
             activation_probability[index] = numpy.random.beta(rank * scale / shape_beta, rank / shape_beta);
+        activation_probability = numpy.reshape(activation_probability, input_dimensions);
     elif activation_style == "geometric":
-        activation_probability = numpy.zeros(input_size);
-        for index in xrange(input_size):
+        input_number_of_neurons = numpy.prod(input_dimensions);
+        activation_probability = numpy.zeros(input_number_of_neurons);
+        for index in xrange(input_number_of_neurons):
             rank = index + 1;
             activation_probability[index] = (activation_parameter - 1) / numpy.log(activation_parameter) * (activation_parameter ** rank)
         activation_probability = numpy.clip(activation_probability, 0., 1.);
+        activation_probability = numpy.reshape(activation_probability, input_dimensions);
     elif activation_style == "reciprocal":
-        activation_probability = activation_parameter / numpy.arange(1, input_size + 1);
+        activation_probability = activation_parameter / numpy.arange(1, input_dimensions + 1);
         activation_probability = numpy.clip(activation_probability, 0., 1.);
     elif activation_style == "exponential":
-        activation_probability = activation_parameter / numpy.arange(1, input_size + 1);
+        activation_probability = activation_parameter / numpy.arange(1, input_dimensions + 1);
         activation_probability = numpy.clip(activation_probability, 0., 1.);
     else:
         sys.stderr.write("error: unrecognized configuration...\n");
