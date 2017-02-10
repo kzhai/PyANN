@@ -31,9 +31,9 @@ def sample_activation_probability(input_dimensions, activation_style, activation
         activation_probability = numpy.random.beta(shape_alpha, shape_beta, size=input_dimensions);
     elif activation_style == "reciprocal_beta_bernoulli":
         shape_alpha, shape_beta = activation_parameter;
-        ranked_shape_alpha = shape_alpha / numpy.arange(1, input_dimensions + 1);
         input_number_of_neurons = numpy.prod(input_dimensions);
         activation_probability = numpy.zeros(input_number_of_neurons);
+        ranked_shape_alpha = shape_alpha / numpy.arange(1, input_number_of_neurons + 1);
         for index in xrange(input_number_of_neurons):
             activation_probability[index] = numpy.random.beta(ranked_shape_alpha[index], shape_beta);
         activation_probability = numpy.reshape(activation_probability, input_dimensions);
