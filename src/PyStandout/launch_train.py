@@ -382,7 +382,7 @@ def launch_train():
     x = theano.tensor.matrix('x')  # the data is presented as rasterized images
     y = theano.tensor.ivector('y')  # the labels are presented as 1D vector of [int] labels
     lr = theano.tensor.scalar('learning_rate');
-    
+
     input_layer = lasagne.layers.InputLayer(shape=input_shape, input_var=x)
     
     import mlp
