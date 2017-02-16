@@ -48,7 +48,7 @@ class MultiLayerPerceptron(network.Network):
             previous_layer_dimension = lasagne.layers.get_output_shape(neural_network)[1:];
             activation_probability = sample_activation_probability(previous_layer_dimension, layer_activation_styles[layer_index], layer_activation_parameters[layer_index]);
             
-            neural_network = GeneralizedDropoutLayer(neural_network, activation_probability=activation_probability);
+            neural_network = GeneralizedDropoutLayer(neural_network, activation_probability=activaon_probability);
             
             layer_dimension = layer_dimensions[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index];
