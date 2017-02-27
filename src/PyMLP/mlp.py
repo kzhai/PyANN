@@ -35,7 +35,7 @@ class MultiLayerPerceptron(network.Network):
 
         assert len(layer_dimensions) == len(layer_nonlinearities)
         assert len(layer_dimensions) == len(layer_activation_parameters)
-        assert len(layer_dimensions) == len(layer_activation_styles) 
+        assert len(layer_dimensions) == len(layer_activation_styles)
         
         '''
         pretrained_network_layers = None;
