@@ -38,8 +38,8 @@ class ConvolutionalNeuralNetwork(network.Network):
             dense_activation_styles=None,
             
             convolution_filter_size=(5, 5),
-            maxpooling_size=(2, 2),
-            pooling_stride=None,
+            maxpooling_size=(3, 3),
+            pooling_stride=(2, 2),
             # pooling_stride=(1, 1),
             
             objective_to_minimize=None,
@@ -76,11 +76,14 @@ class ConvolutionalNeuralNetwork(network.Network):
             # print "before convolution", lasagne.layers.get_output_shape(neural_network)
             # Convolutional layer with 32 kernels of size 5x5. Strided and padded convolutions are supported as well; see the docstring.
             neural_network = lasagne.layers.Conv2DLayer(neural_network,
-                                                 # W=W,
-                                                 num_filters=conv_filter_number,
-                                                 filter_size=conv_filter_size,
-                                                 nonlinearity=conv_nonlinearity,
-                                                 )
+                                                        # W=W,
+                                                        nonlinearity=conv_nonlinearity,
+                                                        num_filters=conv_filter_number,
+                                                        filter_size=conv_filter_size,
+
+                                                        stride=(1, 1),
+                                                        pad=2,
+                                                        )
             
             # pooling_size = maxpooling_sizes[conv_layer_index];
             pooling_size = maxpooling_size
