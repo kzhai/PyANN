@@ -94,10 +94,10 @@ def parse_output(input_file):
     print train_epochs.shape
     print best_models.shape
 
-    print "train results", train_minibatches[-1, -1], numpy.max(train_minibatches[:, -1])
-    print "valid results", valid_minibatches[-1, -1], numpy.max(valid_minibatches[:, -1])
-    print "test results", test_minibatches[-1, -1], numpy.max(test_minibatches[:, -1])
-    print "best models", best_models[-1, -1], numpy.max(best_models[:, -1])
+    print "train results", train_minibatches[-1, -1], numpy.max(train_minibatches[:, -1]), 100-numpy.max(train_minibatches[:, -1])
+    print "valid results", valid_minibatches[-1, -1], numpy.max(valid_minibatches[:, -1]), 100-numpy.max(valid_minibatches[:, -1])
+    print "test results", test_minibatches[-1, -1], numpy.max(test_minibatches[:, -1]), 100-numpy.max(test_minibatches[:, -1])
+    print "best models", best_models[-1, -1], numpy.max(best_models[:, -1]), 100-numpy.max(best_models[:, -1])
 
 def minibatch_pattern_match(pattern, line):
     matcher = re.match(pattern, line);
