@@ -21,7 +21,23 @@ import lasagne.nonlinearities
 import lasagne.layers
 import lasagne.utils
 
+from lasagne.nonlinearities import sigmoid, softmax, tanh, rectify, leaky_rectify, LeakyRectify, very_leaky_rectify, linear, identity
+
 GlorotUniformGain = {};
+GlorotUniformGain[sigmoid] = 4.0;
+GlorotUniformGain[softmax] = 1.0;
+GlorotUniformGain[tanh] = 1.0;
+GlorotUniformGain[rectify] = 1.0;
+GlorotUniformGain[LeakyRectify] = 1.0;
+GlorotUniformGain[leaky_rectify] = 1.0;
+GlorotUniformGain[very_leaky_rectify] = 1.0;
+#GlorotUniformGain[lasagne.nonlinearities.ScaledTanH] = 1.0;
+#GlorotUniformGain[lasagne.nonlinearities.elu] = 1.0;
+#GlorotUniformGain[lasagne.nonlinearities.softplus] = 1.0;
+GlorotUniformGain[linear] = 1.0;
+GlorotUniformGain[identity] = 1.0;
+
+'''
 GlorotUniformGain[lasagne.nonlinearities.sigmoid] = 4.0;
 GlorotUniformGain[lasagne.nonlinearities.softmax] = 1.0;
 GlorotUniformGain[lasagne.nonlinearities.tanh] = 1.0;
@@ -34,6 +50,7 @@ GlorotUniformGain[lasagne.nonlinearities.very_leaky_rectify] = 1.0;
 #GlorotUniformGain[lasagne.nonlinearities.softplus] = 1.0;
 GlorotUniformGain[lasagne.nonlinearities.linear] = 1.0;
 GlorotUniformGain[lasagne.nonlinearities.identity] = 1.0;
+'''
 
 def mean_categorical_crossentropy(network, label):
     # Create a train_loss expression for training, i.e., a scalar objective we want
@@ -70,10 +87,10 @@ class Network(object):
     def __init__(self, input_network):
         # self._input_network = lasagne.layers.get_output(_input_network);
         self._input_network = input_network;
-        self._input = lasagne.layers.get_output(input_network);
+        #self._input = lasagne.layers.get_output(input_network);
 
-    def get_input(self):
-        return self._input
+    #def get_input(self):
+        #return self._input
 
     def get_objective_to_minimize(self, label, **kwargs):
         output = self.get_output(**kwargs);

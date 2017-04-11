@@ -157,6 +157,7 @@ def launch_train():
     assert options.layer_nonlinearities != None
     layer_nonlinearities = options.layer_nonlinearities.split(",")
     layer_nonlinearities = [getattr(lasagne.nonlinearities, layer_nonlinearity) for layer_nonlinearity in layer_nonlinearities]
+    print layer_nonlinearities
     assert len(layer_nonlinearities) == number_of_layers;
 
     layer_activation_styles = options.layer_activation_styles;
