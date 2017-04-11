@@ -52,8 +52,7 @@ class MultiLayerPerceptron(network.Network):
             
             layer_dimension = layer_dimensions[layer_index]
             layer_nonlinearity = layer_nonlinearities[layer_index];
-            print layer_nonlinearity, network.GlorotUniformGain
-            
+
             neural_network = lasagne.layers.DenseLayer(neural_network,
                                                        layer_dimension,
                                                        W=lasagne.init.GlorotUniform(gain=network.GlorotUniformGain[layer_nonlinearity]),

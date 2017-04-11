@@ -24,6 +24,7 @@ import lasagne.utils
 from lasagne.nonlinearities import sigmoid, softmax, tanh, rectify, leaky_rectify, LeakyRectify, very_leaky_rectify, linear, identity
 
 GlorotUniformGain = {};
+'''
 GlorotUniformGain[sigmoid] = 4.0;
 GlorotUniformGain[softmax] = 1.0;
 GlorotUniformGain[tanh] = 1.0;
@@ -36,8 +37,8 @@ GlorotUniformGain[very_leaky_rectify] = 1.0;
 #GlorotUniformGain[lasagne.nonlinearities.softplus] = 1.0;
 GlorotUniformGain[linear] = 1.0;
 GlorotUniformGain[identity] = 1.0;
-
 '''
+
 GlorotUniformGain[lasagne.nonlinearities.sigmoid] = 4.0;
 GlorotUniformGain[lasagne.nonlinearities.softmax] = 1.0;
 GlorotUniformGain[lasagne.nonlinearities.tanh] = 1.0;
@@ -50,7 +51,6 @@ GlorotUniformGain[lasagne.nonlinearities.very_leaky_rectify] = 1.0;
 #GlorotUniformGain[lasagne.nonlinearities.softplus] = 1.0;
 GlorotUniformGain[lasagne.nonlinearities.linear] = 1.0;
 GlorotUniformGain[lasagne.nonlinearities.identity] = 1.0;
-'''
 
 def mean_categorical_crossentropy(network, label):
     # Create a train_loss expression for training, i.e., a scalar objective we want
