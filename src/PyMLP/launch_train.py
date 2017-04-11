@@ -31,7 +31,8 @@ def parse_args():
 
                         # parameter set 3
                         learning_rate=1e-2,
-                        learning_rate_decay=0,
+                        learning_rate_decay_style=None,
+                        learning_rate_decay_parameter=0,
                         objective_to_minimize=None,
 
                         # parameter set 4
