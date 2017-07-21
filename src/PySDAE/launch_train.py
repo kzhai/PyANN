@@ -393,7 +393,7 @@ def launch_train():
         train_function = theano.function(
             inputs=[x],
             outputs=[train_loss,
-                     denoising_auto_encoder.get_input(),
+                     denoising_auto_encoder.get_network_input(),
                      # denoising_auto_encoder.network.get_encoder_output_for(self.input),
                      # denoising_auto_encoder.network.get_decoder_output_for(self.input),
                      # denoising_auto_encoder.network.get_output_for(self.input)
