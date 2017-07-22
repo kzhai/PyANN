@@ -55,7 +55,7 @@ GlorotUniformGain[lasagne.nonlinearities.identity] = 1.0;
 def mean_categorical_crossentropy(network, label):
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
-    train_prediction = network.get_network_output();
+    train_prediction = network.get_output();
     train_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(train_prediction, label))
     
     return train_loss
@@ -63,13 +63,13 @@ def mean_categorical_crossentropy(network, label):
 def mean_binary_crossentropy(network, label):
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
-    train_prediction = network.get_network_output();
+    train_prediction = network.get_output();
     train_loss = theano.tensor.mean(theano.tensor.nnet.binary_crossentropy(train_prediction, label))
     
     return train_loss
     
 def mean_accuracy(network, label):
-    train_prediction = network.get_network_output();
+    train_prediction = network.get_output();
     train_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=1), label), dtype=theano.config.floatX)
     
     return train_accuracy

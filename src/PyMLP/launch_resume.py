@@ -456,7 +456,7 @@ def launch_resume():
     
     # Create a train_loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy train_loss):
-    train_prediction = network.get_network_output()
+    train_prediction = network.get_output()
     train_loss = network.get_objective_to_minimize(y);
     # train_loss = theano.tensor.mean(lasagne.objectives.categorical_crossentropy(train_prediction, y))
     train_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(train_prediction, axis=1), y), dtype=theano.config.floatX)
@@ -471,7 +471,7 @@ def launch_resume():
     # Create a train_loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the networks,
     # disabling dropout layers.
-    validate_prediction = network.get_network_output(deterministic=True)
+    validate_prediction = network.get_output(deterministic=True)
     validate_loss = network.get_objective_to_minimize(y, deterministic=True);
     #validate_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(validate_prediction, y), dtype=theano.config.floatX)
     # As a bonus, also create an expression for the classification accuracy:

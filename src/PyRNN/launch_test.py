@@ -112,7 +112,7 @@ def evaluate_snapshot(input_snapshot_path, test_set_x, test_set_y):
     input_layers[1].input_var = m;
 
     # disabling dropout layers.
-    test_prediction = network.get_network_output(deterministic=True)
+    test_prediction = network.get_output(deterministic=True)
     test_loss = theano.tensor.mean(theano.tensor.nnet.categorical_crossentropy(test_prediction, y))
     # As a bonus, also create an expression for the classification accuracy:
     test_accuracy = theano.tensor.mean(theano.tensor.eq(theano.tensor.argmax(test_prediction, axis=1), y), dtype=theano.config.floatX)
